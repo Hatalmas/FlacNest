@@ -7,33 +7,51 @@ struct PlayerView: View {
     @EnvironmentObject private var libraryVM: LibraryViewModel
     @EnvironmentObject private var playerWindowTracker: PlayerWindowTracker
     @AppStorage("playerTrackListVisible") private var showTrackList = false
+    @AppStorage("showSpinningCDWhilePlaying") private var showSpinningCDWhilePlaying = true
+    @State private var artworkSize: CGFloat = AppSettings.playerArtworkSize
+    @State private var layoutWidth: CGFloat = PlayerWindowSizing.minWidth
+
+    private var showsSpinningCD: Bool {
+        showSpinningCDWhilePlaying && playback.currentAlbum != nil
+    }
 
     var body: some View {
-        VStack(spacing: 0) {
-            VStack(spacing: 12) {
-                NowPlayingMetadataView(
-                    album: playback.currentAlbum,
-                    track: playback.currentTrack,
+        GeometryReader { geometry in
+            let maxArtworkSize = PlayerArtworkSizing.maxSize(
+                forWidth: geometry.size.width,
+                showsSpinningCD: showsSpinningCD
+            )
+
+            VStack(spacing: 0) {
+                PlayerArtworkHeaderView(
                     artworkURL: playback.currentAlbum.flatMap { libraryVM.artworkURL(for: $0) },
                     isPlaying: playback.isPlaying,
-                    layout: .player,
-                    trailingControls: AnyView(playerToolbar)
+                    showsSpinningCD: showsSpinningCD,
+                    artworkSize: artworkSize,
+                    trailingControls: { playerToolbar }
                 )
-                PlaybackProgressView(playback: playback)
-                TransportControls(playback: playback)
-                if let error = playback.lastError {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                        .multilineTextAlignment(.center)
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                .frame(height: artworkSize + PlayerArtworkSizing.headerVerticalPadding)
+
+                PlayerArtworkResizeDivider(
+                    artworkSize: $artworkSize,
+                    maxSize: maxArtworkSize
+                )
+
+                playbackInfoSection
+
+                if showTrackList {
+                    Divider()
+                    PlayerTrackListView(playback: playback)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(.bottom, 8)
                 }
             }
-            .padding(20)
-
-            if showTrackList {
-                Divider()
-                PlayerTrackListView(playback: playback)
-                    .padding(.bottom, 8)
+            .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
+            .onChange(of: geometry.size.width) { _, width in
+                layoutWidth = width
+                clampArtworkSize(forWidth: width)
             }
         }
         .frame(
@@ -48,6 +66,10 @@ struct PlayerView: View {
             if albumID == nil {
                 showTrackList = false
             }
+            clampArtworkSize(forWidth: layoutWidth)
+        }
+        .onChange(of: showSpinningCDWhilePlaying) { _, _ in
+            clampArtworkSize(forWidth: layoutWidth)
         }
         .onChange(of: showTrackList) { wasVisible, isVisible in
             PlayerWindowSizing.handleToggle(from: wasVisible, to: isVisible)
@@ -57,6 +79,25 @@ struct PlayerView: View {
                   PlayerWindowSizing.isPlayerWindow(window) else { return }
             PlayerWindowSizing.saveCurrentSize(trackListVisible: showTrackList)
         }
+    }
+
+    private var playbackInfoSection: some View {
+        VStack(spacing: 12) {
+            PlayerNowPlayingInfoView(
+                album: playback.currentAlbum,
+                track: playback.currentTrack
+            )
+            PlaybackProgressView(playback: playback)
+            TransportControls(playback: playback)
+            if let error = playback.lastError {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .top)
     }
 
     private var playerToolbar: some View {
@@ -93,5 +134,13 @@ struct PlayerView: View {
         }
         .font(.title3)
         .labelStyle(.iconOnly)
+        .frame(width: PlayerArtworkSizing.toolbarWidth, alignment: .center)
+    }
+
+    private func clampArtworkSize(forWidth width: CGFloat) {
+        let clamped = PlayerArtworkSizing.clamp(artworkSize, forWidth: width, showsSpinningCD: showsSpinningCD)
+        guard clamped != artworkSize else { return }
+        artworkSize = clamped
+        AppSettings.playerArtworkSize = clamped
     }
 }

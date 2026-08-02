@@ -19,6 +19,12 @@ struct StatusMenuContent: View {
                 showPlayer()
             }
             .keyboardShortcut("p", modifiers: [.command])
+
+            Divider()
+
+            Button("Close FlacNest") {
+                NSApp.terminate(nil)
+            }
         }
         .padding(12)
         .frame(width: 280)

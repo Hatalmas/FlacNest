@@ -334,3 +334,143 @@ struct NowPlayingMetadataView: View {
         }
     }
 }
+
+enum PlayerArtworkSizing {
+    static let minSize: CGFloat = 64
+    static let defaultSize: CGFloat = 128
+    static let horizontalPadding: CGFloat = 40
+    static let rowSpacing: CGFloat = 14
+    static let toolbarWidth: CGFloat = 44
+    static let headerVerticalPadding: CGFloat = 24
+
+    static func maxSize(forWidth width: CGFloat, showsSpinningCD: Bool) -> CGFloat {
+        let contentWidth = max(width, minSize)
+        let reservedWidth = horizontalPadding + toolbarWidth + rowSpacing
+        if showsSpinningCD {
+            // art + spacing + cd + spacing + toolbar
+            return max(minSize, (contentWidth - reservedWidth - rowSpacing) / 2)
+        }
+        // art + spacing + toolbar
+        return max(minSize, contentWidth - reservedWidth)
+    }
+
+    static func clamp(_ size: CGFloat, forWidth width: CGFloat, showsSpinningCD: Bool) -> CGFloat {
+        max(minSize, min(size, maxSize(forWidth: width, showsSpinningCD: showsSpinningCD)))
+    }
+}
+
+struct AlbumArtworkImage: View {
+    let artworkURL: URL?
+    let size: CGFloat
+    var cornerRadius: CGFloat = 8
+
+    var body: some View {
+        if let url = artworkURL, let nsImage = NSImage(contentsOf: url) {
+            Image(nsImage: nsImage)
+                .highQualityScaled(contentMode: .fill)
+                .frame(width: size, height: size)
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        } else {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(Color.secondary.opacity(0.2))
+                .frame(width: size, height: size)
+                .overlay {
+                    Image(systemName: "music.note")
+                        .font(.title)
+                        .foregroundStyle(.secondary)
+                }
+        }
+    }
+}
+
+struct PlayerArtworkHeaderView<Trailing: View>: View {
+    let artworkURL: URL?
+    let isPlaying: Bool
+    let showsSpinningCD: Bool
+    let artworkSize: CGFloat
+    @ViewBuilder var trailingControls: () -> Trailing
+
+    var body: some View {
+        HStack(alignment: .center, spacing: PlayerArtworkSizing.rowSpacing) {
+            AlbumArtworkImage(artworkURL: artworkURL, size: artworkSize)
+            if showsSpinningCD {
+                SpinningCDView(isSpinning: isPlaying, size: artworkSize)
+            }
+            trailingControls()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+    }
+}
+
+struct PlayerNowPlayingInfoView: View {
+    let album: LibraryAlbum?
+    let track: LibraryTrack?
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Text(track?.title ?? "No track")
+                .font(.headline)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+            Text(trackPerformer)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            Text(album?.displayTitle ?? "No album loaded")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var trackPerformer: String {
+        if let performer = track?.performer?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !performer.isEmpty {
+            return performer
+        }
+        return album?.performer ?? ""
+    }
+}
+
+struct PlayerArtworkResizeDivider: View {
+    @Binding var artworkSize: CGFloat
+    let maxSize: CGFloat
+
+    @State private var sizeAtDragStart: CGFloat?
+
+    var body: some View {
+        ZStack {
+            Divider()
+            Capsule()
+                .fill(Color.secondary.opacity(0.45))
+                .frame(width: 36, height: 4)
+        }
+        .frame(height: 10)
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                    if sizeAtDragStart == nil {
+                        sizeAtDragStart = artworkSize
+                    }
+                    let proposed = (sizeAtDragStart ?? artworkSize) + value.translation.height
+                    let clamped = min(maxSize, max(PlayerArtworkSizing.minSize, proposed))
+                    artworkSize = clamped
+                    AppSettings.playerArtworkSize = clamped
+                }
+                .onEnded { _ in
+                    sizeAtDragStart = nil
+                }
+        )
+        .onHover { isHovering in
+            if isHovering {
+                NSCursor.resizeUpDown.push()
+            } else {
+                NSCursor.pop()
+            }
+        }
+        .help("Drag to resize album art")
+    }
+}

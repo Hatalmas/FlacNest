@@ -18,6 +18,7 @@ enum AppSettings {
     private static let showSpinningCDWhilePlayingKey = "showSpinningCDWhilePlaying"
     static let themeKey = "appTheme"
     static let showStatusMenuKey = "showStatusMenu"
+    static let playerArtworkSizeKey = "playerArtworkSize"
     private static let playerCompactWindowFrameKey = "playerCompactWindowFrame"
     private static let playerExpandedWindowFrameKey = "playerExpandedWindowFrame"
 
@@ -97,6 +98,19 @@ enum AppSettings {
     static var playerExpandedWindowFrame: PlayerWindowFrame? {
         get { decodeFrame(forKey: playerExpandedWindowFrameKey) }
         set { encodeFrame(newValue, forKey: playerExpandedWindowFrameKey) }
+    }
+
+    static var playerArtworkSize: CGFloat {
+        get {
+            let stored = UserDefaults.standard.double(forKey: playerArtworkSizeKey)
+            if stored > 0 {
+                return CGFloat(stored)
+            }
+            return 128
+        }
+        set {
+            UserDefaults.standard.set(Double(newValue), forKey: playerArtworkSizeKey)
+        }
     }
 
     static var lastPlaybackState: LastPlaybackState? {
