@@ -131,6 +131,16 @@ struct AlbumMetadataEditorView: View {
         GroupBox("Tracks") {
             VStack(spacing: 0) {
                 HStack {
+                    Button("Import from clipboard") {
+                        importTrackTitlesFromClipboard()
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 8)
+                .padding(.top, 4)
+                .padding(.bottom, 8)
+
+                HStack {
                     Text("#").frame(width: 28, alignment: .trailing)
                     Text("Title").frame(maxWidth: .infinity, alignment: .leading)
                     Text("Performer").frame(width: 160, alignment: .leading)
@@ -206,6 +216,31 @@ struct AlbumMetadataEditorView: View {
         } catch {
             errorMessage = "Could not set artwork: \(error.localizedDescription)"
         }
+    }
+
+    private func importTrackTitlesFromClipboard() {
+        guard let clipboardText = NSPasteboard.general.string(forType: .string)?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+              !clipboardText.isEmpty else {
+            errorMessage = "Clipboard is empty."
+            return
+        }
+
+        var lines = clipboardText.components(separatedBy: .newlines)
+        while let last = lines.last, last.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            lines.removeLast()
+        }
+        lines = lines.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+        guard lines.count == draft.tracks.count else {
+            errorMessage = "Clipboard has \(lines.count) line(s), but this album has \(draft.tracks.count) track(s)."
+            return
+        }
+
+        for index in draft.tracks.indices {
+            draft.tracks[index].title = lines[index]
+        }
+        errorMessage = nil
     }
 
     private func saveChanges() {
