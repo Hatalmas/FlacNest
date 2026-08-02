@@ -1,15 +1,16 @@
 import AVFoundation
-import Combine
 import Foundation
+import Observation
 
+@Observable
 @MainActor
-final class PlaybackController: ObservableObject {
-    @Published private(set) var currentAlbum: LibraryAlbum?
-    @Published private(set) var currentTrackIndex: Int = 0
-    @Published private(set) var isPlaying = false
-    @Published private(set) var currentTime: Double = 0
-    @Published private(set) var fileDuration: Double = 0
-    @Published var lastError: String?
+final class PlaybackController {
+    private(set) var currentAlbum: LibraryAlbum?
+    private(set) var currentTrackIndex: Int = 0
+    private(set) var isPlaying = false
+    private(set) var currentTime: Double = 0
+    private(set) var fileDuration: Double = 0
+    var lastError: String?
 
     private let engine = AVAudioEngine()
     private let playerNode = AVAudioPlayerNode()

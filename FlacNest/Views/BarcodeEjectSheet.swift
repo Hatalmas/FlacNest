@@ -3,7 +3,7 @@ import SwiftUI
 struct BarcodeEjectSheet: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var libraryVM: LibraryViewModel
-    @EnvironmentObject private var playback: PlaybackController
+    @Environment(PlaybackController.self) private var playback
     @EnvironmentObject private var barcodeEject: BarcodeEjectController
 
     @StateObject private var scanner = BarcodeScannerSession()
@@ -214,14 +214,14 @@ struct BarcodeEjectSheet: View {
 private struct BarcodeEjectSheetModifier: ViewModifier {
     @EnvironmentObject private var barcodeEject: BarcodeEjectController
     @EnvironmentObject private var libraryVM: LibraryViewModel
-    @EnvironmentObject private var playback: PlaybackController
+    @Environment(PlaybackController.self) private var playback
 
     func body(content: Content) -> some View {
         content
             .sheet(isPresented: $barcodeEject.isPresenting) {
                 BarcodeEjectSheet()
                     .environmentObject(libraryVM)
-                    .environmentObject(playback)
+                    .environment(playback)
                     .environmentObject(barcodeEject)
             }
     }

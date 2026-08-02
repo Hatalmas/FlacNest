@@ -3,7 +3,7 @@ import SwiftUI
 struct PlayerView: View {
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismissWindow) private var dismissWindow
-    @EnvironmentObject private var playback: PlaybackController
+    @Environment(PlaybackController.self) private var playback
     @EnvironmentObject private var libraryVM: LibraryViewModel
     @EnvironmentObject private var playerWindowTracker: PlayerWindowTracker
     @EnvironmentObject private var libraryWindowTracker: LibraryWindowTracker
@@ -29,7 +29,7 @@ struct PlayerView: View {
                 PlayerArtworkHeaderView(
                     artworkURL: playback.currentAlbum.flatMap { libraryVM.artworkURL(for: $0) },
                     isPlaying: playback.isPlaying,
-                    showsSpinningCD: showsSpinningCD,
+                    hasAlbum: playback.currentAlbum != nil,
                     artworkSize: artworkSize,
                     trailingControls: { playerToolbar }
                 )

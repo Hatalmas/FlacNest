@@ -42,7 +42,7 @@ struct AlbumMetadataPreviewView: View {
 
     @ViewBuilder
     private func artworkPreview(for album: LibraryAlbum) -> some View {
-        if let url = libraryVM.artworkURL(for: album), let image = NSImage(contentsOf: url) {
+        if let url = libraryVM.artworkURL(for: album), let image = ArtworkImageCache.image(for: url) {
             Image(nsImage: image)
                 .resizable()
                 .aspectRatio(contentMode: .fit)

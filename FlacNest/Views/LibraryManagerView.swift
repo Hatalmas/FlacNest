@@ -3,7 +3,7 @@ import SwiftUI
 
 struct LibraryManagerView: View {
     @Environment(\.openWindow) private var openWindow
-    @EnvironmentObject private var playback: PlaybackController
+    @Environment(PlaybackController.self) private var playback
     @EnvironmentObject private var libraryVM: LibraryViewModel
     @EnvironmentObject private var playerWindowTracker: PlayerWindowTracker
     @EnvironmentObject private var barcodeEject: BarcodeEjectController
@@ -67,7 +67,7 @@ struct LibraryManagerView: View {
         .sheet(item: $editingAlbum) { album in
             AlbumMetadataEditorView(album: album)
                 .environmentObject(libraryVM)
-                .environmentObject(playback)
+                .environment(playback)
         }
         .flacNestFocusedCommands(
             playback: playback,
@@ -352,7 +352,7 @@ struct LibraryManagerView: View {
 
     private func albumArtwork(for album: LibraryAlbum) -> some View {
         Group {
-            if let url = libraryVM.artworkURL(for: album), let nsImage = NSImage(contentsOf: url) {
+            if let url = libraryVM.artworkURL(for: album), let nsImage = ArtworkImageCache.image(for: url) {
                 Image(nsImage: nsImage)
                     .highQualityScaled(contentMode: .fill)
             } else {

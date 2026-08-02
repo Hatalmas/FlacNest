@@ -8,6 +8,9 @@ final class MediaRemoteController {
     private weak var playback: PlaybackController?
     private var commandsConfigured = false
     private var mediaKeyMonitor: Any?
+    private var lastNowPlayingRefresh = Date.distantPast
+    private var lastElapsedSecond = -1
+    private var lastPlaybackStateKey = ""
 
     private init() {}
 
@@ -15,11 +18,25 @@ final class MediaRemoteController {
         self.playback = playback
         configureRemoteCommandsIfNeeded()
         startMediaKeyMonitorIfNeeded()
-        refresh(from: playback)
+        refresh(from: playback, force: true)
     }
 
-    func refresh(from playback: PlaybackController) {
+    func refresh(from playback: PlaybackController, force: Bool = false) {
         self.playback = playback
+
+        let elapsedSecond = Int(playback.currentTime.rounded(.down))
+        let playbackStateKey = "\(playback.currentAlbum?.id ?? "")|\(playback.currentTrackIndex)|\(playback.isPlaying)"
+        let shouldRefreshNowPlaying = force
+            || playbackStateKey != lastPlaybackStateKey
+            || !playback.isPlaying
+            || elapsedSecond != lastElapsedSecond
+            || Date().timeIntervalSince(lastNowPlayingRefresh) >= 1
+
+        guard shouldRefreshNowPlaying else { return }
+
+        lastPlaybackStateKey = playbackStateKey
+        lastElapsedSecond = elapsedSecond
+        lastNowPlayingRefresh = Date()
         updateNowPlayingInfo(from: playback)
     }
 

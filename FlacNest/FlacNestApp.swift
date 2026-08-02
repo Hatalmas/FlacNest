@@ -7,7 +7,7 @@ struct FlacNestApp: App {
     @AppStorage("playerTrackListVisible") private var playerTrackListVisible = false
     @AppStorage(AppSettings.themeKey) private var themeRawValue = AppTheme.system.rawValue
     @AppStorage(AppSettings.showStatusMenuKey) private var showStatusMenu = false
-    @StateObject private var playback = PlaybackController()
+    @State private var playback = PlaybackController()
     @StateObject private var libraryVM = LibraryViewModel()
     @StateObject private var playerWindowTracker = PlayerWindowTracker()
     @StateObject private var libraryWindowTracker = LibraryWindowTracker()
@@ -20,7 +20,7 @@ struct FlacNestApp: App {
     var body: some Scene {
         Window("FlacNest Player", id: "player") {
             PlayerView()
-                .environmentObject(playback)
+                .environment(playback)
                 .environmentObject(libraryVM)
                 .environmentObject(playerWindowTracker)
                 .environmentObject(libraryWindowTracker)
@@ -55,7 +55,7 @@ struct FlacNestApp: App {
 
         Window("FlacNest Library", id: "library") {
             LibraryManagerView()
-                .environmentObject(playback)
+                .environment(playback)
                 .environmentObject(libraryVM)
                 .environmentObject(playerWindowTracker)
                 .environmentObject(libraryWindowTracker)
@@ -82,7 +82,7 @@ struct FlacNestApp: App {
 
         MenuBarExtra(isInserted: $showStatusMenu) {
             StatusMenuContent()
-                .environmentObject(playback)
+                .environment(playback)
                 .environmentObject(libraryVM)
                 .preferredColorScheme(preferredColorScheme)
         } label: {

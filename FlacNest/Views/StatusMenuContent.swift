@@ -4,7 +4,7 @@ import SwiftUI
 struct StatusMenuContent: View {
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openSettings) private var openSettings
-    @EnvironmentObject private var playback: PlaybackController
+    @Environment(PlaybackController.self) private var playback
     @EnvironmentObject private var libraryVM: LibraryViewModel
 
     private var hasLoadedAlbum: Bool {
@@ -84,7 +84,7 @@ struct StatusMenuContent: View {
     private var artworkView: some View {
         if let album = playback.currentAlbum,
            let url = libraryVM.artworkURL(for: album),
-           let nsImage = NSImage(contentsOf: url) {
+           let nsImage = ArtworkImageCache.image(for: url) {
             Image(nsImage: nsImage)
                 .resizable()
                 .interpolation(.high)

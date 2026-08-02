@@ -11,7 +11,7 @@ extension Image {
 }
 
 struct TransportControls: View {
-    @ObservedObject var playback: PlaybackController
+    var playback: PlaybackController
     var onEject: (() -> Void)? = nil
 
     var body: some View {
@@ -59,7 +59,7 @@ struct TransportControls: View {
 }
 
 struct PlaybackProgressView: View {
-    @ObservedObject var playback: PlaybackController
+    var playback: PlaybackController
 
     var body: some View {
         VStack(spacing: 8) {
@@ -165,13 +165,19 @@ struct SpinningCDView: View {
     }
 
     var body: some View {
+        cdImage
+            .onAppear(perform: advanceRotationIfNeeded)
+            .onChange(of: isSpinning) { _, _ in advanceRotationIfNeeded() }
+            .modifier(SpinningCDTimerModifier(isActive: isSpinning || angularVelocity > 0) {
+                advanceRotation()
+            })
+    }
+
+    private var cdImage: some View {
         Image("cd")
             .highQualityScaled(contentMode: .fit)
             .frame(width: size, height: size)
             .rotationEffect(.degrees(angle))
-            .onReceive(Timer.publish(every: frameInterval, on: .main, in: .common).autoconnect()) { _ in
-                advanceRotation()
-            }
     }
 
     private func advanceRotation() {
@@ -193,10 +199,31 @@ struct SpinningCDView: View {
             angle -= 360
         }
     }
+
+    private func advanceRotationIfNeeded() {
+        if isSpinning || angularVelocity > 0 {
+            advanceRotation()
+        }
+    }
+}
+
+private struct SpinningCDTimerModifier: ViewModifier {
+    let isActive: Bool
+    let onTick: () -> Void
+
+    func body(content: Content) -> some View {
+        if isActive {
+            content.onReceive(Timer.publish(every: 1.0 / 60.0, on: .main, in: .common).autoconnect()) { _ in
+                onTick()
+            }
+        } else {
+            content
+        }
+    }
 }
 
 struct PlayerTrackListView: View {
-    @ObservedObject var playback: PlaybackController
+    var playback: PlaybackController
 
     var body: some View {
         ScrollView {
@@ -359,7 +386,7 @@ struct NowPlayingMetadataView: View {
 
     @ViewBuilder
     private var artwork: some View {
-        if let url = artworkURL, let nsImage = NSImage(contentsOf: url) {
+        if let url = artworkURL, let nsImage = ArtworkImageCache.image(for: url) {
             Image(nsImage: nsImage)
                 .highQualityScaled(contentMode: .fill)
                 .frame(width: artworkSize, height: artworkSize)
@@ -452,7 +479,7 @@ struct AlbumArtworkImage: View {
 
     @ViewBuilder
     private var artworkContent: some View {
-        if let url = artworkURL, let nsImage = NSImage(contentsOf: url) {
+        if let url = artworkURL, let nsImage = ArtworkImageCache.image(for: url) {
             Image(nsImage: nsImage)
                 .highQualityScaled(contentMode: .fill)
         } else {
@@ -469,19 +496,144 @@ struct AlbumArtworkImage: View {
 struct PlayerArtworkHeaderView<Trailing: View>: View {
     let artworkURL: URL?
     let isPlaying: Bool
-    let showsSpinningCD: Bool
+    let hasAlbum: Bool
     let artworkSize: CGFloat
     @ViewBuilder var trailingControls: () -> Trailing
 
+    @AppStorage("showSpinningCDWhilePlaying") private var showSpinningCDWhilePlaying = true
+    @State private var cdSlideProgress: CGFloat = 1
+    @State private var isAnimatingCD = false
+
+    private let cdAnimationDuration = 0.45
+
+    private var caseWidth: CGFloat {
+        CDCaseArtworkLayout.displayWidth(forHeight: artworkSize)
+    }
+
+    private var showsCDInLayout: Bool {
+        hasAlbum && (showSpinningCDWhilePlaying || cdSlideProgress > 0.001)
+    }
+
+    private var clusterWidth: CGFloat {
+        guard showsCDInLayout else { return caseWidth }
+        return caseWidth + PlayerArtworkSizing.rowSpacing + artworkSize
+    }
+
+    private var cdExtendedOffsetX: CGFloat {
+        caseWidth + PlayerArtworkSizing.rowSpacing
+    }
+
+    private var cdTuckedOffsetX: CGFloat {
+        (caseWidth - artworkSize) / 2
+    }
+
+    private var cdOffsetX: CGFloat {
+        cdTuckedOffsetX + (cdExtendedOffsetX - cdTuckedOffsetX) * cdSlideProgress
+    }
+
+    private var cdScale: CGFloat {
+        0.28 + 0.72 * cdSlideProgress
+    }
+
     var body: some View {
         HStack(alignment: .center, spacing: PlayerArtworkSizing.rowSpacing) {
-            AlbumArtworkImage(artworkURL: artworkURL, size: artworkSize)
-            if showsSpinningCD {
-                SpinningCDView(isSpinning: isPlaying, size: artworkSize)
-            }
+            artworkCluster
             trailingControls()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .onAppear {
+            cdSlideProgress = showSpinningCDWhilePlaying ? 1 : 0
+        }
+        .onChange(of: showSpinningCDWhilePlaying) { _, isEnabled in
+            guard !isAnimatingCD else { return }
+            cdSlideProgress = isEnabled ? 1 : 0
+        }
+    }
+
+    private var artworkCluster: some View {
+        ZStack(alignment: .topLeading) {
+            if showsCDInLayout {
+                Button(action: toggleSpinningCD) {
+                    SpinningCDView(isSpinning: isPlaying, size: artworkSize)
+                        .frame(width: artworkSize, height: artworkSize)
+                }
+                .buttonStyle(.plain)
+                .disabled(!hasAlbum || cdSlideProgress < 0.35)
+                .help(spinningCDHelpText)
+                .onHover { hovering in
+                    guard hasAlbum, cdSlideProgress > 0.35 else { return }
+                    if hovering {
+                        NSCursor.pointingHand.push()
+                    } else {
+                        NSCursor.pop()
+                    }
+                }
+                .offset(x: cdOffsetX)
+                .scaleEffect(cdScale)
+                .opacity(Double(max(0.05, cdSlideProgress)))
+                .zIndex(cdSlideProgress > 0.65 ? 1 : 0)
+            }
+
+            Button(action: toggleSpinningCD) {
+                AlbumArtworkImage(artworkURL: artworkURL, size: artworkSize)
+            }
+            .buttonStyle(.plain)
+            .disabled(!hasAlbum)
+            .help(spinningCDHelpText)
+            .onHover { hovering in
+                guard hasAlbum else { return }
+                if hovering {
+                    NSCursor.pointingHand.push()
+                } else {
+                    NSCursor.pop()
+                }
+            }
+            .zIndex(2)
+        }
+        .frame(width: clusterWidth, height: artworkSize, alignment: .leading)
+        .animation(.easeInOut(duration: cdAnimationDuration), value: clusterWidth)
+    }
+
+    private var spinningCDHelpText: String {
+        showSpinningCDWhilePlaying
+            ? "Click to slip the CD into the case"
+            : "Click the cover to eject the CD"
+    }
+
+    private func toggleSpinningCD() {
+        guard hasAlbum, !isAnimatingCD else { return }
+
+        if showSpinningCDWhilePlaying {
+            tuckCDIntoCase()
+        } else {
+            ejectCDFromCase()
+        }
+    }
+
+    private func tuckCDIntoCase() {
+        isAnimatingCD = true
+        withAnimation(.easeInOut(duration: cdAnimationDuration)) {
+            cdSlideProgress = 0
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + cdAnimationDuration) {
+            showSpinningCDWhilePlaying = false
+            isAnimatingCD = false
+        }
+    }
+
+    private func ejectCDFromCase() {
+        isAnimatingCD = true
+        showSpinningCDWhilePlaying = true
+        cdSlideProgress = 0
+
+        withAnimation(.easeInOut(duration: cdAnimationDuration)) {
+            cdSlideProgress = 1
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + cdAnimationDuration) {
+            isAnimatingCD = false
+        }
     }
 }
 

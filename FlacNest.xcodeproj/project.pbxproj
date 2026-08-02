@@ -29,6 +29,7 @@
 		ALBUMMETADATA000000000001 /* AlbumMetadataEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ALBUMMETADATA000000000002 /* AlbumMetadataEditorView.swift */; };
 		ALBUMARTWORK0000000000001 /* AlbumArtworkImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = ALBUMARTWORK0000000000002 /* AlbumArtworkImporter.swift */; };
 		TRACKTIMEFMT0000000000001 /* TrackTimeFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRACKTIMEFMT0000000000002 /* TrackTimeFormatting.swift */; };
+		ARTWORKCACHE00000000000001 /* ArtworkImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = ARTWORKCACHE00000000000002 /* ArtworkImageCache.swift */; };
 		FLACNESTCMDS0000000000001 /* FlacNestCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = FLACNESTCMDS0000000000002 /* FlacNestCommands.swift */; };
 		FLACNESTFOCUS000000000001 /* FlacNestFocusedValues.swift in Sources */ = {isa = PBXBuildFile; fileRef = FLACNESTFOCUS000000000002 /* FlacNestFocusedValues.swift */; };
 		LIBDISPLAYOPTS000000000001 /* LibraryDisplayOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = LIBDISPLAYOPTS000000000002 /* LibraryDisplayOptions.swift */; };
@@ -66,6 +67,7 @@
 		ALBUMMETADATA000000000002 /* AlbumMetadataEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumMetadataEditorView.swift; sourceTree = "<group>"; };
 		ALBUMARTWORK0000000000002 /* AlbumArtworkImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumArtworkImporter.swift; sourceTree = "<group>"; };
 		TRACKTIMEFMT0000000000002 /* TrackTimeFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackTimeFormatting.swift; sourceTree = "<group>"; };
+		ARTWORKCACHE00000000000002 /* ArtworkImageCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkImageCache.swift; sourceTree = "<group>"; };
 		FLACNESTCMDS0000000000002 /* FlacNestCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlacNestCommands.swift; sourceTree = "<group>"; };
 		FLACNESTFOCUS000000000002 /* FlacNestFocusedValues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlacNestFocusedValues.swift; sourceTree = "<group>"; };
 		LIBDISPLAYOPTS000000000002 /* LibraryDisplayOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryDisplayOptions.swift; sourceTree = "<group>"; };
@@ -127,6 +129,7 @@
 		G1UTILS00000000000000001 /* Utils */ = {
 			isa = PBXGroup;
 			children = (
+				ARTWORKCACHE00000000000002 /* ArtworkImageCache.swift */,
 				TRACKTIMEFMT0000000000002 /* TrackTimeFormatting.swift */,
 			);
 			path = Utils;
@@ -280,6 +283,7 @@
 				ALBUMMETADATAPREV00000001 /* AlbumMetadataPreviewView.swift in Sources */,
 				ALBUMARTWORK0000000000001 /* AlbumArtworkImporter.swift in Sources */,
 				TRACKTIMEFMT0000000000001 /* TrackTimeFormatting.swift in Sources */,
+				ARTWORKCACHE00000000000001 /* ArtworkImageCache.swift in Sources */,
 				FLACNESTCMDS0000000000001 /* FlacNestCommands.swift in Sources */,
 				FLACNESTFOCUS000000000001 /* FlacNestFocusedValues.swift in Sources */,
 				LIBDISPLAYOPTS000000000001 /* LibraryDisplayOptions.swift in Sources */,

@@ -4,7 +4,7 @@ import SwiftUI
 struct AlbumMetadataEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var libraryVM: LibraryViewModel
-    @EnvironmentObject private var playback: PlaybackController
+    @Environment(PlaybackController.self) private var playback
 
     @State private var draft: LibraryAlbum
     @State private var errorMessage: String?
@@ -83,7 +83,7 @@ struct AlbumMetadataEditorView: View {
 
     @ViewBuilder
     private var artworkPreview: some View {
-        if let url = libraryVM.artworkURL(for: draft), let image = NSImage(contentsOf: url) {
+        if let url = libraryVM.artworkURL(for: draft), let image = ArtworkImageCache.image(for: url) {
             Image(nsImage: image)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
