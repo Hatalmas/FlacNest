@@ -7,7 +7,7 @@ enum AlbumArtworkImporter {
     static func chooseImageFile() -> URL? {
         let panel = NSOpenPanel()
         panel.title = "Choose Album Artwork"
-        panel.message = "Select a JPEG or PNG image for this album."
+        panel.message = "Select an image to reference in metadata. The file is not copied."
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
@@ -19,23 +19,39 @@ enum AlbumArtworkImporter {
         return url
     }
 
-    static func importArtwork(from sourceURL: URL, album: LibraryAlbum, libraryRoot: URL) throws -> String {
-        let albumDirectory = libraryRoot
-            .appendingPathComponent(album.cueRelativePath)
-            .deletingLastPathComponent()
-
-        let fileExtension = sourceURL.pathExtension.isEmpty ? "jpg" : sourceURL.pathExtension
-        let destinationURL = albumDirectory.appendingPathComponent("cover.\(fileExtension)")
-
-        let fileManager = FileManager.default
-        if sourceURL.standardizedFileURL != destinationURL.standardizedFileURL {
-            if fileManager.fileExists(atPath: destinationURL.path) {
-                try fileManager.removeItem(at: destinationURL)
-            }
-            try fileManager.copyItem(at: sourceURL, to: destinationURL)
+    static func referenceArtwork(from sourceURL: URL, album: LibraryAlbum, libraryRoot: URL) throws -> String {
+        let source = sourceURL.standardizedFileURL
+        guard FileManager.default.fileExists(atPath: source.path) else {
+            throw AlbumArtworkImporterError.sourceFileNotFound
         }
 
-        return relativePath(from: libraryRoot.path, to: destinationURL.path)
+        let root = libraryRoot.standardizedFileURL
+        let rootPath = root.path
+        let sourcePath = source.path
+
+        if sourcePath == rootPath {
+            throw AlbumArtworkImporterError.invalidArtworkSelection
+        }
+
+        if sourcePath.hasPrefix(rootPath + "/") {
+            return relativePath(from: rootPath, to: sourcePath)
+        }
+
+        return sourcePath
+    }
+
+    static func artworkURL(for album: LibraryAlbum, libraryRoot: URL?) -> URL? {
+        guard let art = album.artworkRelativePath?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !art.isEmpty else {
+            return nil
+        }
+
+        if art.hasPrefix("/") {
+            return URL(fileURLWithPath: art)
+        }
+
+        guard let libraryRoot else { return nil }
+        return libraryRoot.appendingPathComponent(art)
     }
 
     private static func relativePath(from root: String, to target: String) -> String {
@@ -45,5 +61,19 @@ enum AlbumArtworkImporter {
             return String(target.dropFirst(rootNorm.count + 1))
         }
         return target
+    }
+}
+
+enum AlbumArtworkImporterError: LocalizedError {
+    case sourceFileNotFound
+    case invalidArtworkSelection
+
+    var errorDescription: String? {
+        switch self {
+        case .sourceFileNotFound:
+            return "The selected image file could not be found."
+        case .invalidArtworkSelection:
+            return "Choose an image file, not the library folder itself."
+        }
     }
 }

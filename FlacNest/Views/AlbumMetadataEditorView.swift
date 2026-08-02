@@ -197,14 +197,14 @@ struct AlbumMetadataEditorView: View {
         guard let sourceURL = AlbumArtworkImporter.chooseImageFile() else { return }
 
         do {
-            draft.artworkRelativePath = try AlbumArtworkImporter.importArtwork(
+            draft.artworkRelativePath = try AlbumArtworkImporter.referenceArtwork(
                 from: sourceURL,
                 album: draft,
                 libraryRoot: root
             )
             errorMessage = nil
         } catch {
-            errorMessage = "Could not import artwork: \(error.localizedDescription)"
+            errorMessage = "Could not set artwork: \(error.localizedDescription)"
         }
     }
 

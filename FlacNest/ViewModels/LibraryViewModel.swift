@@ -76,9 +76,7 @@ final class LibraryViewModel: ObservableObject {
     }
 
     func artworkURL(for album: LibraryAlbum) -> URL? {
-        guard let root = AppSettings.libraryRootURL,
-              let art = album.artworkRelativePath else { return nil }
-        return root.appendingPathComponent(art)
+        AlbumArtworkImporter.artworkURL(for: album, libraryRoot: AppSettings.libraryRootURL)
     }
 
     func updateAlbum(_ album: LibraryAlbum) throws {
