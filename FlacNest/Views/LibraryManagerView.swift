@@ -6,6 +6,7 @@ struct LibraryManagerView: View {
     @EnvironmentObject private var playback: PlaybackController
     @EnvironmentObject private var libraryVM: LibraryViewModel
     @EnvironmentObject private var playerWindowTracker: PlayerWindowTracker
+    @EnvironmentObject private var barcodeEject: BarcodeEjectController
     @State private var editingAlbum: LibraryAlbum?
     @State private var selectedAlbumID: String?
 
@@ -62,6 +63,7 @@ struct LibraryManagerView: View {
             libraryVM.loadFromDisk()
             playerWindowTracker.refresh()
         }
+        .barcodeEjectSheet()
     }
 
     private var libraryList: some View {
@@ -310,7 +312,9 @@ struct LibraryManagerView: View {
                     isPlaying: playback.isPlaying
                 )
                 PlaybackProgressView(playback: playback)
-                TransportControls(playback: playback)
+                TransportControls(playback: playback) {
+                    barcodeEject.presentEject()
+                }
             }
             .padding(16)
 

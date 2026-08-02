@@ -114,6 +114,7 @@ enum FlacNestLibraryStore {
             discID: element.attribute(forName: "discID")?.stringValue,
             comment: element.attribute(forName: "comment")?.stringValue,
             artworkRelativePath: artwork,
+            barcode: element.attribute(forName: "barcode")?.stringValue,
             tracks: tracks
         )
     }
@@ -148,6 +149,7 @@ enum FlacNestLibraryStore {
         if let date = album.date { attributes["date"] = date }
         if let discID = album.discID { attributes["discID"] = discID }
         if let comment = album.comment { attributes["comment"] = comment }
+        if let barcode = album.barcode { attributes["barcode"] = barcode }
 
         let fileElement = XMLElement(name: "file")
         fileElement.setAttributesWith(attributes)

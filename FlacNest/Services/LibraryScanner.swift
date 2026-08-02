@@ -205,6 +205,7 @@ enum LibraryScanner {
             discID: metadata.discID,
             comment: metadata.comment,
             artworkRelativePath: artwork,
+            barcode: nil,
             tracks: libraryTracks
         )
     }

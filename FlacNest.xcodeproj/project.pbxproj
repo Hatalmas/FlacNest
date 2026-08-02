@@ -35,6 +35,9 @@
 		LASTPLAYBACK0000000000001 /* LastPlaybackState.swift in Sources */ = {isa = PBXBuildFile; fileRef = LASTPLAYBACK0000000000002 /* LastPlaybackState.swift */; };
 		APPTHEME000000000000000001 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = APPTHEME000000000000000002 /* AppTheme.swift */; };
 		STATUSMENU0000000000000001 /* StatusMenuContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = STATUSMENU0000000000000002 /* StatusMenuContent.swift */; };
+		BARCODESCAN000000000000001 /* BarcodeScannerSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BARCODESCAN000000000000002 /* BarcodeScannerSession.swift */; };
+		BARCODEEJECT00000000000001 /* BarcodeEjectController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BARCODEEJECT00000000000002 /* BarcodeEjectController.swift */; };
+		BARCODEEJECT00000000000003 /* BarcodeEjectSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BARCODEEJECT00000000000004 /* BarcodeEjectSheet.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -68,6 +71,9 @@
 		LASTPLAYBACK0000000000002 /* LastPlaybackState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastPlaybackState.swift; sourceTree = "<group>"; };
 		APPTHEME000000000000000002 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
 		STATUSMENU0000000000000002 /* StatusMenuContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusMenuContent.swift; sourceTree = "<group>"; };
+		BARCODESCAN000000000000002 /* BarcodeScannerSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarcodeScannerSession.swift; sourceTree = "<group>"; };
+		BARCODEEJECT00000000000002 /* BarcodeEjectController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarcodeEjectController.swift; sourceTree = "<group>"; };
+		BARCODEEJECT00000000000004 /* BarcodeEjectSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarcodeEjectSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -156,6 +162,7 @@
 				825498DE520D49B7984F793D /* LibraryScanner.swift */,
 				DE4AC6E7AC294B1CA4C026CE /* PlaybackController.swift */,
 				MEDIAREMOTECTRL00000000002 /* MediaRemoteController.swift */,
+				BARCODESCAN000000000000002 /* BarcodeScannerSession.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -164,6 +171,7 @@
 			isa = PBXGroup;
 			children = (
 				3210805580DD44F782F1DFDA /* LibraryViewModel.swift */,
+				BARCODEEJECT00000000000002 /* BarcodeEjectController.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -177,6 +185,7 @@
 				ALBUMMETADATA000000000002 /* AlbumMetadataEditorView.swift */,
 				933EDE1C15F34CA28C687FCB /* SettingsView.swift */,
 				STATUSMENU0000000000000002 /* StatusMenuContent.swift */,
+				BARCODEEJECT00000000000004 /* BarcodeEjectSheet.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -273,6 +282,9 @@
 				LASTPLAYBACK0000000000001 /* LastPlaybackState.swift in Sources */,
 				APPTHEME000000000000000001 /* AppTheme.swift in Sources */,
 				STATUSMENU0000000000000001 /* StatusMenuContent.swift in Sources */,
+				BARCODESCAN000000000000001 /* BarcodeScannerSession.swift in Sources */,
+				BARCODEEJECT00000000000001 /* BarcodeEjectController.swift in Sources */,
+				BARCODEEJECT00000000000003 /* BarcodeEjectSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -296,6 +308,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				INFOPLIST_KEY_NSCameraUsageDescription = "FlacNest uses the camera to scan CD barcodes when you press Eject.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -326,6 +339,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				INFOPLIST_KEY_NSCameraUsageDescription = "FlacNest uses the camera to scan CD barcodes when you press Eject.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

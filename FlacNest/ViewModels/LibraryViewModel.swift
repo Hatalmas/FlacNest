@@ -86,6 +86,51 @@ final class LibraryViewModel: ObservableObject {
         statusMessage = "Saved metadata for \(album.displayTitle)."
     }
 
+    func album(forBarcode barcode: String) -> LibraryAlbum? {
+        let normalized = Self.normalizeBarcode(barcode)
+        guard !normalized.isEmpty else { return nil }
+        return library.albums.first { Self.normalizeBarcode($0.barcode ?? "") == normalized }
+    }
+
+    func assignBarcode(_ barcode: String, to albumID: String) throws {
+        let normalized = Self.normalizeBarcode(barcode)
+        guard !normalized.isEmpty else { return }
+
+        for index in library.albums.indices where library.albums[index].id != albumID {
+            if Self.normalizeBarcode(library.albums[index].barcode ?? "") == normalized {
+                library.albums[index].barcode = nil
+            }
+        }
+
+        guard let index = library.albums.firstIndex(where: { $0.id == albumID }) else { return }
+        library.albums[index].barcode = normalized
+        try saveLibraryToDisk()
+        statusMessage = "Assigned barcode to \(library.albums[index].displayTitle)."
+    }
+
+    static func normalizeBarcode(_ barcode: String) -> String {
+        barcode.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    static func albumMatchesSearch(_ album: LibraryAlbum, query: String) -> Bool {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return true }
+
+        let haystack = [
+            album.displayTitle,
+            album.performer,
+            album.flacRelativePath,
+            album.cueRelativePath,
+            album.barcode ?? "",
+        ]
+        .joined(separator: " ")
+        .localizedLowercase
+
+        return trimmed.localizedLowercase
+            .split(whereSeparator: \.isWhitespace)
+            .allSatisfy { haystack.contains($0) }
+    }
+
     func saveLibraryToDisk() throws {
         guard let xmlURL = AppSettings.libraryXMLURL else {
             throw LibraryViewModelError.libraryXMLNotConfigured
@@ -117,7 +162,15 @@ final class LibraryViewModel: ObservableObject {
 
         applyScanProgress(ScanProgress(phase: .saving), force: true)
         statusMessage = "Saving flacnest.xml…"
+        let preservedBarcodes = Dictionary(
+            uniqueKeysWithValues: library.albums.compactMap { album in
+                album.barcode.map { (album.id, $0) }
+            }
+        )
         library = result.library
+        for index in library.albums.indices {
+            library.albums[index].barcode = preservedBarcodes[library.albums[index].id]
+        }
 
         if let xmlURL = AppSettings.libraryXMLURL {
             do {

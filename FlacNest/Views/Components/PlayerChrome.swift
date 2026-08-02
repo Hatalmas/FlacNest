@@ -12,39 +12,49 @@ extension Image {
 
 struct TransportControls: View {
     @ObservedObject var playback: PlaybackController
+    var onEject: (() -> Void)? = nil
 
     var body: some View {
         HStack(spacing: 16) {
-            Button(action: { playback.previousTrack() }) {
-                Image(systemName: "backward.fill")
-            }
-            .help("Previous track (⌘←)")
-
-            if playback.isPlaying {
-                Button(action: { playback.pause() }) {
-                    Image(systemName: "pause.fill")
+            Group {
+                Button(action: { playback.previousTrack() }) {
+                    Image(systemName: "backward.fill")
                 }
-                .help("Pause (Space)")
-            } else {
-                Button(action: { playback.play() }) {
-                    Image(systemName: "play.fill")
+                .help("Previous track (⌘←)")
+
+                if playback.isPlaying {
+                    Button(action: { playback.pause() }) {
+                        Image(systemName: "pause.fill")
+                    }
+                    .help("Pause (Space)")
+                } else {
+                    Button(action: { playback.play() }) {
+                        Image(systemName: "play.fill")
+                    }
+                    .help("Play (Space)")
                 }
-                .help("Play (Space)")
-            }
 
-            Button(action: { playback.stop() }) {
-                Image(systemName: "stop.fill")
-            }
-            .help("Stop (⌘.)")
+                Button(action: { playback.stop() }) {
+                    Image(systemName: "stop.fill")
+                }
+                .help("Stop (⌘.)")
 
-            Button(action: { playback.nextTrack() }) {
-                Image(systemName: "forward.fill")
+                Button(action: { playback.nextTrack() }) {
+                    Image(systemName: "forward.fill")
+                }
+                .help("Next track (⌘→)")
             }
-            .help("Next track (⌘→)")
+            .disabled(playback.currentAlbum == nil)
+
+            if let onEject {
+                Button(action: onEject) {
+                    Image(systemName: "eject.fill")
+                }
+                .help("Eject — scan CD barcode")
+            }
         }
         .buttonStyle(.borderless)
         .font(.title2)
-        .disabled(playback.currentAlbum == nil)
     }
 }
 
@@ -135,21 +145,53 @@ struct SpinningCDView: View {
     let size: CGFloat
 
     @State private var angle: Double = 0
+    @State private var angularVelocity: Double = 0
 
     private let secondsPerRotation = 4.0
+    private let spinUpDuration = 0.7
+    private let spinDownDuration = 1.5
+    private let frameInterval = 1.0 / 60.0
+
+    private var targetAngularVelocity: Double {
+        360.0 / secondsPerRotation
+    }
+
+    private var spinUpAcceleration: Double {
+        targetAngularVelocity / spinUpDuration
+    }
+
+    private var spinDownDeceleration: Double {
+        targetAngularVelocity / spinDownDuration
+    }
 
     var body: some View {
         Image("cd")
             .highQualityScaled(contentMode: .fit)
             .frame(width: size, height: size)
             .rotationEffect(.degrees(angle))
-            .onReceive(Timer.publish(every: 1.0 / 30.0, on: .main, in: .common).autoconnect()) { _ in
-                guard isSpinning else { return }
-                angle += 360.0 / (30.0 * secondsPerRotation)
-                if angle >= 360 {
-                    angle -= 360
-                }
+            .onReceive(Timer.publish(every: frameInterval, on: .main, in: .common).autoconnect()) { _ in
+                advanceRotation()
             }
+    }
+
+    private func advanceRotation() {
+        if isSpinning {
+            if angularVelocity < targetAngularVelocity {
+                angularVelocity = min(
+                    targetAngularVelocity,
+                    angularVelocity + spinUpAcceleration * frameInterval
+                )
+            }
+        } else if angularVelocity > 0 {
+            angularVelocity = max(0, angularVelocity - spinDownDeceleration * frameInterval)
+        }
+
+        guard angularVelocity > 0 else { return }
+
+        angle += angularVelocity * frameInterval
+        if angle >= 360 {
+            angle -= 360
+        }
     }
 }
 

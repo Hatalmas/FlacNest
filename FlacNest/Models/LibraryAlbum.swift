@@ -25,6 +25,7 @@ struct LibraryAlbum: Codable, Equatable, Identifiable {
     var discID: String?
     var comment: String?
     var artworkRelativePath: String?
+    var barcode: String?
     var tracks: [LibraryTrack]
 
     var displayTitle: String {

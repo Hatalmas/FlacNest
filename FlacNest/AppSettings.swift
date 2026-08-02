@@ -20,6 +20,7 @@ enum AppSettings {
     static let themeKey = "appTheme"
     static let showStatusMenuKey = "showStatusMenu"
     static let continuousAlbumPlayKey = "continuousAlbumPlay"
+    private static let barcodeScannerCameraIDKey = "barcodeScannerCameraID"
     static let playerArtworkSizeKey = "playerArtworkSize"
     private static let playerCompactWindowFrameKey = "playerCompactWindowFrame"
     private static let playerExpandedWindowFrameKey = "playerExpandedWindowFrame"
@@ -95,6 +96,17 @@ enum AppSettings {
     static var continuousAlbumPlay: Bool {
         get { UserDefaults.standard.bool(forKey: continuousAlbumPlayKey) }
         set { UserDefaults.standard.set(newValue, forKey: continuousAlbumPlayKey) }
+    }
+
+    static var barcodeScannerCameraID: String? {
+        get { UserDefaults.standard.string(forKey: barcodeScannerCameraIDKey) }
+        set {
+            if let newValue, !newValue.isEmpty {
+                UserDefaults.standard.set(newValue, forKey: barcodeScannerCameraIDKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: barcodeScannerCameraIDKey)
+            }
+        }
     }
 
     static var playerCompactWindowFrame: PlayerWindowFrame? {

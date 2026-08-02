@@ -10,6 +10,7 @@ struct FlacNestApp: App {
     @StateObject private var playback = PlaybackController()
     @StateObject private var libraryVM = LibraryViewModel()
     @StateObject private var playerWindowTracker = PlayerWindowTracker()
+    @StateObject private var barcodeEject = BarcodeEjectController()
 
     private var preferredColorScheme: ColorScheme? {
         (AppTheme(rawValue: themeRawValue) ?? .system).colorScheme
@@ -21,6 +22,7 @@ struct FlacNestApp: App {
                 .environmentObject(playback)
                 .environmentObject(libraryVM)
                 .environmentObject(playerWindowTracker)
+                .environmentObject(barcodeEject)
                 .flacNestFocusedCommands(playback: playback)
                 .onReceive(NotificationCenter.default.publisher(for: .flacNestLibraryRootDidChange)) { _ in
                     playback.configure(libraryRoot: AppSettings.libraryRootURL)
@@ -51,6 +53,7 @@ struct FlacNestApp: App {
                 .environmentObject(playback)
                 .environmentObject(libraryVM)
                 .environmentObject(playerWindowTracker)
+                .environmentObject(barcodeEject)
                 .onReceive(NotificationCenter.default.publisher(for: .flacNestLibraryRootDidChange)) { _ in
                     playback.configure(libraryRoot: AppSettings.libraryRootURL)
                     libraryVM.loadFromDisk()

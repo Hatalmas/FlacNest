@@ -6,6 +6,7 @@ struct PlayerView: View {
     @EnvironmentObject private var playback: PlaybackController
     @EnvironmentObject private var libraryVM: LibraryViewModel
     @EnvironmentObject private var playerWindowTracker: PlayerWindowTracker
+    @EnvironmentObject private var barcodeEject: BarcodeEjectController
     @AppStorage("playerTrackListVisible") private var showTrackList = false
     @AppStorage("showSpinningCDWhilePlaying") private var showSpinningCDWhilePlaying = true
     @State private var artworkSize: CGFloat = 128
@@ -102,6 +103,7 @@ struct PlayerView: View {
                   PlayerWindowSizing.isPlayerWindow(window) else { return }
             persistCurrentPlayerLayout()
         }
+        .barcodeEjectSheet()
     }
 
     private var playbackInfoSection: some View {
@@ -111,7 +113,9 @@ struct PlayerView: View {
                 track: playback.currentTrack
             )
             PlaybackProgressView(playback: playback)
-            TransportControls(playback: playback)
+            TransportControls(playback: playback) {
+                barcodeEject.presentEject()
+            }
             if let error = playback.lastError {
                 Text(error)
                     .font(.caption)
