@@ -437,6 +437,7 @@ struct PlayerNowPlayingInfoView: View {
 struct PlayerArtworkResizeDivider: View {
     @Binding var artworkSize: CGFloat
     let maxSize: CGFloat
+    var onResizeEnded: (() -> Void)? = nil
 
     @State private var sizeAtDragStart: CGFloat?
 
@@ -458,10 +459,10 @@ struct PlayerArtworkResizeDivider: View {
                     let proposed = (sizeAtDragStart ?? artworkSize) + value.translation.height
                     let clamped = min(maxSize, max(PlayerArtworkSizing.minSize, proposed))
                     artworkSize = clamped
-                    AppSettings.playerArtworkSize = clamped
                 }
                 .onEnded { _ in
                     sizeAtDragStart = nil
+                    onResizeEnded?()
                 }
         )
         .onHover { isHovering in

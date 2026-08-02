@@ -33,9 +33,7 @@ struct FlacNestApp: App {
                     playback.saveResumeStateIfNeeded()
                 }
                 .onAppear {
-                    playback.configure(libraryRoot: AppSettings.libraryRootURL)
-                    libraryVM.loadFromDisk()
-                    MediaRemoteController.shared.configure(playback: playback)
+                    configureSharedPlayback()
                 }
                 .preferredColorScheme(preferredColorScheme)
         }
@@ -58,7 +56,7 @@ struct FlacNestApp: App {
                     libraryVM.loadFromDisk()
                 }
                 .onAppear {
-                    playback.configure(libraryRoot: AppSettings.libraryRootURL)
+                    configureSharedPlayback()
                 }
                 .preferredColorScheme(preferredColorScheme)
         }
@@ -83,6 +81,15 @@ struct FlacNestApp: App {
         }
         .menuBarExtraStyle(.window)
     }
+
+    private func configureSharedPlayback() {
+        playback.configure(libraryRoot: AppSettings.libraryRootURL)
+        playback.orderedAlbumsProvider = {
+            LibraryAlbumSorting.sorted(libraryVM.library.albums, by: libraryVM.sortMode)
+        }
+        libraryVM.loadFromDisk()
+        MediaRemoteController.shared.configure(playback: playback)
+    }
 }
 
 enum PlayerWindowSizing {
@@ -99,16 +106,20 @@ enum PlayerWindowSizing {
         return NSSize(width: width, height: height)
     }
 
-    static func handleToggle(from wasVisible: Bool, to isVisible: Bool) {
-        saveCurrentSize(trackListVisible: wasVisible)
+    static func handleToggle(from wasVisible: Bool, to isVisible: Bool, artworkSize: CGFloat) {
+        saveCurrentSize(trackListVisible: wasVisible, artworkSize: artworkSize)
         restoreSize(trackListVisible: isVisible)
     }
 
-    static func saveCurrentSize(trackListVisible: Bool) {
+    static func saveCurrentSize(trackListVisible: Bool, artworkSize: CGFloat? = nil) {
         guard let window = playerWindow else { return }
+        let existing = trackListVisible
+            ? AppSettings.playerExpandedWindowFrame
+            : AppSettings.playerCompactWindowFrame
         let frame = PlayerWindowFrame(
             width: window.contentLayoutRect.width,
-            height: window.contentLayoutRect.height
+            height: window.contentLayoutRect.height,
+            artworkSize: artworkSize.map(Double.init) ?? existing?.artworkSize
         )
         if trackListVisible {
             AppSettings.playerExpandedWindowFrame = frame

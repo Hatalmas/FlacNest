@@ -21,6 +21,7 @@ final class PlaybackController: ObservableObject {
     private var libraryRoot: URL?
     private var hasAttemptedRestore = false
     private var lastResumeSave = Date.distantPast
+    var orderedAlbumsProvider: (() -> [LibraryAlbum])?
 
     init() {
         engine.attach(playerNode)
@@ -366,12 +367,31 @@ final class PlaybackController: ObservableObject {
         if currentTrackIndex + 1 < (currentAlbum?.tracks.count ?? 0) {
             currentTrackIndex += 1
             play(fromTrackStart: true)
+        } else if playNextAlbumContinuously() {
+            return
         } else {
             isPlaying = false
             stopPositionTimer()
             currentTime = segmentEndSeconds
             saveResumeStateIfNeeded()
+            MediaRemoteController.shared.refresh(from: self)
         }
+    }
+
+    @discardableResult
+    private func playNextAlbumContinuously() -> Bool {
+        guard AppSettings.continuousAlbumPlay,
+              let currentAlbum,
+              let albums = orderedAlbumsProvider?(),
+              let currentIndex = albums.firstIndex(where: { $0.id == currentAlbum.id }),
+              currentIndex + 1 < albums.count else {
+            return false
+        }
+
+        let nextAlbum = albums[currentIndex + 1]
+        load(album: nextAlbum, trackIndex: 0)
+        play(fromTrackStart: true)
+        return true
     }
 
     private func stopInternal(saveState: Bool) {

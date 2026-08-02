@@ -8,8 +8,9 @@ struct PlayerView: View {
     @EnvironmentObject private var playerWindowTracker: PlayerWindowTracker
     @AppStorage("playerTrackListVisible") private var showTrackList = false
     @AppStorage("showSpinningCDWhilePlaying") private var showSpinningCDWhilePlaying = true
-    @State private var artworkSize: CGFloat = AppSettings.playerArtworkSize
+    @State private var artworkSize: CGFloat = 128
     @State private var layoutWidth: CGFloat = PlayerWindowSizing.minWidth
+    @State private var hasAppliedStoredArtworkSize = false
 
     private var showsSpinningCD: Bool {
         showSpinningCDWhilePlaying && playback.currentAlbum != nil
@@ -36,7 +37,8 @@ struct PlayerView: View {
 
                 PlayerArtworkResizeDivider(
                     artworkSize: $artworkSize,
-                    maxSize: maxArtworkSize
+                    maxSize: maxArtworkSize,
+                    onResizeEnded: { persistCurrentPlayerLayout() }
                 )
 
                 playbackInfoSection
@@ -49,8 +51,20 @@ struct PlayerView: View {
                 }
             }
             .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
+            .onAppear {
+                layoutWidth = geometry.size.width
+                if !hasAppliedStoredArtworkSize {
+                    artworkSize = AppSettings.playerArtworkSize(trackListVisible: showTrackList)
+                    hasAppliedStoredArtworkSize = true
+                }
+                clampArtworkSize(forWidth: geometry.size.width)
+            }
             .onChange(of: geometry.size.width) { _, width in
                 layoutWidth = width
+                if !hasAppliedStoredArtworkSize {
+                    artworkSize = AppSettings.playerArtworkSize(trackListVisible: showTrackList)
+                    hasAppliedStoredArtworkSize = true
+                }
                 clampArtworkSize(forWidth: width)
             }
         }
@@ -59,8 +73,12 @@ struct PlayerView: View {
             minHeight: PlayerWindowSizing.minHeight
         )
         .onAppear {
+            artworkSize = AppSettings.playerArtworkSize(trackListVisible: showTrackList)
             PlayerWindowSizing.restoreSize(trackListVisible: showTrackList)
             playerWindowTracker.refresh()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .flacNestApplicationWillTerminate)) { _ in
+            persistCurrentPlayerLayout()
         }
         .onChange(of: playback.currentAlbum?.id) { _, albumID in
             if albumID == nil {
@@ -72,12 +90,17 @@ struct PlayerView: View {
             clampArtworkSize(forWidth: layoutWidth)
         }
         .onChange(of: showTrackList) { wasVisible, isVisible in
-            PlayerWindowSizing.handleToggle(from: wasVisible, to: isVisible)
+            persistCurrentPlayerLayout(trackListVisible: wasVisible)
+            PlayerWindowSizing.restoreSize(trackListVisible: isVisible)
+            hasAppliedStoredArtworkSize = false
+            artworkSize = AppSettings.playerArtworkSize(trackListVisible: isVisible)
+            hasAppliedStoredArtworkSize = true
+            clampArtworkSize(forWidth: layoutWidth)
         }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didEndLiveResizeNotification)) { notification in
             guard let window = notification.object as? NSWindow,
                   PlayerWindowSizing.isPlayerWindow(window) else { return }
-            PlayerWindowSizing.saveCurrentSize(trackListVisible: showTrackList)
+            persistCurrentPlayerLayout()
         }
     }
 
@@ -137,10 +160,15 @@ struct PlayerView: View {
         .frame(width: PlayerArtworkSizing.toolbarWidth, alignment: .center)
     }
 
+    private func persistCurrentPlayerLayout(trackListVisible: Bool? = nil) {
+        let mode = trackListVisible ?? showTrackList
+        AppSettings.setPlayerArtworkSize(artworkSize, trackListVisible: mode)
+        PlayerWindowSizing.saveCurrentSize(trackListVisible: mode, artworkSize: artworkSize)
+    }
+
     private func clampArtworkSize(forWidth width: CGFloat) {
         let clamped = PlayerArtworkSizing.clamp(artworkSize, forWidth: width, showsSpinningCD: showsSpinningCD)
         guard clamped != artworkSize else { return }
         artworkSize = clamped
-        AppSettings.playerArtworkSize = clamped
     }
 }

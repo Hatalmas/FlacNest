@@ -76,25 +76,41 @@ struct LibraryManagerView: View {
                     .padding(.vertical, 6)
             }
 
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
-                    ForEach(libraryVM.displayedSections) { section in
-                        if libraryVM.groupMode == .none {
-                            ForEach(section.albums) { album in
-                                albumListRow(album)
-                            }
-                        } else {
-                            Section {
+            ScrollViewReader { scrollProxy in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
+                        ForEach(libraryVM.displayedSections) { section in
+                            if libraryVM.groupMode == .none {
                                 ForEach(section.albums) { album in
                                     albumListRow(album)
+                                        .id(album.id)
                                 }
-                            } header: {
-                                sectionHeader(section.title)
+                            } else {
+                                Section {
+                                    ForEach(section.albums) { album in
+                                        albumListRow(album)
+                                            .id(album.id)
+                                    }
+                                } header: {
+                                    sectionHeader(section.title)
+                                }
                             }
                         }
                     }
+                    .padding(.vertical, 4)
                 }
-                .padding(.vertical, 4)
+                .onAppear {
+                    focusPlayingAlbum(using: scrollProxy)
+                }
+                .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { notification in
+                    guard let window = notification.object as? NSWindow,
+                          PlayerWindowSizing.isLibraryWindow(window) else { return }
+                    focusPlayingAlbum(using: scrollProxy)
+                }
+                .onChange(of: playback.currentAlbum?.id) { _, albumID in
+                    guard albumID != nil else { return }
+                    focusPlayingAlbum(using: scrollProxy)
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .allowsHitTesting(!libraryVM.isScanning)
@@ -188,11 +204,15 @@ struct LibraryManagerView: View {
     }
 
     private func rowBackground(for album: LibraryAlbum) -> some View {
-        Group {
-            if selectedAlbumID == album.id {
+        let isSelected = selectedAlbumID == album.id
+        let isPlayingAlbum = playback.currentAlbum?.id == album.id
+
+        return ZStack {
+            if isPlayingAlbum {
+                Color.accentColor.opacity(0.12)
+            }
+            if isSelected {
                 Color.accentColor.opacity(0.22)
-            } else {
-                Color.clear
             }
         }
     }
@@ -216,6 +236,12 @@ struct LibraryManagerView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+            if playback.currentAlbum?.id == album.id {
+                Image(systemName: playback.isPlaying ? "speaker.wave.2.fill" : "pause.circle")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -304,5 +330,16 @@ struct LibraryManagerView: View {
         selectedAlbumID = album.id
         playback.load(album: album)
         playback.play()
+    }
+
+    private func focusPlayingAlbum(using scrollProxy: ScrollViewProxy) {
+        guard let playingAlbumID = playback.currentAlbum?.id else { return }
+        selectedAlbumID = playingAlbumID
+        libraryVM.selectedAlbumID = playingAlbumID
+        DispatchQueue.main.async {
+            withAnimation {
+                scrollProxy.scrollTo(playingAlbumID, anchor: .center)
+            }
+        }
     }
 }

@@ -3,6 +3,7 @@ import Foundation
 struct PlayerWindowFrame: Codable, Equatable {
     var width: Double
     var height: Double
+    var artworkSize: Double?
 }
 
 enum AppSettings {
@@ -18,6 +19,7 @@ enum AppSettings {
     private static let showSpinningCDWhilePlayingKey = "showSpinningCDWhilePlaying"
     static let themeKey = "appTheme"
     static let showStatusMenuKey = "showStatusMenu"
+    static let continuousAlbumPlayKey = "continuousAlbumPlay"
     static let playerArtworkSizeKey = "playerArtworkSize"
     private static let playerCompactWindowFrameKey = "playerCompactWindowFrame"
     private static let playerExpandedWindowFrameKey = "playerExpandedWindowFrame"
@@ -90,6 +92,11 @@ enum AppSettings {
         set { UserDefaults.standard.set(newValue, forKey: showStatusMenuKey) }
     }
 
+    static var continuousAlbumPlay: Bool {
+        get { UserDefaults.standard.bool(forKey: continuousAlbumPlayKey) }
+        set { UserDefaults.standard.set(newValue, forKey: continuousAlbumPlayKey) }
+    }
+
     static var playerCompactWindowFrame: PlayerWindowFrame? {
         get { decodeFrame(forKey: playerCompactWindowFrameKey) }
         set { encodeFrame(newValue, forKey: playerCompactWindowFrameKey) }
@@ -100,16 +107,42 @@ enum AppSettings {
         set { encodeFrame(newValue, forKey: playerExpandedWindowFrameKey) }
     }
 
-    static var playerArtworkSize: CGFloat {
-        get {
-            let stored = UserDefaults.standard.double(forKey: playerArtworkSizeKey)
-            if stored > 0 {
-                return CGFloat(stored)
-            }
-            return 128
+    static func playerArtworkSize(trackListVisible: Bool) -> CGFloat {
+        let frame = trackListVisible ? playerExpandedWindowFrame : playerCompactWindowFrame
+        if let size = frame?.artworkSize, size > 0 {
+            return CGFloat(size)
         }
-        set {
-            UserDefaults.standard.set(Double(newValue), forKey: playerArtworkSizeKey)
+
+        let legacy = UserDefaults.standard.double(forKey: playerArtworkSizeKey)
+        if legacy > 0 {
+            return CGFloat(legacy)
+        }
+        return 128
+    }
+
+    static func setPlayerArtworkSize(_ size: CGFloat, trackListVisible: Bool) {
+        updatePlayerWindowFrame(trackListVisible: trackListVisible) { frame in
+            var updated = frame
+            updated.artworkSize = Double(size)
+            return updated
+        }
+    }
+
+    private static func updatePlayerWindowFrame(
+        trackListVisible: Bool,
+        transform: (PlayerWindowFrame) -> PlayerWindowFrame
+    ) {
+        let defaultFrame = PlayerWindowFrame(
+            width: trackListVisible ? 380 : 380,
+            height: trackListVisible ? 560 : 420,
+            artworkSize: nil
+        )
+        let current = (trackListVisible ? playerExpandedWindowFrame : playerCompactWindowFrame) ?? defaultFrame
+        let updated = transform(current)
+        if trackListVisible {
+            playerExpandedWindowFrame = updated
+        } else {
+            playerCompactWindowFrame = updated
         }
     }
 

@@ -8,6 +8,7 @@ struct SettingsView: View {
     @State private var saveLastPlayedPosition: Bool = AppSettings.saveLastPlayedPosition
     @State private var showSpinningCDWhilePlaying: Bool = AppSettings.showSpinningCDWhilePlaying
     @State private var showStatusMenu: Bool = AppSettings.showStatusMenu
+    @State private var continuousAlbumPlay: Bool = AppSettings.continuousAlbumPlay
     @State private var theme: AppTheme = AppSettings.theme
 
     var body: some View {
@@ -82,9 +83,10 @@ struct SettingsView: View {
             Section {
                 Toggle("Show status menu", isOn: showStatusMenuToggle)
                 Toggle("Save last played album and position", isOn: saveLastPlayedToggle)
+                Toggle("Continuous album play", isOn: continuousAlbumPlayToggle)
                 Toggle("Show spinning CD while playing", isOn: showSpinningCDToggle)
             } footer: {
-                Text("The status menu adds a FlacNest icon to the menu bar with playback controls and now playing info. Saved playback is restored on launch when the FLAC is still available.")
+                Text("The status menu adds a FlacNest icon to the menu bar with playback controls and now playing info. Continuous album play advances to the next album in the current library sort order when the last track finishes.")
             }
 
             Section {
@@ -118,6 +120,16 @@ struct SettingsView: View {
             set: { enabled in
                 showStatusMenu = enabled
                 AppSettings.showStatusMenu = enabled
+            }
+        )
+    }
+
+    private var continuousAlbumPlayToggle: Binding<Bool> {
+        Binding(
+            get: { continuousAlbumPlay },
+            set: { enabled in
+                continuousAlbumPlay = enabled
+                AppSettings.continuousAlbumPlay = enabled
             }
         )
     }
@@ -185,6 +197,7 @@ struct SettingsView: View {
         saveLastPlayedPosition = AppSettings.saveLastPlayedPosition
         showSpinningCDWhilePlaying = AppSettings.showSpinningCDWhilePlaying
         showStatusMenu = AppSettings.showStatusMenu
+        continuousAlbumPlay = AppSettings.continuousAlbumPlay
         theme = AppSettings.theme
     }
 }
