@@ -13,6 +13,7 @@ final class LibraryViewModel: ObservableObject {
     @Published var selectedAlbumID: String?
     @Published var sortMode: LibrarySortMode = AppSettings.librarySortMode
     @Published var groupMode: LibraryGroupMode = AppSettings.libraryGroupMode
+    @Published var showFavoritesOnly: Bool = AppSettings.libraryShowFavoritesOnly
 
     private var scanTask: Task<Void, Never>?
     private var lastProgressUpdate = Date.distantPast
@@ -58,11 +59,19 @@ final class LibraryViewModel: ObservableObject {
     }
 
     var displayedSections: [LibraryAlbumSection] {
-        LibraryAlbumSorting.sections(
-            from: library.albums,
+        let albums = showFavoritesOnly
+            ? library.albums.filter(\.isFavorite)
+            : library.albums
+        return LibraryAlbumSorting.sections(
+            from: albums,
             sortMode: sortMode,
             groupMode: groupMode
         )
+    }
+
+    func setShowFavoritesOnly(_ enabled: Bool) {
+        showFavoritesOnly = enabled
+        AppSettings.libraryShowFavoritesOnly = enabled
     }
 
     func setSortMode(_ mode: LibrarySortMode) {
@@ -90,6 +99,12 @@ final class LibraryViewModel: ObservableObject {
         let normalized = Self.normalizeBarcode(barcode)
         guard !normalized.isEmpty else { return nil }
         return library.albums.first { Self.normalizeBarcode($0.barcode ?? "") == normalized }
+    }
+
+    func toggleFavorite(for albumID: String) throws {
+        guard let index = library.albums.firstIndex(where: { $0.id == albumID }) else { return }
+        library.albums[index].isFavorite.toggle()
+        try saveLibraryToDisk()
     }
 
     func assignBarcode(_ barcode: String, to albumID: String) throws {
@@ -167,15 +182,17 @@ final class LibraryViewModel: ObservableObject {
                 album.barcode.map { (album.id, $0) }
             }
         )
+        let preservedFavorites = Set(library.albums.filter(\.isFavorite).map(\.id))
         library = result.library
         for index in library.albums.indices {
             library.albums[index].barcode = preservedBarcodes[library.albums[index].id]
+            library.albums[index].isFavorite = preservedFavorites.contains(library.albums[index].id)
         }
 
         if let xmlURL = AppSettings.libraryXMLURL {
             do {
                 try await Task(priority: .utility) {
-                    try FlacNestLibraryStore.save(result.library, to: xmlURL)
+                    try FlacNestLibraryStore.save(library, to: xmlURL)
                 }.value
             } catch {
                 statusMessage = "Found \(result.library.albums.count) albums, but saving flacnest.xml failed: \(error.localizedDescription)"

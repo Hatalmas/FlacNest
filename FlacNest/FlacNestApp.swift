@@ -10,6 +10,7 @@ struct FlacNestApp: App {
     @StateObject private var playback = PlaybackController()
     @StateObject private var libraryVM = LibraryViewModel()
     @StateObject private var playerWindowTracker = PlayerWindowTracker()
+    @StateObject private var libraryWindowTracker = LibraryWindowTracker()
     @StateObject private var barcodeEject = BarcodeEjectController()
 
     private var preferredColorScheme: ColorScheme? {
@@ -22,8 +23,12 @@ struct FlacNestApp: App {
                 .environmentObject(playback)
                 .environmentObject(libraryVM)
                 .environmentObject(playerWindowTracker)
+                .environmentObject(libraryWindowTracker)
                 .environmentObject(barcodeEject)
-                .flacNestFocusedCommands(playback: playback)
+                .flacNestFocusedCommands(
+                    playback: playback,
+                    onEject: { barcodeEject.presentEject() }
+                )
                 .onReceive(NotificationCenter.default.publisher(for: .flacNestLibraryRootDidChange)) { _ in
                     playback.configure(libraryRoot: AppSettings.libraryRootURL)
                     libraryVM.loadFromDisk()
@@ -53,6 +58,7 @@ struct FlacNestApp: App {
                 .environmentObject(playback)
                 .environmentObject(libraryVM)
                 .environmentObject(playerWindowTracker)
+                .environmentObject(libraryWindowTracker)
                 .environmentObject(barcodeEject)
                 .onReceive(NotificationCenter.default.publisher(for: .flacNestLibraryRootDidChange)) { _ in
                     playback.configure(libraryRoot: AppSettings.libraryRootURL)
@@ -182,6 +188,29 @@ enum PlayerWindowSizing {
         return window.isVisible
     }
 
+    static var isLibraryWindowOpen: Bool {
+        guard let window = libraryWindow else { return false }
+        return window.isVisible
+    }
+
+    static func toggleLibrary(
+        openWindow: OpenWindowAction,
+        dismissWindow: DismissWindowAction,
+        tracker: LibraryWindowTracker? = nil
+    ) {
+        if isLibraryWindowOpen {
+            dismissWindow(id: "library")
+        } else {
+            openWindow(id: "library")
+            DispatchQueue.main.async {
+                bringLibraryToFront()
+            }
+        }
+        DispatchQueue.main.async {
+            tracker?.refresh()
+        }
+    }
+
     private static var playerWindow: NSWindow? {
         NSApp.windows.first(where: isPlayerWindow)
     }
@@ -224,5 +253,41 @@ final class PlayerWindowTracker: ObservableObject {
 
     func refresh() {
         isOpen = PlayerWindowSizing.isPlayerWindowOpen
+    }
+}
+
+@MainActor
+final class LibraryWindowTracker: ObservableObject {
+    @Published private(set) var isOpen = false
+
+    private var observers: [NSObjectProtocol] = []
+
+    init() {
+        let center = NotificationCenter.default
+        let names: [Notification.Name] = [
+            NSWindow.willCloseNotification,
+            NSWindow.didBecomeKeyNotification,
+            NSApplication.didBecomeActiveNotification,
+        ]
+
+        for name in names {
+            observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                self?.refresh()
+            })
+        }
+
+        DispatchQueue.main.async { [weak self] in
+            self?.refresh()
+        }
+    }
+
+    deinit {
+        for observer in observers {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+
+    func refresh() {
+        isOpen = PlayerWindowSizing.isLibraryWindowOpen
     }
 }

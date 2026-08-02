@@ -2,9 +2,11 @@ import SwiftUI
 
 struct FlacNestCommands: Commands {
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismissWindow) private var dismissWindow
     @FocusedValue(\.focusedPlayback) private var playback
     @FocusedValue(\.focusedLibraryViewModel) private var libraryVM
     @FocusedValue(\.focusedEditMetadata) private var editMetadata
+    @FocusedValue(\.focusedEject) private var eject
 
     var body: some Commands {
         CommandGroup(replacing: .newItem) { }
@@ -35,6 +37,14 @@ struct FlacNestCommands: Commands {
             }
             .keyboardShortcut(.leftArrow, modifiers: .command)
             .disabled(playback?.currentAlbum == nil)
+
+            Divider()
+
+            Button("Eject — Scan Barcode") {
+                eject?()
+            }
+            .keyboardShortcut("e", modifiers: [.command, .shift])
+            .disabled(eject == nil)
         }
 
         CommandMenu("Library") {
@@ -74,7 +84,10 @@ struct FlacNestCommands: Commands {
             .keyboardShortcut("1", modifiers: .command)
 
             Button("FlacNest Library") {
-                openWindow(id: "library")
+                PlayerWindowSizing.toggleLibrary(
+                    openWindow: openWindow,
+                    dismissWindow: dismissWindow
+                )
             }
             .keyboardShortcut("2", modifiers: .command)
         }

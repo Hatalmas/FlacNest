@@ -20,6 +20,8 @@ enum AppSettings {
     static let themeKey = "appTheme"
     static let showStatusMenuKey = "showStatusMenu"
     static let continuousAlbumPlayKey = "continuousAlbumPlay"
+    static let libraryMetadataPreviewVisibleKey = "libraryMetadataPreviewVisible"
+    static let libraryShowFavoritesOnlyKey = "libraryShowFavoritesOnly"
     private static let barcodeScannerCameraIDKey = "barcodeScannerCameraID"
     static let playerArtworkSizeKey = "playerArtworkSize"
     private static let playerCompactWindowFrameKey = "playerCompactWindowFrame"
@@ -96,6 +98,16 @@ enum AppSettings {
     static var continuousAlbumPlay: Bool {
         get { UserDefaults.standard.bool(forKey: continuousAlbumPlayKey) }
         set { UserDefaults.standard.set(newValue, forKey: continuousAlbumPlayKey) }
+    }
+
+    static var libraryMetadataPreviewVisible: Bool {
+        get { UserDefaults.standard.bool(forKey: libraryMetadataPreviewVisibleKey) }
+        set { UserDefaults.standard.set(newValue, forKey: libraryMetadataPreviewVisibleKey) }
+    }
+
+    static var libraryShowFavoritesOnly: Bool {
+        get { UserDefaults.standard.bool(forKey: libraryShowFavoritesOnlyKey) }
+        set { UserDefaults.standard.set(newValue, forKey: libraryShowFavoritesOnlyKey) }
     }
 
     static var barcodeScannerCameraID: String? {

@@ -7,13 +7,21 @@ struct LibraryManagerView: View {
     @EnvironmentObject private var libraryVM: LibraryViewModel
     @EnvironmentObject private var playerWindowTracker: PlayerWindowTracker
     @EnvironmentObject private var barcodeEject: BarcodeEjectController
+    @AppStorage(AppSettings.libraryMetadataPreviewVisibleKey) private var showMetadataPreview = false
     @State private var editingAlbum: LibraryAlbum?
     @State private var selectedAlbumID: String?
+    @FocusState private var libraryListFocused: Bool
 
     private var selectedAlbum: LibraryAlbum? {
         guard let id = selectedAlbumID else { return nil }
         return libraryVM.library.albums.first { $0.id == id }
     }
+
+    private var displayedAlbums: [LibraryAlbum] {
+        libraryVM.displayedSections.flatMap(\.albums)
+    }
+
+    private let keyboardPageSize = 12
 
     var body: some View {
         VStack(spacing: 0) {
@@ -23,9 +31,23 @@ struct LibraryManagerView: View {
                 playerStrip
             }
         }
-        .frame(minWidth: 560, minHeight: 480)
+        .frame(minWidth: showMetadataPreview ? 920 : 560, minHeight: 480)
         .toolbar {
             ToolbarItemGroup {
+                Button {
+                    showMetadataPreview.toggle()
+                } label: {
+                    Image(systemName: showMetadataPreview ? "info.circle.fill" : "info.circle")
+                }
+                .help(showMetadataPreview ? "Hide metadata preview" : "Show metadata preview")
+
+                Button {
+                    libraryVM.setShowFavoritesOnly(!libraryVM.showFavoritesOnly)
+                } label: {
+                    Image(systemName: libraryVM.showFavoritesOnly ? "star.fill" : "star")
+                }
+                .help(libraryVM.showFavoritesOnly ? "Show all albums" : "Show favorites only")
+
                 sortGroupMenu
 
                 if libraryVM.isScanning {
@@ -54,7 +76,8 @@ struct LibraryManagerView: View {
                 if let album = selectedAlbum {
                     editingAlbum = album
                 }
-            }
+            },
+            onEject: { barcodeEject.presentEject() }
         )
         .onChange(of: selectedAlbumID) { _, newValue in
             libraryVM.selectedAlbumID = newValue
@@ -67,6 +90,41 @@ struct LibraryManagerView: View {
     }
 
     private var libraryList: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Group {
+                if showMetadataPreview {
+                    HSplitView {
+                        albumListPane
+                        metadataPreviewPane
+                    }
+                } else {
+                    albumListPane
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            HStack {
+                Button("Play Selected") {
+                    if let album = selectedAlbum {
+                        beginPlayback(for: album)
+                    }
+                }
+                .disabled(selectedAlbum == nil || libraryVM.isScanning)
+
+                Button("Edit Metadata…") {
+                    if let album = selectedAlbum {
+                        editingAlbum = album
+                    }
+                }
+                .disabled(selectedAlbum == nil || libraryVM.isScanning)
+
+                Spacer()
+            }
+            .padding(12)
+        }
+    }
+
+    private var albumListPane: some View {
         VStack(alignment: .leading, spacing: 0) {
             if libraryVM.isScanning {
                 scanProgressView
@@ -101,12 +159,33 @@ struct LibraryManagerView: View {
                     }
                     .padding(.vertical, 4)
                 }
+                .focusable()
+                .focused($libraryListFocused)
+                .focusEffectDisabled()
+                .onKeyPress(.upArrow) {
+                    moveSelection(by: -1, using: scrollProxy)
+                    return .handled
+                }
+                .onKeyPress(.downArrow) {
+                    moveSelection(by: 1, using: scrollProxy)
+                    return .handled
+                }
+                .onKeyPress(.pageUp) {
+                    moveSelection(by: -keyboardPageSize, using: scrollProxy)
+                    return .handled
+                }
+                .onKeyPress(.pageDown) {
+                    moveSelection(by: keyboardPageSize, using: scrollProxy)
+                    return .handled
+                }
                 .onAppear {
+                    libraryListFocused = true
                     focusPlayingAlbum(using: scrollProxy)
                 }
                 .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { notification in
                     guard let window = notification.object as? NSWindow,
                           PlayerWindowSizing.isLibraryWindow(window) else { return }
+                    libraryListFocused = true
                     focusPlayingAlbum(using: scrollProxy)
                 }
                 .onChange(of: playback.currentAlbum?.id) { _, albumID in
@@ -116,26 +195,21 @@ struct LibraryManagerView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .allowsHitTesting(!libraryVM.isScanning)
-
-            HStack {
-                Button("Play Selected") {
-                    if let album = selectedAlbum {
-                        beginPlayback(for: album)
-                    }
-                }
-                .disabled(selectedAlbum == nil || libraryVM.isScanning)
-
-                Button("Edit Metadata…") {
-                    if let album = selectedAlbum {
-                        editingAlbum = album
-                    }
-                }
-                .disabled(selectedAlbum == nil || libraryVM.isScanning)
-
-                Spacer()
-            }
-            .padding(12)
         }
+    }
+
+    private var metadataPreviewPane: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Metadata Preview")
+                .font(.headline)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(.bar)
+
+            AlbumMetadataPreviewView(album: selectedAlbum)
+        }
+        .frame(minWidth: 320, idealWidth: 360, maxWidth: 420)
     }
 
     private func sectionHeader(_ title: String) -> some View {
@@ -202,6 +276,9 @@ struct LibraryManagerView: View {
             .contextMenu {
                 Button("Play") { beginPlayback(for: album) }
                 Button("Edit Metadata…") { editingAlbum = album }
+                Button(isAlbumFavorite(album) ? "Remove from Favorites" : "Add to Favorites") {
+                    toggleFavorite(for: album)
+                }
             }
     }
 
@@ -220,7 +297,9 @@ struct LibraryManagerView: View {
     }
 
     private func albumRow(_ album: LibraryAlbum) -> some View {
-        HStack(alignment: .center, spacing: 10) {
+        let isFavorite = isAlbumFavorite(album)
+
+        return HStack(alignment: .center, spacing: 10) {
             albumArtwork(for: album)
             VStack(alignment: .leading, spacing: 2) {
                 Text(album.displayTitle)
@@ -240,11 +319,33 @@ struct LibraryManagerView: View {
                 .lineLimit(1)
             }
             Spacer(minLength: 0)
-            if playback.currentAlbum?.id == album.id {
-                Image(systemName: playback.isPlaying ? "speaker.wave.2.fill" : "pause.circle")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                if playback.currentAlbum?.id == album.id {
+                    Image(systemName: playback.isPlaying ? "speaker.wave.2.fill" : "pause.circle")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Button {
+                    toggleFavorite(for: album)
+                } label: {
+                    Image(systemName: isFavorite ? "star.fill" : "star")
+                        .foregroundStyle(isFavorite ? Color.yellow : Color.secondary)
+                }
+                .buttonStyle(.borderless)
+                .help(isFavorite ? "Remove from favorites" : "Add to favorites")
             }
+        }
+    }
+
+    private func isAlbumFavorite(_ album: LibraryAlbum) -> Bool {
+        libraryVM.library.albums.first(where: { $0.id == album.id })?.isFavorite ?? album.isFavorite
+    }
+
+    private func toggleFavorite(for album: LibraryAlbum) {
+        do {
+            try libraryVM.toggleFavorite(for: album.id)
+        } catch {
+            libraryVM.statusMessage = "Could not update favorite: \(error.localizedDescription)"
         }
     }
 
@@ -344,6 +445,28 @@ struct LibraryManagerView: View {
             withAnimation {
                 scrollProxy.scrollTo(playingAlbumID, anchor: .center)
             }
+        }
+    }
+
+    private func moveSelection(by delta: Int, using scrollProxy: ScrollViewProxy) {
+        guard !libraryVM.isScanning else { return }
+
+        let albums = displayedAlbums
+        guard !albums.isEmpty else { return }
+
+        let currentIndex: Int
+        if let selectedAlbumID, let index = albums.firstIndex(where: { $0.id == selectedAlbumID }) {
+            currentIndex = index
+        } else {
+            currentIndex = delta >= 0 ? -1 : albums.count
+        }
+
+        let newIndex = min(albums.count - 1, max(0, currentIndex + delta))
+        let album = albums[newIndex]
+        selectedAlbumID = album.id
+
+        withAnimation {
+            scrollProxy.scrollTo(album.id, anchor: .center)
         }
     }
 }

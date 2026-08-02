@@ -12,6 +12,10 @@ private struct EditMetadataFocusedKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
+private struct EjectFocusedKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
 extension FocusedValues {
     var focusedPlayback: PlaybackController? {
         get { self[PlaybackControllerFocusedKey.self] }
@@ -27,16 +31,23 @@ extension FocusedValues {
         get { self[EditMetadataFocusedKey.self] }
         set { self[EditMetadataFocusedKey.self] = newValue }
     }
+
+    var focusedEject: (() -> Void)? {
+        get { self[EjectFocusedKey.self] }
+        set { self[EjectFocusedKey.self] = newValue }
+    }
 }
 
 extension View {
     func flacNestFocusedCommands(
         playback: PlaybackController,
         libraryVM: LibraryViewModel? = nil,
-        onEditMetadata: (() -> Void)? = nil
+        onEditMetadata: (() -> Void)? = nil,
+        onEject: (() -> Void)? = nil
     ) -> some View {
         focusedValue(\.focusedPlayback, playback)
             .focusedValue(\.focusedLibraryViewModel, libraryVM)
             .focusedValue(\.focusedEditMetadata, onEditMetadata)
+            .focusedValue(\.focusedEject, onEject)
     }
 }

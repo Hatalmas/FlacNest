@@ -14,4 +14,18 @@ enum TrackTimeFormatting {
         let duration = max(0, end - start)
         return formatClock(duration)
     }
+
+    /// Parses a pasted track line, trimming whitespace and removing a trailing duration such as `3:52`.
+    static func importedTrackTitle(from line: String) -> String {
+        var title = line.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if let durationRange = title.range(
+            of: #"\s+\d{1,2}:\d{2}(?::\d{2})?\s*$"#,
+            options: .regularExpression
+        ) {
+            title.removeSubrange(durationRange)
+        }
+
+        return title.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 }

@@ -206,6 +206,7 @@ enum LibraryScanner {
             comment: metadata.comment,
             artworkRelativePath: artwork,
             barcode: nil,
+            isFavorite: false,
             tracks: libraryTracks
         )
     }

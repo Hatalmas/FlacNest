@@ -37,6 +37,7 @@
 		STATUSMENU0000000000000001 /* StatusMenuContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = STATUSMENU0000000000000002 /* StatusMenuContent.swift */; };
 		BARCODESCAN000000000000001 /* BarcodeScannerSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BARCODESCAN000000000000002 /* BarcodeScannerSession.swift */; };
 		BARCODEEJECT00000000000001 /* BarcodeEjectController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BARCODEEJECT00000000000002 /* BarcodeEjectController.swift */; };
+		ALBUMMETADATAPREV00000001 /* AlbumMetadataPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ALBUMMETADATAPREV00000002 /* AlbumMetadataPreviewView.swift */; };
 		BARCODEEJECT00000000000003 /* BarcodeEjectSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BARCODEEJECT00000000000004 /* BarcodeEjectSheet.swift */; };
 /* End PBXBuildFile section */
 
@@ -73,6 +74,7 @@
 		STATUSMENU0000000000000002 /* StatusMenuContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusMenuContent.swift; sourceTree = "<group>"; };
 		BARCODESCAN000000000000002 /* BarcodeScannerSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarcodeScannerSession.swift; sourceTree = "<group>"; };
 		BARCODEEJECT00000000000002 /* BarcodeEjectController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarcodeEjectController.swift; sourceTree = "<group>"; };
+		ALBUMMETADATAPREV00000002 /* AlbumMetadataPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumMetadataPreviewView.swift; sourceTree = "<group>"; };
 		BARCODEEJECT00000000000004 /* BarcodeEjectSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarcodeEjectSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -183,6 +185,7 @@
 				254F88484E9B4014B670207E /* PlayerView.swift */,
 				25D0F4898D0B47CB8B72B311 /* LibraryManagerView.swift */,
 				ALBUMMETADATA000000000002 /* AlbumMetadataEditorView.swift */,
+				ALBUMMETADATAPREV00000002 /* AlbumMetadataPreviewView.swift */,
 				933EDE1C15F34CA28C687FCB /* SettingsView.swift */,
 				STATUSMENU0000000000000002 /* StatusMenuContent.swift */,
 				BARCODEEJECT00000000000004 /* BarcodeEjectSheet.swift */,
@@ -274,6 +277,7 @@
 				D6551E16AEE14122829696B7 /* LibraryManagerView.swift in Sources */,
 				481B4EA4D3B44131B1900241 /* SettingsView.swift in Sources */,
 				ALBUMMETADATA000000000001 /* AlbumMetadataEditorView.swift in Sources */,
+				ALBUMMETADATAPREV00000001 /* AlbumMetadataPreviewView.swift in Sources */,
 				ALBUMARTWORK0000000000001 /* AlbumArtworkImporter.swift in Sources */,
 				TRACKTIMEFMT0000000000001 /* TrackTimeFormatting.swift in Sources */,
 				FLACNESTCMDS0000000000001 /* FlacNestCommands.swift in Sources */,

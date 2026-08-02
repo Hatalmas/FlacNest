@@ -50,7 +50,7 @@ struct TransportControls: View {
                 Button(action: onEject) {
                     Image(systemName: "eject.fill")
                 }
-                .help("Eject — scan CD barcode")
+                .help("Eject — scan CD barcode (⌘⇧E)")
             }
         }
         .buttonStyle(.borderless)

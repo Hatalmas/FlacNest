@@ -11,23 +11,36 @@ struct StatusMenuContent: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            nowPlayingSection
-            playbackControls
-            Divider()
-            Button("Show Player") {
-                showPlayer()
+        HStack(alignment: .top, spacing: 0) {
+            VStack(alignment: .leading, spacing: 12) {
+                nowPlayingSection
+                playbackControls
             }
-            .keyboardShortcut("p", modifiers: [.command])
+            .padding(12)
 
-            Divider()
+            VStack(spacing: 8) {
+                Button {
+                    showPlayer()
+                } label: {
+                    Image(systemName: "macwindow")
+                }
+                .help("Show Player (⌘P)")
+                .keyboardShortcut("p", modifiers: [.command])
 
-            Button("Close FlacNest") {
-                NSApp.terminate(nil)
+                Button {
+                    NSApp.terminate(nil)
+                } label: {
+                    Image(systemName: "xmark")
+                }
+                .help("Close FlacNest")
             }
+            .buttonStyle(.borderless)
+            .font(.title3)
+            .labelStyle(.iconOnly)
+            .padding(.top, 12)
+            .padding(.trailing, 10)
         }
-        .padding(12)
-        .frame(width: 280)
+        .frame(width: 300)
     }
 
     private var nowPlayingSection: some View {

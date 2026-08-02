@@ -6,6 +6,7 @@ struct PlayerView: View {
     @EnvironmentObject private var playback: PlaybackController
     @EnvironmentObject private var libraryVM: LibraryViewModel
     @EnvironmentObject private var playerWindowTracker: PlayerWindowTracker
+    @EnvironmentObject private var libraryWindowTracker: LibraryWindowTracker
     @EnvironmentObject private var barcodeEject: BarcodeEjectController
     @AppStorage("playerTrackListVisible") private var showTrackList = false
     @AppStorage("showSpinningCDWhilePlaying") private var showSpinningCDWhilePlaying = true
@@ -77,6 +78,7 @@ struct PlayerView: View {
             artworkSize = AppSettings.playerArtworkSize(trackListVisible: showTrackList)
             PlayerWindowSizing.restoreSize(trackListVisible: showTrackList)
             playerWindowTracker.refresh()
+            libraryWindowTracker.refresh()
         }
         .onReceive(NotificationCenter.default.publisher(for: .flacNestApplicationWillTerminate)) { _ in
             persistCurrentPlayerLayout()
@@ -152,12 +154,16 @@ struct PlayerView: View {
             .disabled(playback.currentAlbum == nil)
 
             Button {
-                openWindow(id: "library")
+                PlayerWindowSizing.toggleLibrary(
+                    openWindow: openWindow,
+                    dismissWindow: dismissWindow,
+                    tracker: libraryWindowTracker
+                )
             } label: {
-                Image(systemName: "book")
+                Image(systemName: libraryWindowTracker.isOpen ? "book.fill" : "book")
             }
             .buttonStyle(.borderless)
-            .help("Open Library (⌘2)")
+            .help(libraryWindowTracker.isOpen ? "Close Library (⌘2)" : "Open Library (⌘2)")
         }
         .font(.title3)
         .labelStyle(.iconOnly)

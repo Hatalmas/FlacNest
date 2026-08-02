@@ -230,7 +230,7 @@ struct AlbumMetadataEditorView: View {
         while let last = lines.last, last.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             lines.removeLast()
         }
-        lines = lines.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        lines = lines.map { TrackTimeFormatting.importedTrackTitle(from: $0) }
 
         guard lines.count == draft.tracks.count else {
             errorMessage = "Clipboard has \(lines.count) line(s), but this album has \(draft.tracks.count) track(s)."
