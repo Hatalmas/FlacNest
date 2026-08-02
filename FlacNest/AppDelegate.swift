@@ -26,6 +26,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         NotificationCenter.default.post(name: .flacNestLibraryRootDidChange, object: nil)
+
+        DispatchQueue.main.async {
+            DockIconVisibility.sync()
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -38,4 +42,5 @@ extension Notification.Name {
     static let flacNestLibraryRootDidChange = Notification.Name("flacNestLibraryRootDidChange")
     static let flacNestLibraryDidLoad = Notification.Name("flacNestLibraryDidLoad")
     static let flacNestApplicationWillTerminate = Notification.Name("flacNestApplicationWillTerminate")
+    static let flacNestMainWindowVisibilityDidChange = Notification.Name("flacNestMainWindowVisibilityDidChange")
 }

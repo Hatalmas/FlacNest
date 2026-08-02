@@ -153,7 +153,7 @@ struct StatusMenuContent: View {
     }
 
     private func showPlayer() {
-        NSApp.activate(ignoringOtherApps: true)
+        DockIconVisibility.prepareToShowMainWindow()
         openWindow(id: "player")
         DispatchQueue.main.async {
             PlayerWindowSizing.bringPlayerToFront()

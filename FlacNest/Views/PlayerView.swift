@@ -106,6 +106,7 @@ struct PlayerView: View {
             persistCurrentPlayerLayout()
         }
         .barcodeEjectSheet()
+        .background(MainWindowLifecycleMonitor())
     }
 
     private var playbackInfoSection: some View {

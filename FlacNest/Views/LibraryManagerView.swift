@@ -87,6 +87,7 @@ struct LibraryManagerView: View {
             playerWindowTracker.refresh()
         }
         .barcodeEjectSheet()
+        .background(MainWindowLifecycleMonitor())
     }
 
     private var libraryList: some View {

@@ -79,7 +79,11 @@ struct FlacNestCommands: Commands {
 
         CommandGroup(after: .windowArrangement) {
             Button("FlacNest Player") {
+                DockIconVisibility.prepareToShowMainWindow()
                 openWindow(id: "player")
+                DispatchQueue.main.async {
+                    PlayerWindowSizing.bringPlayerToFront()
+                }
             }
             .keyboardShortcut("1", modifiers: .command)
 

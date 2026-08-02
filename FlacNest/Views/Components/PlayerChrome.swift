@@ -377,6 +377,17 @@ struct NowPlayingMetadataView: View {
     }
 }
 
+enum CDCaseArtworkLayout {
+    static let casePixelSize = CGSize(width: 680, height: 624)
+    static let artworkPixelRect = CGRect(x: 72, y: 18, width: 588, height: 579)
+
+    static var aspectRatio: CGFloat { casePixelSize.width / casePixelSize.height }
+
+    static func displayWidth(forHeight height: CGFloat) -> CGFloat {
+        height * aspectRatio
+    }
+}
+
 enum PlayerArtworkSizing {
     static let minSize: CGFloat = 64
     static let defaultSize: CGFloat = 128
@@ -389,11 +400,12 @@ enum PlayerArtworkSizing {
         let contentWidth = max(width, minSize)
         let reservedWidth = horizontalPadding + toolbarWidth + rowSpacing
         if showsSpinningCD {
-            // art + spacing + cd + spacing + toolbar
-            return max(minSize, (contentWidth - reservedWidth - rowSpacing) / 2)
+            // case + spacing + cd + spacing + toolbar (height drives both case and cd)
+            let availableWidth = contentWidth - reservedWidth - rowSpacing
+            return max(minSize, availableWidth / (CDCaseArtworkLayout.aspectRatio + 1))
         }
-        // art + spacing + toolbar
-        return max(minSize, contentWidth - reservedWidth)
+        // case + spacing + toolbar
+        return max(minSize, (contentWidth - reservedWidth) / CDCaseArtworkLayout.aspectRatio)
     }
 
     static func clamp(_ size: CGFloat, forWidth width: CGFloat, showsSpinningCD: Bool) -> CGFloat {
@@ -404,18 +416,47 @@ enum PlayerArtworkSizing {
 struct AlbumArtworkImage: View {
     let artworkURL: URL?
     let size: CGFloat
-    var cornerRadius: CGFloat = 8
+
+    private var caseWidth: CGFloat {
+        CDCaseArtworkLayout.displayWidth(forHeight: size)
+    }
+
+    private var artworkFrame: (width: CGFloat, height: CGFloat, x: CGFloat, y: CGFloat) {
+        let scaleX = caseWidth / CDCaseArtworkLayout.casePixelSize.width
+        let scaleY = size / CDCaseArtworkLayout.casePixelSize.height
+        let rect = CDCaseArtworkLayout.artworkPixelRect
+        return (
+            rect.width * scaleX,
+            rect.height * scaleY,
+            rect.minX * scaleX,
+            rect.minY * scaleY
+        )
+    }
 
     var body: some View {
+        let artwork = artworkFrame
+
+        ZStack(alignment: .topLeading) {
+            artworkContent
+                .frame(width: artwork.width, height: artwork.height)
+                .clipped()
+                .offset(x: artwork.x, y: artwork.y)
+
+            Image("cdcase")
+                .resizable()
+                .interpolation(.high)
+                .frame(width: caseWidth, height: size)
+        }
+        .frame(width: caseWidth, height: size)
+    }
+
+    @ViewBuilder
+    private var artworkContent: some View {
         if let url = artworkURL, let nsImage = NSImage(contentsOf: url) {
             Image(nsImage: nsImage)
                 .highQualityScaled(contentMode: .fill)
-                .frame(width: size, height: size)
-                .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         } else {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(Color.secondary.opacity(0.2))
-                .frame(width: size, height: size)
+            Color.secondary.opacity(0.2)
                 .overlay {
                     Image(systemName: "music.note")
                         .font(.title)

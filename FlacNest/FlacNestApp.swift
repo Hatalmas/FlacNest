@@ -145,15 +145,18 @@ enum PlayerWindowSizing {
     }
 
     static func bringPlayerToFront() {
+        DockIconVisibility.prepareToShowMainWindow()
         NSApp.activate(ignoringOtherApps: true)
         playerWindow?.makeKeyAndOrderFront(nil)
     }
 
     static func detach(openWindow: OpenWindowAction, tracker: PlayerWindowTracker) {
+        DockIconVisibility.prepareToShowMainWindow()
         openWindow(id: "player")
         DispatchQueue.main.async {
             bringPlayerToFront()
             tracker.refresh()
+            DockIconVisibility.sync()
         }
     }
 
@@ -171,6 +174,7 @@ enum PlayerWindowSizing {
     }
 
     static func bringLibraryToFront() {
+        DockIconVisibility.prepareToShowMainWindow()
         NSApp.activate(ignoringOtherApps: true)
         libraryWindow?.makeKeyAndOrderFront(nil)
     }
@@ -183,14 +187,16 @@ enum PlayerWindowSizing {
         window.title == "FlacNest Library" || window.identifier?.rawValue == "library"
     }
 
+    static func isMainWindowShown(_ window: NSWindow) -> Bool {
+        window.isVisible && window.occlusionState.contains(.visible)
+    }
+
     static var isPlayerWindowOpen: Bool {
-        guard let window = playerWindow else { return false }
-        return window.isVisible
+        NSApp.windows.contains { isPlayerWindow($0) && isMainWindowShown($0) }
     }
 
     static var isLibraryWindowOpen: Bool {
-        guard let window = libraryWindow else { return false }
-        return window.isVisible
+        NSApp.windows.contains { isLibraryWindow($0) && isMainWindowShown($0) }
     }
 
     static func toggleLibrary(
@@ -201,6 +207,7 @@ enum PlayerWindowSizing {
         if isLibraryWindowOpen {
             dismissWindow(id: "library")
         } else {
+            DockIconVisibility.prepareToShowMainWindow()
             openWindow(id: "library")
             DispatchQueue.main.async {
                 bringLibraryToFront()
@@ -208,6 +215,7 @@ enum PlayerWindowSizing {
         }
         DispatchQueue.main.async {
             tracker?.refresh()
+            DockIconVisibility.sync()
         }
     }
 
@@ -228,17 +236,15 @@ final class PlayerWindowTracker: ObservableObject {
 
     init() {
         let center = NotificationCenter.default
-        let names: [Notification.Name] = [
-            NSWindow.willCloseNotification,
-            NSWindow.didBecomeKeyNotification,
-            NSApplication.didBecomeActiveNotification,
-        ]
-
-        for name in names {
-            observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+        observers.append(
+            center.addObserver(
+                forName: .flacNestMainWindowVisibilityDidChange,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
                 self?.refresh()
-            })
-        }
+            }
+        )
 
         DispatchQueue.main.async { [weak self] in
             self?.refresh()
@@ -253,6 +259,26 @@ final class PlayerWindowTracker: ObservableObject {
 
     func refresh() {
         isOpen = PlayerWindowSizing.isPlayerWindowOpen
+        DockIconVisibility.sync()
+    }
+}
+
+enum DockIconVisibility {
+    static func prepareToShowMainWindow() {
+        apply(showInDock: true)
+    }
+
+    static func sync() {
+        apply(
+            showInDock: PlayerWindowSizing.isPlayerWindowOpen
+                || PlayerWindowSizing.isLibraryWindowOpen
+        )
+    }
+
+    private static func apply(showInDock: Bool) {
+        let target: NSApplication.ActivationPolicy = showInDock ? .regular : .accessory
+        guard NSApp.activationPolicy() != target else { return }
+        NSApp.setActivationPolicy(target)
     }
 }
 
@@ -264,17 +290,15 @@ final class LibraryWindowTracker: ObservableObject {
 
     init() {
         let center = NotificationCenter.default
-        let names: [Notification.Name] = [
-            NSWindow.willCloseNotification,
-            NSWindow.didBecomeKeyNotification,
-            NSApplication.didBecomeActiveNotification,
-        ]
-
-        for name in names {
-            observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+        observers.append(
+            center.addObserver(
+                forName: .flacNestMainWindowVisibilityDidChange,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
                 self?.refresh()
-            })
-        }
+            }
+        )
 
         DispatchQueue.main.async { [weak self] in
             self?.refresh()
@@ -289,5 +313,70 @@ final class LibraryWindowTracker: ObservableObject {
 
     func refresh() {
         isOpen = PlayerWindowSizing.isLibraryWindowOpen
+        DockIconVisibility.sync()
+    }
+}
+
+struct MainWindowLifecycleMonitor: NSViewRepresentable {
+    func makeNSView(context: Context) -> MonitorView {
+        MonitorView()
+    }
+
+    func updateNSView(_ nsView: MonitorView, context: Context) {}
+
+    final class MonitorView: NSView {
+        private var observers: [NSObjectProtocol] = []
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            unregisterObservers()
+
+            guard let window else {
+                scheduleVisibilitySync()
+                return
+            }
+
+            guard PlayerWindowSizing.isPlayerWindow(window) || PlayerWindowSizing.isLibraryWindow(window) else {
+                return
+            }
+
+            registerObservers(for: window)
+            scheduleVisibilitySync()
+        }
+
+        deinit {
+            unregisterObservers()
+        }
+
+        private func registerObservers(for window: NSWindow) {
+            let center = NotificationCenter.default
+            let names: [Notification.Name] = [
+                NSWindow.willCloseNotification,
+                NSWindow.didChangeOcclusionStateNotification,
+                NSWindow.didBecomeKeyNotification,
+                NSWindow.didResignKeyNotification,
+            ]
+
+            for name in names {
+                observers.append(
+                    center.addObserver(forName: name, object: window, queue: .main) { [weak self] _ in
+                        self?.scheduleVisibilitySync()
+                    }
+                )
+            }
+        }
+
+        private func unregisterObservers() {
+            for observer in observers {
+                NotificationCenter.default.removeObserver(observer)
+            }
+            observers.removeAll()
+        }
+
+        private func scheduleVisibilitySync() {
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .flacNestMainWindowVisibilityDidChange, object: nil)
+            }
+        }
     }
 }
