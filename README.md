@@ -1,3 +1,5 @@
+![FlacNest icon](docs/iconflac.png)
+
 # FlacNest
 
 A native macOS app for playing FLAC albums with CUE sheets. FlacNest scans a folder of music, builds a library from your CUE files, and gives you a focused player for gapless album playback—with optional library management, metadata editing, and menu bar controls.

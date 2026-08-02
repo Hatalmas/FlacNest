@@ -3,6 +3,7 @@ import SwiftUI
 
 struct StatusMenuContent: View {
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.openSettings) private var openSettings
     @EnvironmentObject private var playback: PlaybackController
     @EnvironmentObject private var libraryVM: LibraryViewModel
 
@@ -26,6 +27,13 @@ struct StatusMenuContent: View {
                 }
                 .help("Show Player (⌘P)")
                 .keyboardShortcut("p", modifiers: [.command])
+
+                Button {
+                    openSettings()
+                } label: {
+                    Image(systemName: "gearshape")
+                }
+                .help("Settings")
 
                 Button {
                     NSApp.terminate(nil)
