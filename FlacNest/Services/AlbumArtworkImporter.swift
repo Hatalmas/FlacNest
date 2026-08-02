@@ -2,7 +2,14 @@ import AppKit
 import Foundation
 import UniformTypeIdentifiers
 
+struct AlbumArtworkReference: Equatable {
+    var path: String
+    var bookmark: Data?
+}
+
 enum AlbumArtworkImporter {
+    private static var accessedArtworkURLs: Set<URL> = []
+
     @MainActor
     static func chooseImageFile() -> URL? {
         let panel = NSOpenPanel()
@@ -19,7 +26,7 @@ enum AlbumArtworkImporter {
         return url
     }
 
-    static func referenceArtwork(from sourceURL: URL, album: LibraryAlbum, libraryRoot: URL) throws -> String {
+    static func referenceArtwork(from sourceURL: URL, album: LibraryAlbum, libraryRoot: URL) throws -> AlbumArtworkReference {
         let source = sourceURL.standardizedFileURL
         guard FileManager.default.fileExists(atPath: source.path) else {
             throw AlbumArtworkImporterError.sourceFileNotFound
@@ -34,10 +41,18 @@ enum AlbumArtworkImporter {
         }
 
         if sourcePath.hasPrefix(rootPath + "/") {
-            return relativePath(from: rootPath, to: sourcePath)
+            return AlbumArtworkReference(
+                path: relativePath(from: rootPath, to: sourcePath),
+                bookmark: nil
+            )
         }
 
-        return sourcePath
+        let bookmark = try? source.bookmarkData(
+            options: .withSecurityScope,
+            includingResourceValuesForKeys: nil,
+            relativeTo: nil
+        )
+        return AlbumArtworkReference(path: sourcePath, bookmark: bookmark)
     }
 
     static func artworkURL(for album: LibraryAlbum, libraryRoot: URL?) -> URL? {
@@ -47,11 +62,39 @@ enum AlbumArtworkImporter {
         }
 
         if art.hasPrefix("/") {
+            if let bookmark = album.artworkBookmark,
+               let url = resolveSecurityScopedURL(from: bookmark) {
+                return url
+            }
             return URL(fileURLWithPath: art)
         }
 
         guard let libraryRoot else { return nil }
         return libraryRoot.appendingPathComponent(art)
+    }
+
+    static func stopAccessingArtwork() {
+        for url in accessedArtworkURLs {
+            url.stopAccessingSecurityScopedResource()
+        }
+        accessedArtworkURLs.removeAll()
+    }
+
+    private static func resolveSecurityScopedURL(from bookmark: Data) -> URL? {
+        var stale = false
+        guard let url = try? URL(
+            resolvingBookmarkData: bookmark,
+            options: .withSecurityScope,
+            relativeTo: nil,
+            bookmarkDataIsStale: &stale
+        ) else {
+            return nil
+        }
+
+        if url.startAccessingSecurityScopedResource() {
+            accessedArtworkURLs.insert(url)
+        }
+        return url
     }
 
     private static func relativePath(from root: String, to target: String) -> String {

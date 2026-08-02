@@ -72,7 +72,12 @@ enum FlacNestLibraryStore {
             let flac = element.attribute(forName: "flac")?.stringValue
         else { return nil }
 
-        let artwork = element.elements(forName: "artwork").first?.attribute(forName: "path")?.stringValue
+        let artworkElement = element.elements(forName: "artwork").first
+        let artwork = artworkElement?.attribute(forName: "path")?.stringValue
+        let artworkBookmark = artworkElement?
+            .attribute(forName: "bookmark")?
+            .stringValue
+            .flatMap { Data(base64Encoded: $0) }
 
         var tracks: [LibraryTrack] = []
         for trackElement in element.elements(forName: "track") {
@@ -114,6 +119,7 @@ enum FlacNestLibraryStore {
             discID: element.attribute(forName: "discID")?.stringValue,
             comment: element.attribute(forName: "comment")?.stringValue,
             artworkRelativePath: artwork,
+            artworkBookmark: artworkBookmark,
             barcode: element.attribute(forName: "barcode")?.stringValue,
             isFavorite: parseBoolAttribute(element.attribute(forName: "favorite")?.stringValue),
             tracks: tracks
@@ -158,7 +164,11 @@ enum FlacNestLibraryStore {
 
         if let artwork = album.artworkRelativePath {
             let art = XMLElement(name: "artwork")
-            art.setAttributesWith(["path": artwork])
+            var artworkAttributes = ["path": artwork]
+            if let bookmark = album.artworkBookmark {
+                artworkAttributes["bookmark"] = bookmark.base64EncodedString()
+            }
+            art.setAttributesWith(artworkAttributes)
             fileElement.addChild(art)
         }
 

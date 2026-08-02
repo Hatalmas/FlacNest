@@ -542,11 +542,11 @@ struct PlayerArtworkHeaderView<Trailing: View>: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .onAppear {
-            cdSlideProgress = showSpinningCDWhilePlaying ? 1 : 0
+            applyCDSlideProgress(showSpinningCDWhilePlaying ? 1 : 0, animated: false)
         }
         .onChange(of: showSpinningCDWhilePlaying) { _, isEnabled in
             guard !isAnimatingCD else { return }
-            cdSlideProgress = isEnabled ? 1 : 0
+            applyCDSlideProgress(isEnabled ? 1 : 0, animated: false)
         }
     }
 
@@ -591,7 +591,6 @@ struct PlayerArtworkHeaderView<Trailing: View>: View {
             .zIndex(2)
         }
         .frame(width: clusterWidth, height: artworkSize, alignment: .leading)
-        .animation(.easeInOut(duration: cdAnimationDuration), value: clusterWidth)
     }
 
     private var spinningCDHelpText: String {
@@ -625,7 +624,7 @@ struct PlayerArtworkHeaderView<Trailing: View>: View {
     private func ejectCDFromCase() {
         isAnimatingCD = true
         showSpinningCDWhilePlaying = true
-        cdSlideProgress = 0
+        applyCDSlideProgress(0, animated: false)
 
         withAnimation(.easeInOut(duration: cdAnimationDuration)) {
             cdSlideProgress = 1
@@ -634,6 +633,19 @@ struct PlayerArtworkHeaderView<Trailing: View>: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + cdAnimationDuration) {
             isAnimatingCD = false
         }
+    }
+
+    private func applyCDSlideProgress(_ progress: CGFloat, animated: Bool) {
+        guard animated else {
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                cdSlideProgress = progress
+            }
+            return
+        }
+
+        cdSlideProgress = progress
     }
 }
 

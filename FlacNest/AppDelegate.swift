@@ -34,6 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         NotificationCenter.default.post(name: .flacNestApplicationWillTerminate, object: nil)
+        AlbumArtworkImporter.stopAccessingArtwork()
         AppSettings.stopAccessing()
     }
 }

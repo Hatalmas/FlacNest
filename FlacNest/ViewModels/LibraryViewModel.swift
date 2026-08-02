@@ -183,10 +183,20 @@ final class LibraryViewModel: ObservableObject {
             }
         )
         let preservedFavorites = Set(library.albums.filter(\.isFavorite).map(\.id))
+        let preservedArtwork = Dictionary<String, (String, Data?)>(
+            uniqueKeysWithValues: library.albums.compactMap { album in
+                guard let path = album.artworkRelativePath else { return nil }
+                return (album.id, (path, album.artworkBookmark))
+            }
+        )
         library = result.library
         for index in library.albums.indices {
             library.albums[index].barcode = preservedBarcodes[library.albums[index].id]
             library.albums[index].isFavorite = preservedFavorites.contains(library.albums[index].id)
+            if let preserved = preservedArtwork[library.albums[index].id] {
+                library.albums[index].artworkRelativePath = preserved.0
+                library.albums[index].artworkBookmark = preserved.1
+            }
         }
 
         if let xmlURL = AppSettings.libraryXMLURL {

@@ -71,7 +71,10 @@ struct AlbumMetadataEditorView: View {
 
                     HStack {
                         Button("Choose Image…") { chooseArtwork() }
-                        Button("Clear") { draft.artworkRelativePath = nil }
+                        Button("Clear") {
+                            draft.artworkRelativePath = nil
+                            draft.artworkBookmark = nil
+                        }
                             .disabled(draft.artworkRelativePath == nil)
                     }
                 }
@@ -133,6 +136,9 @@ struct AlbumMetadataEditorView: View {
                 HStack {
                     Button("Import from clipboard") {
                         importTrackTitlesFromClipboard()
+                    }
+                    Button("Override performer") {
+                        overrideTrackPerformersFromAlbum()
                     }
                     Spacer()
                 }
@@ -207,11 +213,13 @@ struct AlbumMetadataEditorView: View {
         guard let sourceURL = AlbumArtworkImporter.chooseImageFile() else { return }
 
         do {
-            draft.artworkRelativePath = try AlbumArtworkImporter.referenceArtwork(
+            let reference = try AlbumArtworkImporter.referenceArtwork(
                 from: sourceURL,
                 album: draft,
                 libraryRoot: root
             )
+            draft.artworkRelativePath = reference.path
+            draft.artworkBookmark = reference.bookmark
             errorMessage = nil
         } catch {
             errorMessage = "Could not set artwork: \(error.localizedDescription)"
@@ -239,6 +247,14 @@ struct AlbumMetadataEditorView: View {
 
         for index in draft.tracks.indices {
             draft.tracks[index].title = lines[index]
+        }
+        errorMessage = nil
+    }
+
+    private func overrideTrackPerformersFromAlbum() {
+        let performer = draft.performer.trimmingCharacters(in: .whitespacesAndNewlines)
+        for index in draft.tracks.indices {
+            draft.tracks[index].performer = performer.isEmpty ? nil : performer
         }
         errorMessage = nil
     }
