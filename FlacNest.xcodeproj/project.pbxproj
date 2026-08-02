@@ -1,0 +1,460 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0E8ED56C1808472BBDCF70E9 /* LibraryScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 825498DE520D49B7984F793D /* LibraryScanner.swift */; };
+		481B4EA4D3B44131B1900241 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933EDE1C15F34CA28C687FCB /* SettingsView.swift */; };
+		52D20E3AAB4A4FA6937476FF /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF7E0354447347E2A4D1D633 /* AppDelegate.swift */; };
+		6FCBD5DCE2E6401DB05BF4F5 /* PlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE4AC6E7AC294B1CA4C026CE /* PlaybackController.swift */; };
+		MEDIAREMOTECTRL00000000001 /* MediaRemoteController.swift in Sources */ = {isa = PBXBuildFile; fileRef = MEDIAREMOTECTRL00000000002 /* MediaRemoteController.swift */; };
+		CUEFILEREADER00000000001 /* CUEFileReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CUEFILEREADER00000000002 /* CUEFileReader.swift */; };
+		LIBXMLLOC000000000000001 /* LibraryXMLLocationChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = LIBXMLLOC000000000000002 /* LibraryXMLLocationChange.swift */; };
+		FLACMETAREADER00000000001 /* FLACMetadataReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = FLACMETAREADER00000000002 /* FLACMetadataReader.swift */; };
+		CUEMETAREPAIR000000000001 /* CUEMetadataRepair.swift in Sources */ = {isa = PBXBuildFile; fileRef = CUEMETAREPAIR000000000002 /* CUEMetadataRepair.swift */; };
+		7340A06B94064A788C129404 /* FlacNestLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1027D3AE9647BF8B2779AB /* FlacNestLibraryStore.swift */; };
+		8EFB77A1B5654961B532CC26 /* PlayerChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25449D342ECE4BE588E8FAAC /* PlayerChrome.swift */; };
+		9286936E5259411C9EACBE81 /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 254F88484E9B4014B670207E /* PlayerView.swift */; };
+		98460537EA224F6D99E28175 /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3210805580DD44F782F1DFDA /* LibraryViewModel.swift */; };
+		B8B7C08A1ABE491C8DD15800 /* LibraryAlbum.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BADF80C6D4C4825A3D3C7BE /* LibraryAlbum.swift */; };
+		D077439A5BF642E2B308468D /* CUEParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D36ED3A4ECF428EB28C6FF0 /* CUEParser.swift */; };
+		D6551E16AEE14122829696B7 /* LibraryManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25D0F4898D0B47CB8B72B311 /* LibraryManagerView.swift */; };
+		E344744CC50344B59769B0E2 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = C61C56BFEA324EC9AE90789E /* AppSettings.swift */; };
+		E99EAFC0A1BB48FDA27E650D /* FlacNestApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03655B3C213432FACF4FC37 /* FlacNestApp.swift */; };
+		F0E9D014758B4BA2A3D23D0E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 795A41C3CFF84E27AB58D236 /* Assets.xcassets */; };
+		ALBUMMETADATA000000000001 /* AlbumMetadataEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ALBUMMETADATA000000000002 /* AlbumMetadataEditorView.swift */; };
+		ALBUMARTWORK0000000000001 /* AlbumArtworkImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = ALBUMARTWORK0000000000002 /* AlbumArtworkImporter.swift */; };
+		TRACKTIMEFMT0000000000001 /* TrackTimeFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRACKTIMEFMT0000000000002 /* TrackTimeFormatting.swift */; };
+		FLACNESTCMDS0000000000001 /* FlacNestCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = FLACNESTCMDS0000000000002 /* FlacNestCommands.swift */; };
+		FLACNESTFOCUS000000000001 /* FlacNestFocusedValues.swift in Sources */ = {isa = PBXBuildFile; fileRef = FLACNESTFOCUS000000000002 /* FlacNestFocusedValues.swift */; };
+		LIBDISPLAYOPTS000000000001 /* LibraryDisplayOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = LIBDISPLAYOPTS000000000002 /* LibraryDisplayOptions.swift */; };
+		LASTPLAYBACK0000000000001 /* LastPlaybackState.swift in Sources */ = {isa = PBXBuildFile; fileRef = LASTPLAYBACK0000000000002 /* LastPlaybackState.swift */; };
+		APPTHEME000000000000000001 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = APPTHEME000000000000000002 /* AppTheme.swift */; };
+		STATUSMENU0000000000000001 /* StatusMenuContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = STATUSMENU0000000000000002 /* StatusMenuContent.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		25449D342ECE4BE588E8FAAC /* PlayerChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerChrome.swift; sourceTree = "<group>"; };
+		254F88484E9B4014B670207E /* PlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerView.swift; sourceTree = "<group>"; };
+		25D0F4898D0B47CB8B72B311 /* LibraryManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryManagerView.swift; sourceTree = "<group>"; };
+		3210805580DD44F782F1DFDA /* LibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModel.swift; sourceTree = "<group>"; };
+		407D8C24F6264BDF871288DC /* FlacNest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FlacNest.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6BADF80C6D4C4825A3D3C7BE /* LibraryAlbum.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryAlbum.swift; sourceTree = "<group>"; };
+		6D36ED3A4ECF428EB28C6FF0 /* CUEParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CUEParser.swift; sourceTree = "<group>"; };
+		795A41C3CFF84E27AB58D236 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		7D1027D3AE9647BF8B2779AB /* FlacNestLibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlacNestLibraryStore.swift; sourceTree = "<group>"; };
+		825498DE520D49B7984F793D /* LibraryScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryScanner.swift; sourceTree = "<group>"; };
+		933EDE1C15F34CA28C687FCB /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A018AB49EFC34555AA5B5FD7 /* FlacNest.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FlacNest.entitlements; sourceTree = "<group>"; };
+		A03655B3C213432FACF4FC37 /* FlacNestApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlacNestApp.swift; sourceTree = "<group>"; };
+		C61C56BFEA324EC9AE90789E /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		DE4AC6E7AC294B1CA4C026CE /* PlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackController.swift; sourceTree = "<group>"; };
+		MEDIAREMOTECTRL00000000002 /* MediaRemoteController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaRemoteController.swift; sourceTree = "<group>"; };
+		CUEFILEREADER00000000002 /* CUEFileReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CUEFileReader.swift; sourceTree = "<group>"; };
+		LIBXMLLOC000000000000002 /* LibraryXMLLocationChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryXMLLocationChange.swift; sourceTree = "<group>"; };
+		FLACMETAREADER00000000002 /* FLACMetadataReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FLACMetadataReader.swift; sourceTree = "<group>"; };
+		CUEMETAREPAIR000000000002 /* CUEMetadataRepair.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CUEMetadataRepair.swift; sourceTree = "<group>"; };
+		EF7E0354447347E2A4D1D633 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		ALBUMMETADATA000000000002 /* AlbumMetadataEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumMetadataEditorView.swift; sourceTree = "<group>"; };
+		ALBUMARTWORK0000000000002 /* AlbumArtworkImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumArtworkImporter.swift; sourceTree = "<group>"; };
+		TRACKTIMEFMT0000000000002 /* TrackTimeFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackTimeFormatting.swift; sourceTree = "<group>"; };
+		FLACNESTCMDS0000000000002 /* FlacNestCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlacNestCommands.swift; sourceTree = "<group>"; };
+		FLACNESTFOCUS000000000002 /* FlacNestFocusedValues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlacNestFocusedValues.swift; sourceTree = "<group>"; };
+		LIBDISPLAYOPTS000000000002 /* LibraryDisplayOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryDisplayOptions.swift; sourceTree = "<group>"; };
+		LASTPLAYBACK0000000000002 /* LastPlaybackState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastPlaybackState.swift; sourceTree = "<group>"; };
+		APPTHEME000000000000000002 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+		STATUSMENU0000000000000002 /* StatusMenuContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusMenuContent.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C6E6D226EF0C49BA9D3D5851 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0F4A1DC3594F4876B000EDAE /* FlacNest */ = {
+			isa = PBXGroup;
+			children = (
+				C61C56BFEA324EC9AE90789E /* AppSettings.swift */,
+				EF7E0354447347E2A4D1D633 /* AppDelegate.swift */,
+				A03655B3C213432FACF4FC37 /* FlacNestApp.swift */,
+				FLACNESTCMDS0000000000002 /* FlacNestCommands.swift */,
+				FLACNESTFOCUS000000000002 /* FlacNestFocusedValues.swift */,
+				G1MODELS0000000000000001 /* Models */,
+				G1UTILS00000000000000001 /* Utils */,
+				G1SERVICES000000000000001 /* Services */,
+				G1VIEWMODELS00000000000001 /* ViewModels */,
+				G1VIEWS000000000000000001 /* Views */,
+				795A41C3CFF84E27AB58D236 /* Assets.xcassets */,
+				A018AB49EFC34555AA5B5FD7 /* FlacNest.entitlements */,
+			);
+			path = FlacNest;
+			sourceTree = "<group>";
+		};
+		17803E0F96F54783B49FF0BD /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				407D8C24F6264BDF871288DC /* FlacNest.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AA13572D15B94CFE9B69E81D = {
+			isa = PBXGroup;
+			children = (
+				0F4A1DC3594F4876B000EDAE /* FlacNest */,
+				17803E0F96F54783B49FF0BD /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		G1UTILS00000000000000001 /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				TRACKTIMEFMT0000000000002 /* TrackTimeFormatting.swift */,
+			);
+			path = Utils;
+			sourceTree = "<group>";
+		};
+		G1COMPONENTS00000000000001 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				25449D342ECE4BE588E8FAAC /* PlayerChrome.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		G1MODELS0000000000000001 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				6BADF80C6D4C4825A3D3C7BE /* LibraryAlbum.swift */,
+				LIBDISPLAYOPTS000000000002 /* LibraryDisplayOptions.swift */,
+				LASTPLAYBACK0000000000002 /* LastPlaybackState.swift */,
+				APPTHEME000000000000000002 /* AppTheme.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		G1SERVICES000000000000001 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				6D36ED3A4ECF428EB28C6FF0 /* CUEParser.swift */,
+				CUEFILEREADER00000000002 /* CUEFileReader.swift */,
+				LIBXMLLOC000000000000002 /* LibraryXMLLocationChange.swift */,
+				FLACMETAREADER00000000002 /* FLACMetadataReader.swift */,
+				CUEMETAREPAIR000000000002 /* CUEMetadataRepair.swift */,
+				ALBUMARTWORK0000000000002 /* AlbumArtworkImporter.swift */,
+				7D1027D3AE9647BF8B2779AB /* FlacNestLibraryStore.swift */,
+				825498DE520D49B7984F793D /* LibraryScanner.swift */,
+				DE4AC6E7AC294B1CA4C026CE /* PlaybackController.swift */,
+				MEDIAREMOTECTRL00000000002 /* MediaRemoteController.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		G1VIEWMODELS00000000000001 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				3210805580DD44F782F1DFDA /* LibraryViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		G1VIEWS000000000000000001 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				G1COMPONENTS00000000000001 /* Components */,
+				254F88484E9B4014B670207E /* PlayerView.swift */,
+				25D0F4898D0B47CB8B72B311 /* LibraryManagerView.swift */,
+				ALBUMMETADATA000000000002 /* AlbumMetadataEditorView.swift */,
+				933EDE1C15F34CA28C687FCB /* SettingsView.swift */,
+				STATUSMENU0000000000000002 /* StatusMenuContent.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		57480D8A0EB04403807F1CF4 /* FlacNest */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 884DF634EA974814AEE22B12 /* Build configuration list for PBXNativeTarget "FlacNest" */;
+			buildPhases = (
+				5F6E6A2AE8D04D3497EECFDF /* Sources */,
+				C6E6D226EF0C49BA9D3D5851 /* Frameworks */,
+				37AA40DA7A1C4D2284A231E8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FlacNest;
+			productName = FlacNest;
+			productReference = 407D8C24F6264BDF871288DC /* FlacNest.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		9E78EBF078BF41FD9AA6398C /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 2660;
+				ORGANIZATIONNAME = FlacNest;
+			};
+			buildConfigurationList = 220297E5FF2640A89934AD32 /* Build configuration list for PBXProject "FlacNest" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = AA13572D15B94CFE9B69E81D;
+			productRefGroup = 17803E0F96F54783B49FF0BD /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				57480D8A0EB04403807F1CF4 /* FlacNest */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		37AA40DA7A1C4D2284A231E8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F0E9D014758B4BA2A3D23D0E /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		5F6E6A2AE8D04D3497EECFDF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E344744CC50344B59769B0E2 /* AppSettings.swift in Sources */,
+				52D20E3AAB4A4FA6937476FF /* AppDelegate.swift in Sources */,
+				E99EAFC0A1BB48FDA27E650D /* FlacNestApp.swift in Sources */,
+				B8B7C08A1ABE491C8DD15800 /* LibraryAlbum.swift in Sources */,
+				D077439A5BF642E2B308468D /* CUEParser.swift in Sources */,
+				7340A06B94064A788C129404 /* FlacNestLibraryStore.swift in Sources */,
+				0E8ED56C1808472BBDCF70E9 /* LibraryScanner.swift in Sources */,
+				6FCBD5DCE2E6401DB05BF4F5 /* PlaybackController.swift in Sources */,
+				MEDIAREMOTECTRL00000000001 /* MediaRemoteController.swift in Sources */,
+				CUEFILEREADER00000000001 /* CUEFileReader.swift in Sources */,
+				LIBXMLLOC000000000000001 /* LibraryXMLLocationChange.swift in Sources */,
+				FLACMETAREADER00000000001 /* FLACMetadataReader.swift in Sources */,
+				CUEMETAREPAIR000000000001 /* CUEMetadataRepair.swift in Sources */,
+				98460537EA224F6D99E28175 /* LibraryViewModel.swift in Sources */,
+				8EFB77A1B5654961B532CC26 /* PlayerChrome.swift in Sources */,
+				9286936E5259411C9EACBE81 /* PlayerView.swift in Sources */,
+				D6551E16AEE14122829696B7 /* LibraryManagerView.swift in Sources */,
+				481B4EA4D3B44131B1900241 /* SettingsView.swift in Sources */,
+				ALBUMMETADATA000000000001 /* AlbumMetadataEditorView.swift in Sources */,
+				ALBUMARTWORK0000000000001 /* AlbumArtworkImporter.swift in Sources */,
+				TRACKTIMEFMT0000000000001 /* TrackTimeFormatting.swift in Sources */,
+				FLACNESTCMDS0000000000001 /* FlacNestCommands.swift in Sources */,
+				FLACNESTFOCUS000000000001 /* FlacNestFocusedValues.swift in Sources */,
+				LIBDISPLAYOPTS000000000001 /* LibraryDisplayOptions.swift in Sources */,
+				LASTPLAYBACK0000000000001 /* LastPlaybackState.swift in Sources */,
+				APPTHEME000000000000000001 /* AppTheme.swift in Sources */,
+				STATUSMENU0000000000000001 /* StatusMenuContent.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		00B6752A46AC43B1B3E26922 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_ENTITLEMENTS = FlacNest/FlacNest.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleIconName = AppIcon;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.flacnest.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		8991A4DB158A4DEAAB3AEB44 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_ENTITLEMENTS = FlacNest/FlacNest.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleIconName = AppIcon;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.flacnest.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		8F69C57D687749B69BF4F947 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		B63B20C69D114197B77D29A9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		220297E5FF2640A89934AD32 /* Build configuration list for PBXProject "FlacNest" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8F69C57D687749B69BF4F947 /* Debug */,
+				B63B20C69D114197B77D29A9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		884DF634EA974814AEE22B12 /* Build configuration list for PBXNativeTarget "FlacNest" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8991A4DB158A4DEAAB3AEB44 /* Debug */,
+				00B6752A46AC43B1B3E26922 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 9E78EBF078BF41FD9AA6398C /* Project object */;
+}
