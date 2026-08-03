@@ -113,12 +113,28 @@ struct TransportControls: View {
 }
 
 struct PlaybackProgressView: View {
+    enum Style {
+        case standard
+        case player
+    }
+
     var playback: PlaybackController
+    var style: Style = .standard
+
+    private var trackProgressLabel: String {
+        switch style {
+        case .standard:
+            return "Track"
+        case .player:
+            guard let track = playback.currentTrack else { return "Track" }
+            return String(format: "TRACK %02d", track.number)
+        }
+    }
 
     var body: some View {
         VStack(spacing: 8) {
             progressRow(
-                label: "Track",
+                label: trackProgressLabel,
                 progress: playback.trackProgress,
                 elapsed: TrackTimeFormatting.formatClock(playback.trackElapsed),
                 total: TrackTimeFormatting.formatClock(playback.trackDuration)

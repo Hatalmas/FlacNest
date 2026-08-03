@@ -116,7 +116,7 @@ struct PlayerView: View {
                 album: playback.currentAlbum,
                 track: playback.currentTrack
             )
-            PlaybackProgressView(playback: playback)
+            PlaybackProgressView(playback: playback, style: .player)
             TransportControls(playback: playback, style: .player) {
                 barcodeEject.presentEject()
             }
