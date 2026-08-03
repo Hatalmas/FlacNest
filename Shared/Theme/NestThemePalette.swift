@@ -14,6 +14,14 @@ struct NestThemePalette: Equatable {
         secondary: Color(hex: 0x48321B, opacity: 0.65),
         surface: Color(hex: 0xF3EBDF)
     )
+
+    static let darkNest = NestThemePalette(
+        background: Color(hex: 0x302821),
+        accent: Color(hex: 0x788A59),
+        primary: Color(hex: 0xFDF6EB),
+        secondary: Color(hex: 0xFDF6EB, opacity: 0.65),
+        surface: Color(hex: 0x452A12)
+    )
 }
 
 private struct NestThemePaletteKey: EnvironmentKey {
@@ -136,6 +144,53 @@ private struct NestPrimaryForegroundModifier: ViewModifier {
     }
 }
 
+private struct NestGroupBoxStyle: GroupBoxStyle {
+    @Environment(\.nestThemePalette) private var palette
+
+    func makeBody(configuration: Configuration) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            configuration.label
+                .font(.headline)
+                .foregroundStyle(labelColor)
+
+            configuration.content
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(surfaceColor, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+    }
+
+    private var labelColor: Color {
+        if let palette {
+            return palette.primary
+        }
+        return Color.primary
+    }
+
+    private var surfaceColor: Color {
+        if let palette {
+            return palette.surface
+        }
+        #if os(macOS)
+        return Color(nsColor: .controlBackgroundColor)
+        #else
+        return Color(.secondarySystemBackground)
+        #endif
+    }
+}
+
+private struct NestThemedGroupBoxModifier: ViewModifier {
+    @Environment(\.nestThemePalette) private var palette
+
+    func body(content: Content) -> some View {
+        if palette != nil {
+            content.groupBoxStyle(NestGroupBoxStyle())
+        } else {
+            content
+        }
+    }
+}
+
 private struct NestThemedPlaceholderSurfaceModifier: ViewModifier {
     @Environment(\.nestThemePalette) private var palette
     let cornerRadius: CGFloat
@@ -183,6 +238,10 @@ extension View {
 
     func nestThemedPlaceholderSurface(cornerRadius: CGFloat = 8) -> some View {
         modifier(NestThemedPlaceholderSurfaceModifier(cornerRadius: cornerRadius))
+    }
+
+    func nestThemedGroupBoxes() -> some View {
+        modifier(NestThemedGroupBoxModifier())
     }
 
     @ViewBuilder

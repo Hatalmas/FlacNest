@@ -79,7 +79,7 @@ struct SettingsView: View {
                     }
                 }
             } footer: {
-                Text("Nest uses FlacNest cream, green, and brown tones. Light, Dark, and System follow your Mac appearance.")
+                Text("Nest and Dark Nest use FlacNest cream, green, and brown tones. Light, Dark, and System follow your Mac appearance.")
             }
 
             Section {
@@ -88,14 +88,14 @@ struct SettingsView: View {
                 Toggle("Continuous album play", isOn: continuousAlbumPlayToggle)
                 Toggle("Show spinning CD while playing", isOn: showSpinningCDToggle)
             } footer: {
-                Text("The status menu adds a FlacNest icon to the menu bar with playback controls and now playing info. Continuous album play advances to the next album in the current library sort order when the last track finishes.")
+                Text("The status menu adds a FlacNest icon to the menu bar with playback controls and now playing info. Saving last played album caches the full album entry so the player can restore immediately on launch without waiting for the library to load. Continuous album play advances to the next album in the current library sort order when the last track finishes.")
             }
 
             Section {
                 Button("Export Library for iPhone/iPad…") {
                     exportPortableLibrary()
                 }
-                .disabled(libraryVM.library.albums.isEmpty || libraryVM.isScanning)
+                .disabled(libraryVM.library.albums.isEmpty || libraryVM.isLibraryBusy)
 
                 if let exportStatusMessage {
                     Text(exportStatusMessage)

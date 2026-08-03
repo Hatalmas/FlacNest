@@ -22,7 +22,7 @@ struct AlbumMetadataEditorView: View {
                 Button("Cancel") { dismiss() }
                 Button("Save") { saveChanges() }
                     .keyboardShortcut(.defaultAction)
-                    .disabled(libraryVM.isScanning)
+                    .disabled(libraryVM.isLibraryBusy)
             }
             .padding()
 

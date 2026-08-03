@@ -24,11 +24,14 @@ struct LibraryManagerView: View {
     private let keyboardPageSize = 12
 
     var body: some View {
-        VStack(spacing: 0) {
-            libraryList
-            if !playerWindowTracker.isOpen {
-                Divider()
-                playerStrip
+        Group {
+            if showMetadataPreview {
+                HSplitView {
+                    libraryColumn
+                    metadataPreviewPane
+                }
+            } else {
+                libraryColumn
             }
         }
         .frame(minWidth: showMetadataPreview ? 920 : 560, minHeight: 480)
@@ -40,6 +43,7 @@ struct LibraryManagerView: View {
                     Image(systemName: showMetadataPreview ? "info.circle.fill" : "info.circle")
                 }
                 .help(showMetadataPreview ? "Hide metadata preview" : "Show metadata preview")
+                .disabled(libraryVM.isLibraryBusy)
 
                 Button {
                     libraryVM.setShowFavoritesOnly(!libraryVM.showFavoritesOnly)
@@ -47,6 +51,7 @@ struct LibraryManagerView: View {
                     Image(systemName: libraryVM.showFavoritesOnly ? "star.fill" : "star")
                 }
                 .help(libraryVM.showFavoritesOnly ? "Show all albums" : "Show favorites only")
+                .disabled(libraryVM.isLibraryBusy)
 
                 sortGroupMenu
 
@@ -83,135 +88,143 @@ struct LibraryManagerView: View {
             libraryVM.selectedAlbumID = newValue
         }
         .onAppear {
-            libraryVM.loadFromDisk()
             playerWindowTracker.refresh()
         }
         .barcodeEjectSheet()
         .background(MainWindowLifecycleMonitor())
     }
 
-    private var libraryList: some View {
+    private var libraryColumn: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Group {
-                if showMetadataPreview {
-                    HSplitView {
-                        albumListPane
-                        metadataPreviewPane
-                    }
-                } else {
-                    albumListPane
-                }
+            albumListScrollArea
+
+            libraryActionBar
+
+            if !playerWindowTracker.isOpen {
+                Divider()
+                playerStrip
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            HStack {
-                Button("Play Selected") {
-                    if let album = selectedAlbum {
-                        beginPlayback(for: album)
-                    }
-                }
-                .disabled(selectedAlbum == nil || libraryVM.isScanning)
-
-                Button("Edit Metadata…") {
-                    if let album = selectedAlbum {
-                        editingAlbum = album
-                    }
-                }
-                .disabled(selectedAlbum == nil || libraryVM.isScanning)
-
-                Spacer()
-            }
-            .padding(12)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .nestThemedScreenBackground()
     }
 
-    private var albumListPane: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            if libraryVM.isScanning {
-                scanProgressView
-            } else if let message = libraryVM.statusMessage {
+    private var libraryActionBar: some View {
+        HStack(spacing: 12) {
+            Button("Play Selected") {
+                if let album = selectedAlbum {
+                    beginPlayback(for: album)
+                }
+            }
+            .disabled(selectedAlbum == nil || libraryVM.isLibraryBusy)
+
+            Button("Edit Metadata…") {
+                if let album = selectedAlbum {
+                    editingAlbum = album
+                }
+            }
+            .disabled(selectedAlbum == nil || libraryVM.isLibraryBusy)
+
+            if !libraryVM.isLibraryBusy, let message = libraryVM.statusMessage {
                 Text(message)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
+                    .nestSecondaryForeground()
+                    .lineLimit(1)
             }
 
-            ScrollViewReader { scrollProxy in
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
-                        ForEach(libraryVM.displayedSections) { section in
-                            if libraryVM.groupMode == .none {
+            Spacer()
+        }
+        .padding(12)
+        .nestSurfaceBackground()
+    }
+
+    private var albumListScrollArea: some View {
+        ScrollViewReader { scrollProxy in
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
+                    ForEach(libraryVM.displayedSections) { section in
+                        if libraryVM.groupMode == .none {
+                            ForEach(section.albums) { album in
+                                albumListRow(album)
+                                    .id(album.id)
+                            }
+                        } else {
+                            Section {
                                 ForEach(section.albums) { album in
                                     albumListRow(album)
                                         .id(album.id)
                                 }
-                            } else {
-                                Section {
-                                    ForEach(section.albums) { album in
-                                        albumListRow(album)
-                                            .id(album.id)
-                                    }
-                                } header: {
-                                    sectionHeader(section.title)
-                                }
+                            } header: {
+                                sectionHeader(section.title)
                             }
                         }
                     }
-                    .padding(.vertical, 4)
                 }
-                .focusable()
-                .focused($libraryListFocused)
-                .focusEffectDisabled()
-                .onKeyPress(.upArrow) {
-                    moveSelection(by: -1, using: scrollProxy)
-                    return .handled
-                }
-                .onKeyPress(.downArrow) {
-                    moveSelection(by: 1, using: scrollProxy)
-                    return .handled
-                }
-                .onKeyPress(.pageUp) {
-                    moveSelection(by: -keyboardPageSize, using: scrollProxy)
-                    return .handled
-                }
-                .onKeyPress(.pageDown) {
-                    moveSelection(by: keyboardPageSize, using: scrollProxy)
-                    return .handled
-                }
-                .onAppear {
-                    libraryListFocused = true
-                    focusPlayingAlbum(using: scrollProxy)
-                }
-                .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { notification in
-                    guard let window = notification.object as? NSWindow,
-                          PlayerWindowSizing.isLibraryWindow(window) else { return }
-                    libraryListFocused = true
-                    focusPlayingAlbum(using: scrollProxy)
-                }
-                .onChange(of: playback.currentAlbum?.id) { _, albumID in
-                    guard albumID != nil else { return }
-                    focusPlayingAlbum(using: scrollProxy)
-                }
+                .padding(.vertical, 4)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .allowsHitTesting(!libraryVM.isScanning)
+            .focusable()
+            .focused($libraryListFocused)
+            .focusEffectDisabled()
+            .onKeyPress(.upArrow) {
+                moveSelection(by: -1, using: scrollProxy)
+                return .handled
+            }
+            .onKeyPress(.downArrow) {
+                moveSelection(by: 1, using: scrollProxy)
+                return .handled
+            }
+            .onKeyPress(.pageUp) {
+                moveSelection(by: -keyboardPageSize, using: scrollProxy)
+                return .handled
+            }
+            .onKeyPress(.pageDown) {
+                moveSelection(by: keyboardPageSize, using: scrollProxy)
+                return .handled
+            }
+            .onAppear {
+                libraryListFocused = true
+                focusPlayingAlbum(using: scrollProxy)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { notification in
+                guard let window = notification.object as? NSWindow,
+                      PlayerWindowSizing.isLibraryWindow(window) else { return }
+                libraryListFocused = true
+                focusPlayingAlbum(using: scrollProxy)
+            }
+            .onChange(of: playback.currentAlbum?.id) { _, albumID in
+                guard albumID != nil else { return }
+                focusPlayingAlbum(using: scrollProxy)
+            }
         }
-        .nestThemedScreenBackground()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .allowsHitTesting(!libraryVM.isLibraryBusy)
+        .overlay {
+            if libraryVM.isLibraryBusy {
+                LibraryBusyOverlay(
+                    isScanning: libraryVM.isScanning,
+                    isPreparingLibraryUI: libraryVM.isPreparingLibraryUI,
+                    scanProgress: libraryVM.scanProgress,
+                    statusMessage: libraryVM.statusMessage
+                )
+            }
+        }
     }
 
     private var metadataPreviewPane: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Metadata Preview")
                 .font(.headline)
+                .nestPrimaryForeground()
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .nestSurfaceBackground()
 
             AlbumMetadataPreviewView(album: selectedAlbum)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(minWidth: 320, idealWidth: 360, maxWidth: 420)
+        .frame(minWidth: 320, idealWidth: 360, maxWidth: 420, maxHeight: .infinity)
+        .nestThemedScreenBackground()
     }
 
     private func sectionHeader(_ title: String) -> some View {
@@ -257,7 +270,7 @@ struct LibraryManagerView: View {
         } label: {
             Label("Sort & Group", systemImage: "arrow.up.arrow.down.circle")
         }
-        .disabled(libraryVM.isScanning)
+        .disabled(libraryVM.isLibraryBusy)
         .help("Sort and group albums in the library list")
     }
 
@@ -340,7 +353,7 @@ struct LibraryManagerView: View {
     }
 
     private func isAlbumFavorite(_ album: LibraryAlbum) -> Bool {
-        libraryVM.library.albums.first(where: { $0.id == album.id })?.isFavorite ?? album.isFavorite
+        album.isFavorite
     }
 
     private func toggleFavorite(for album: LibraryAlbum) {
@@ -352,57 +365,7 @@ struct LibraryManagerView: View {
     }
 
     private func albumArtwork(for album: LibraryAlbum) -> some View {
-        Group {
-            if let url = libraryVM.artworkURL(for: album), let nsImage = ArtworkImageCache.image(for: url) {
-                Image(nsImage: nsImage)
-                    .highQualityScaled(contentMode: .fill)
-            } else {
-                Image(systemName: "music.note")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.secondary.opacity(0.2))
-            }
-        }
-        .frame(width: 36, height: 36)
-        .clipShape(RoundedRectangle(cornerRadius: 4))
-    }
-
-    private var scanProgressView: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(libraryVM.scanProgress.title)
-                    .font(.subheadline)
-                Spacer()
-                if libraryVM.scanProgress.phase == .processing, libraryVM.scanProgress.total > 0 {
-                    Text(libraryVM.scanProgress.detail)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                }
-            }
-
-            if libraryVM.scanProgress.phase == .processing, libraryVM.scanProgress.total > 0 {
-                ProgressView(value: libraryVM.scanProgress.fractionCompleted)
-            } else {
-                ProgressView()
-            }
-
-            if !libraryVM.scanProgress.currentItem.isEmpty {
-                Text(libraryVM.scanProgress.currentItem)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-            } else if let message = libraryVM.statusMessage {
-                Text(message)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(.quaternary.opacity(0.35))
+        LibraryAlbumArtworkThumbnail(url: libraryVM.artworkURL(for: album))
     }
 
     private var playerStrip: some View {
@@ -420,6 +383,7 @@ struct LibraryManagerView: View {
                 }
             }
             .padding(16)
+            .nestPrimaryForeground()
 
             Button {
                 PlayerWindowSizing.detach(openWindow: openWindow, tracker: playerWindowTracker)
@@ -430,7 +394,7 @@ struct LibraryManagerView: View {
             .help("Detach Player")
             .padding(12)
         }
-        .background(.bar)
+        .nestSurfaceBackground()
     }
 
     private func beginPlayback(for album: LibraryAlbum) {
@@ -451,7 +415,7 @@ struct LibraryManagerView: View {
     }
 
     private func moveSelection(by delta: Int, using scrollProxy: ScrollViewProxy) {
-        guard !libraryVM.isScanning else { return }
+        guard !libraryVM.isLibraryBusy else { return }
 
         let albums = displayedAlbums
         guard !albums.isEmpty else { return }
@@ -470,5 +434,107 @@ struct LibraryManagerView: View {
         withAnimation {
             scrollProxy.scrollTo(album.id, anchor: .center)
         }
+    }
+}
+
+private struct LibraryAlbumArtworkThumbnail: View {
+    let url: URL?
+    @State private var image: NSImage?
+
+    var body: some View {
+        Group {
+            if let image {
+                Image(nsImage: image)
+                    .highQualityScaled(contentMode: .fill)
+            } else {
+                Image(systemName: "music.note")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.secondary.opacity(0.2))
+            }
+        }
+        .frame(width: 36, height: 36)
+        .clipShape(RoundedRectangle(cornerRadius: 4))
+        .task(id: url?.path) {
+            guard let url else {
+                image = nil
+                return
+            }
+            image = await Task.detached(priority: .utility) {
+                ArtworkImageCache.image(for: url)
+            }.value
+        }
+    }
+}
+
+private struct LibraryBusyOverlay: View {
+    @Environment(\.nestThemePalette) private var palette
+
+    let isScanning: Bool
+    let isPreparingLibraryUI: Bool
+    let scanProgress: ScanProgress
+    let statusMessage: String?
+
+    var body: some View {
+        ZStack {
+            overlayBackground
+                .ignoresSafeArea()
+
+            VStack(spacing: 18) {
+                SpinningCDView(isSpinning: true, size: 104)
+                    .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 4)
+
+                Text(title)
+                    .font(.headline)
+                    .nestPrimaryForeground()
+
+                if isScanning {
+                    if scanProgress.phase == .processing, scanProgress.total > 0 {
+                        ProgressView(value: scanProgress.fractionCompleted)
+                            .frame(maxWidth: 240)
+                        Text(scanProgress.detail)
+                            .font(.caption.monospacedDigit())
+                            .nestSecondaryForeground()
+                    } else {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+
+                    if !scanProgress.currentItem.isEmpty {
+                        Text(scanProgress.currentItem)
+                            .font(.caption)
+                            .nestSecondaryForeground()
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .frame(maxWidth: 280)
+                    }
+                } else if let statusMessage {
+                    Text(statusMessage)
+                        .font(.subheadline)
+                        .nestSecondaryForeground()
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: 280)
+                }
+            }
+            .padding(28)
+        }
+    }
+
+    private var title: String {
+        if isScanning {
+            return scanProgress.title
+        }
+        if isPreparingLibraryUI {
+            return "Preparing Library"
+        }
+        return "Loading Library"
+    }
+
+    private var overlayBackground: Color {
+        if let palette {
+            return palette.background.opacity(0.92)
+        }
+        return Color(nsColor: .windowBackgroundColor).opacity(0.92)
     }
 }

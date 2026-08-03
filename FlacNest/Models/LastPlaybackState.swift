@@ -5,4 +5,9 @@ struct LastPlaybackState: Codable, Equatable {
     var flacRelativePath: String
     var trackIndex: Int
     var positionSeconds: Double
+    var cachedAlbum: LibraryAlbum?
+
+    var hasCachedAlbum: Bool {
+        cachedAlbum != nil
+    }
 }

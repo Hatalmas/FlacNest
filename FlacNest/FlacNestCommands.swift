@@ -54,7 +54,7 @@ struct FlacNestCommands: Commands {
                 playback?.play()
             }
             .keyboardShortcut(.return, modifiers: [])
-            .disabled(libraryVM?.selectedAlbum == nil || libraryVM?.isScanning == true)
+            .disabled(libraryVM?.selectedAlbum == nil || libraryVM?.isLibraryBusy == true)
 
             Button("Edit Metadata…") {
                 editMetadata?()
@@ -68,7 +68,7 @@ struct FlacNestCommands: Commands {
                 libraryVM?.refreshLibrary()
             }
             .keyboardShortcut("r", modifiers: .command)
-            .disabled(libraryVM?.isScanning == true)
+            .disabled(libraryVM?.isLibraryBusy == true)
 
             Button("Cancel Scan") {
                 libraryVM?.cancelScan()
@@ -81,7 +81,7 @@ struct FlacNestCommands: Commands {
             Button("Prepare Export…") {
                 openWindow(id: "prepareExport")
             }
-            .disabled(libraryVM?.library.albums.isEmpty == true || libraryVM?.isScanning == true)
+            .disabled(libraryVM?.library.albums.isEmpty == true || libraryVM?.isLibraryBusy == true)
         }
 
         CommandGroup(after: .windowArrangement) {

@@ -35,7 +35,7 @@ struct PlayerView: View {
                 )
                 .padding(.horizontal, 20)
                 .padding(.top, 20)
-                .frame(height: artworkSize + PlayerArtworkSizing.headerVerticalPadding)
+                .frame(height: artworkSize + PlayerArtworkSizing.headerVerticalPadding + PlayerArtworkSizing.displayPadding * 2)
 
                 PlayerArtworkResizeDivider(
                     artworkSize: $artworkSize,
@@ -117,7 +117,7 @@ struct PlayerView: View {
                 track: playback.currentTrack
             )
             PlaybackProgressView(playback: playback)
-            TransportControls(playback: playback) {
+            TransportControls(playback: playback, style: .player) {
                 barcodeEject.presentEject()
             }
             if let error = playback.lastError {
@@ -132,7 +132,7 @@ struct PlayerView: View {
     }
 
     private var playerToolbar: some View {
-        VStack(spacing: 8) {
+        PlayerToolbarIconGroup {
             Button {
                 PlayerWindowSizing.attach(
                     dismissWindow: dismissWindow,
@@ -167,8 +167,6 @@ struct PlayerView: View {
             .buttonStyle(.borderless)
             .help(libraryWindowTracker.isOpen ? "Close Library (⌘2)" : "Open Library (⌘2)")
         }
-        .font(.title3)
-        .labelStyle(.iconOnly)
         .frame(width: PlayerArtworkSizing.toolbarWidth, alignment: .center)
     }
 

@@ -7,7 +7,10 @@ import UniformTypeIdentifiers
 @MainActor
 final class LibraryViewModel: ObservableObject {
     @Published var library: FlacNestLibrary = FlacNestLibrary()
+    @Published private(set) var displayedSections: [LibraryAlbumSection] = []
     @Published var isScanning = false
+    @Published private(set) var isLoadingLibrary = false
+    @Published private(set) var isPreparingLibraryUI = false
     @Published var scanProgress = ScanProgress()
     @Published var statusMessage: String?
     @Published var selectedAlbumID: String?
@@ -16,25 +19,175 @@ final class LibraryViewModel: ObservableObject {
     @Published var showFavoritesOnly: Bool = AppSettings.libraryShowFavoritesOnly
 
     private var scanTask: Task<Void, Never>?
+    private var loadTask: Task<Void, Never>?
+    private var sectionsTask: Task<Void, Never>?
+    private var rootChangeObserver: NSObjectProtocol?
     private var lastProgressUpdate = Date.distantPast
+    private var hasLoadedLibrary = false
 
-    func loadFromDisk() {
+    var isLibraryBusy: Bool {
+        isLoadingLibrary || isScanning || isPreparingLibraryUI
+    }
+
+    init() {
+        rootChangeObserver = NotificationCenter.default.addObserver(
+            forName: .flacNestLibraryRootDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.reloadFromDisk()
+            }
+        }
+        loadFromDisk()
+    }
+
+    deinit {
+        if let rootChangeObserver {
+            NotificationCenter.default.removeObserver(rootChangeObserver)
+        }
+    }
+
+    func loadFromDisk(force: Bool = false) {
+        if isLoadingLibrary {
+            if force {
+                loadTask?.cancel()
+            } else {
+                return
+            }
+        }
+        if hasLoadedLibrary && !force {
+            return
+        }
+
+        loadTask = Task {
+            await performLoadFromDisk()
+        }
+    }
+
+    func reloadFromDisk() {
+        hasLoadedLibrary = false
+        loadTask?.cancel()
+        sectionsTask?.cancel()
+        loadFromDisk(force: true)
+    }
+
+    private func performLoadFromDisk() async {
         guard let xmlURL = AppSettings.libraryXMLURL else {
-            NotificationCenter.default.post(name: .flacNestLibraryDidLoad, object: nil)
+            hasLoadedLibrary = true
+            postLibraryDidLoad()
             return
         }
+
         guard FileManager.default.fileExists(atPath: xmlURL.path) else {
-            NotificationCenter.default.post(name: .flacNestLibraryDidLoad, object: nil)
+            hasLoadedLibrary = true
+            postLibraryDidLoad()
             return
         }
-        do {
-            library = try FlacNestLibraryStore.load(from: xmlURL)
-            statusMessage = "Loaded \(library.albums.count) albums from library."
-        } catch {
-            library = FlacNestLibrary()
-            statusMessage = "Could not read flacnest.xml (\(error.localizedDescription)). Use Refresh Library to rebuild it."
+
+        isLoadingLibrary = true
+        statusMessage = "Loading library…"
+
+        let result: Result<FlacNestLibrary, Error> = await Task.detached(priority: .userInitiated) {
+            do {
+                return .success(try FlacNestLibraryStore.load(from: xmlURL))
+            } catch {
+                return .failure(error)
+            }
+        }.value
+
+        guard !Task.isCancelled else {
+            isLoadingLibrary = false
+            return
         }
+
+        isLoadingLibrary = false
+        loadTask = nil
+
+        switch result {
+        case .success(let loaded):
+            library = loaded
+            statusMessage = "Loaded \(loaded.albums.count) albums from library."
+            await rebuildDisplayedSectionsAndWait(for: loaded)
+            hasLoadedLibrary = true
+        case .failure(let error):
+            library = FlacNestLibrary()
+            displayedSections = []
+            isPreparingLibraryUI = false
+            statusMessage = "Could not read flacnest.xml (\(error.localizedDescription)). Use Refresh Library to rebuild it."
+            hasLoadedLibrary = true
+        }
+
+        guard !Task.isCancelled else { return }
+
+        postLibraryDidLoad()
+    }
+
+    private func postLibraryDidLoad() {
         NotificationCenter.default.post(name: .flacNestLibraryDidLoad, object: nil)
+    }
+
+    private func rebuildDisplayedSections(for library: FlacNestLibrary? = nil) {
+        sectionsTask?.cancel()
+        let sourceLibrary = library ?? self.library
+        let showFavoritesOnly = self.showFavoritesOnly
+        let sortMode = self.sortMode
+        let groupMode = self.groupMode
+
+        isPreparingLibraryUI = true
+        sectionsTask = Task {
+            let sections = await Task.detached(priority: .userInitiated) {
+                Self.buildDisplayedSections(
+                    library: sourceLibrary,
+                    showFavoritesOnly: showFavoritesOnly,
+                    sortMode: sortMode,
+                    groupMode: groupMode
+                )
+            }.value
+
+            guard !Task.isCancelled else { return }
+
+            displayedSections = sections
+            isPreparingLibraryUI = false
+            sectionsTask = nil
+        }
+    }
+
+    private func rebuildDisplayedSectionsAndWait(for library: FlacNestLibrary) async {
+        sectionsTask?.cancel()
+
+        let showFavoritesOnly = self.showFavoritesOnly
+        let sortMode = self.sortMode
+        let groupMode = self.groupMode
+        isPreparingLibraryUI = true
+
+        let sections = await Task.detached(priority: .userInitiated) {
+            Self.buildDisplayedSections(
+                library: library,
+                showFavoritesOnly: showFavoritesOnly,
+                sortMode: sortMode,
+                groupMode: groupMode
+            )
+        }.value
+
+        guard !Task.isCancelled else {
+            isPreparingLibraryUI = false
+            return
+        }
+
+        displayedSections = sections
+        isPreparingLibraryUI = false
+        sectionsTask = nil
+    }
+
+    nonisolated private static func buildDisplayedSections(
+        library: FlacNestLibrary,
+        showFavoritesOnly: Bool,
+        sortMode: LibrarySortMode,
+        groupMode: LibraryGroupMode
+    ) -> [LibraryAlbumSection] {
+        let albums = showFavoritesOnly ? library.albums.filter(\.isFavorite) : library.albums
+        return LibraryAlbumSorting.sections(from: albums, sortMode: sortMode, groupMode: groupMode)
     }
 
     func refreshLibrary() {
@@ -58,30 +211,22 @@ final class LibraryViewModel: ObservableObject {
         return library.albums.first { $0.id == id }
     }
 
-    var displayedSections: [LibraryAlbumSection] {
-        let albums = showFavoritesOnly
-            ? library.albums.filter(\.isFavorite)
-            : library.albums
-        return LibraryAlbumSorting.sections(
-            from: albums,
-            sortMode: sortMode,
-            groupMode: groupMode
-        )
-    }
-
     func setShowFavoritesOnly(_ enabled: Bool) {
         showFavoritesOnly = enabled
         AppSettings.libraryShowFavoritesOnly = enabled
+        rebuildDisplayedSections()
     }
 
     func setSortMode(_ mode: LibrarySortMode) {
         sortMode = mode
         AppSettings.librarySortMode = mode
+        rebuildDisplayedSections()
     }
 
     func setGroupMode(_ mode: LibraryGroupMode) {
         groupMode = mode
         AppSettings.libraryGroupMode = mode
+        rebuildDisplayedSections()
     }
 
     func artworkURL(for album: LibraryAlbum) -> URL? {
@@ -105,6 +250,7 @@ final class LibraryViewModel: ObservableObject {
         guard let index = library.albums.firstIndex(where: { $0.id == albumID }) else { return }
         library.albums[index].isFavorite.toggle()
         try saveLibraryToDisk()
+        rebuildDisplayedSections()
     }
 
     func assignBarcode(_ barcode: String, to albumID: String) throws {
@@ -221,7 +367,9 @@ final class LibraryViewModel: ObservableObject {
             message += " Skipped \(result.skippedCues.count) CUE file(s)."
         }
         statusMessage = message
+        await rebuildDisplayedSectionsAndWait(for: library)
         finishScan(cancelled: false)
+        postLibraryDidLoad()
     }
 
     private func handleScanProgress(_ progress: ScanProgress) {

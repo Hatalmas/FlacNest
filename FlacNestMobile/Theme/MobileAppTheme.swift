@@ -2,6 +2,7 @@ import SwiftUI
 
 enum MobileAppTheme: String, CaseIterable, Identifiable {
     case nest
+    case darkNest
     case system
     case light
     case dark
@@ -11,6 +12,7 @@ enum MobileAppTheme: String, CaseIterable, Identifiable {
     var label: String {
         switch self {
         case .nest: return "Nest"
+        case .darkNest: return "Dark Nest"
         case .system: return "System"
         case .light: return "Light"
         case .dark: return "Dark"
@@ -20,14 +22,15 @@ enum MobileAppTheme: String, CaseIterable, Identifiable {
     var colorScheme: ColorScheme? {
         switch self {
         case .nest, .light: return .light
+        case .darkNest, .dark: return .dark
         case .system: return nil
-        case .dark: return .dark
         }
     }
 
     var palette: NestThemePalette? {
         switch self {
         case .nest: return .nest
+        case .darkNest: return .darkNest
         case .system, .light, .dark: return nil
         }
     }

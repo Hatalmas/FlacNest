@@ -112,32 +112,63 @@ final class PlaybackController {
         MediaRemoteController.shared.refresh(from: self)
     }
 
-    func restoreLastPlayback(from library: FlacNestLibrary) {
+    func restoreCachedPlaybackIfAvailable() {
         guard !hasAttemptedRestore else { return }
-        hasAttemptedRestore = true
+        guard AppSettings.saveLastPlayedPosition,
+              let state = AppSettings.lastPlaybackState,
+              let cachedAlbum = state.cachedAlbum,
+              cachedAlbum.flacRelativePath == state.flacRelativePath,
+              let root = libraryRoot else {
+            return
+        }
 
+        let flacURL = root.appendingPathComponent(state.flacRelativePath)
+        guard FileManager.default.fileExists(atPath: flacURL.path) else { return }
+
+        hasAttemptedRestore = true
+        load(
+            album: cachedAlbum,
+            trackIndex: state.trackIndex,
+            seekTo: state.positionSeconds
+        )
+    }
+
+    func restoreLastPlayback(from library: FlacNestLibrary) {
         guard AppSettings.saveLastPlayedPosition,
               let state = AppSettings.lastPlaybackState else {
+            if !hasAttemptedRestore {
+                hasAttemptedRestore = true
+            }
+            return
+        }
+
+        if hasAttemptedRestore {
+            if let album = library.albums.first(where: { $0.id == state.albumID }) {
+                updateAlbumMetadataIfPlaying(album)
+                saveResumeStateIfNeeded()
+            }
             return
         }
 
         guard let album = library.albums.first(where: { $0.id == state.albumID }) else {
-            AppSettings.lastPlaybackState = nil
             return
         }
 
         guard album.flacRelativePath == state.flacRelativePath,
               let root = libraryRoot else {
             AppSettings.lastPlaybackState = nil
+            hasAttemptedRestore = true
             return
         }
 
         let flacURL = root.appendingPathComponent(state.flacRelativePath)
         guard FileManager.default.fileExists(atPath: flacURL.path) else {
             AppSettings.lastPlaybackState = nil
+            hasAttemptedRestore = true
             return
         }
 
+        hasAttemptedRestore = true
         load(
             album: album,
             trackIndex: state.trackIndex,
@@ -153,7 +184,8 @@ final class PlaybackController {
             albumID: album.id,
             flacRelativePath: album.flacRelativePath,
             trackIndex: currentTrackIndex,
-            positionSeconds: currentTime
+            positionSeconds: currentTime,
+            cachedAlbum: album
         )
         lastResumeSave = Date()
     }

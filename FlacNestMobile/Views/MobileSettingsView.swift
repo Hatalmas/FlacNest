@@ -24,7 +24,7 @@ struct MobileSettingsView: View {
             } header: {
                 Text("Appearance")
             } footer: {
-                Text("Nest uses FlacNest cream, green, and brown tones. System follows your device appearance.")
+                Text("Nest and Dark Nest use FlacNest cream, green, and brown tones. System follows your device appearance.")
             }
 
             Section {

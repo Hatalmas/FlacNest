@@ -11,50 +11,104 @@ extension Image {
 }
 
 struct TransportControls: View {
+    enum Style {
+        case standard
+        case player
+    }
+
     var playback: PlaybackController
+    var style: Style = .standard
     var onEject: (() -> Void)? = nil
 
+    @Environment(\.nestThemePalette) private var palette
+
+    private var isDisabled: Bool { playback.currentAlbum == nil }
+
     var body: some View {
-        HStack(spacing: 16) {
-            Group {
-                Button(action: { playback.previousTrack() }) {
-                    Image(systemName: "backward.fill")
-                }
-                .help("Previous track (⌘←)")
+        HStack(spacing: style == .player ? 20 : 16) {
+            transportButton(
+                systemName: "backward.fill",
+                role: .secondary,
+                help: "Previous track (⌘←)",
+                action: { playback.previousTrack() }
+            )
 
-                if playback.isPlaying {
-                    Button(action: { playback.pause() }) {
-                        Image(systemName: "pause.fill")
-                    }
-                    .help("Pause (Space)")
-                } else {
-                    Button(action: { playback.play() }) {
-                        Image(systemName: "play.fill")
-                    }
-                    .help("Play (Space)")
-                }
-
-                Button(action: { playback.stop() }) {
-                    Image(systemName: "stop.fill")
-                }
-                .help("Stop (⌘.)")
-
-                Button(action: { playback.nextTrack() }) {
-                    Image(systemName: "forward.fill")
-                }
-                .help("Next track (⌘→)")
+            if playback.isPlaying {
+                transportButton(
+                    systemName: "pause.fill",
+                    role: .primary,
+                    help: "Pause (Space)",
+                    action: { playback.pause() }
+                )
+            } else {
+                transportButton(
+                    systemName: "play.fill",
+                    role: .primary,
+                    help: "Play (Space)",
+                    action: { playback.play() }
+                )
             }
-            .disabled(playback.currentAlbum == nil)
+
+            transportButton(
+                systemName: "stop.fill",
+                role: .secondary,
+                help: "Stop (⌘.)",
+                action: { playback.stop() }
+            )
+
+            transportButton(
+                systemName: "forward.fill",
+                role: .secondary,
+                help: "Next track (⌘→)",
+                action: { playback.nextTrack() }
+            )
 
             if let onEject {
-                Button(action: onEject) {
-                    Image(systemName: "eject.fill")
-                }
-                .help("Eject — scan CD barcode (⌘⇧E)")
+                transportButton(
+                    systemName: "eject.fill",
+                    role: .secondary,
+                    help: "Eject — scan CD barcode (⌘⇧E)",
+                    action: onEject
+                )
             }
         }
+    }
+
+    private enum ButtonRole {
+        case primary
+        case secondary
+    }
+
+    @ViewBuilder
+    private func transportButton(
+        systemName: String,
+        role: ButtonRole,
+        help: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            styledIcon(systemName: systemName, role: role)
+        }
         .buttonStyle(.borderless)
-        .font(.title2)
+        .help(help)
+        .disabled(isDisabled)
+    }
+
+    @ViewBuilder
+    private func styledIcon(systemName: String, role: ButtonRole) -> some View {
+        let image = Image(systemName: systemName)
+            .font(role == .primary && style == .player ? .largeTitle : .title2)
+
+        if style == .player {
+            switch role {
+            case .primary:
+                image.foregroundStyle(palette?.accent ?? Color.accentColor)
+            case .secondary:
+                image.foregroundStyle(palette?.primary ?? Color.primary)
+            }
+        } else {
+            image
+        }
     }
 }
 
@@ -409,8 +463,9 @@ enum PlayerArtworkSizing {
     static let defaultSize: CGFloat = 128
     static let horizontalPadding: CGFloat = 40
     static let rowSpacing: CGFloat = 14
-    static let toolbarWidth: CGFloat = 44
+    static let toolbarWidth: CGFloat = 52
     static let headerVerticalPadding: CGFloat = 24
+    static let displayPadding: CGFloat = 12
 
     static func maxSize(forWidth width: CGFloat, showsSpinningCD: Bool) -> CGFloat {
         let contentWidth = max(width, minSize)
@@ -426,6 +481,34 @@ enum PlayerArtworkSizing {
 
     static func clamp(_ size: CGFloat, forWidth width: CGFloat, showsSpinningCD: Bool) -> CGFloat {
         max(minSize, min(size, maxSize(forWidth: width, showsSpinningCD: showsSpinningCD)))
+    }
+}
+
+struct PlayerToolbarIconGroup<Content: View>: View {
+    @Environment(\.nestThemePalette) private var palette
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        VStack(spacing: 10) {
+            content()
+        }
+        .font(.title3)
+        .labelStyle(.iconOnly)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 12)
+        .background {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(groupBackground)
+        }
+        .compositingGroup()
+        .shadow(color: .black.opacity(0.22), radius: 8, x: 0, y: 4)
+    }
+
+    private var groupBackground: Color {
+        if let palette {
+            return palette.background
+        }
+        return Color(nsColor: .windowBackgroundColor)
     }
 }
 
@@ -464,6 +547,8 @@ struct AlbumArtworkImage: View {
                 .frame(width: caseWidth, height: size)
         }
         .frame(width: caseWidth, height: size)
+        .compositingGroup()
+        .shadow(color: .black.opacity(0.22), radius: 8, x: 0, y: 4)
     }
 
     @ViewBuilder
@@ -580,6 +665,7 @@ struct PlayerArtworkHeaderView<Trailing: View>: View {
             .zIndex(2)
         }
         .frame(width: clusterWidth, height: artworkSize, alignment: .leading)
+        .padding(PlayerArtworkSizing.displayPadding)
     }
 
     private var spinningCDHelpText: String {

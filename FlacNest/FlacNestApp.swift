@@ -31,7 +31,7 @@ struct FlacNestApp: App {
                 )
                 .onReceive(NotificationCenter.default.publisher(for: .flacNestLibraryRootDidChange)) { _ in
                     playback.configure(libraryRoot: AppSettings.libraryRootURL)
-                    libraryVM.loadFromDisk()
+                    libraryVM.reloadFromDisk()
                 }
                 .onReceive(NotificationCenter.default.publisher(for: .flacNestLibraryDidLoad)) { _ in
                     playback.restoreLastPlayback(from: libraryVM.library)
@@ -62,7 +62,10 @@ struct FlacNestApp: App {
                 .environmentObject(barcodeEject)
                 .onReceive(NotificationCenter.default.publisher(for: .flacNestLibraryRootDidChange)) { _ in
                     playback.configure(libraryRoot: AppSettings.libraryRootURL)
-                    libraryVM.loadFromDisk()
+                    libraryVM.reloadFromDisk()
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .flacNestLibraryDidLoad)) { _ in
+                    playback.restoreLastPlayback(from: libraryVM.library)
                 }
                 .onAppear {
                     configureSharedPlayback()
@@ -83,7 +86,7 @@ struct FlacNestApp: App {
                 .environmentObject(libraryVM)
                 .onReceive(NotificationCenter.default.publisher(for: .flacNestLibraryRootDidChange)) { _ in
                     playback.configure(libraryRoot: AppSettings.libraryRootURL)
-                    libraryVM.loadFromDisk()
+                    libraryVM.reloadFromDisk()
                 }
                 .appTheme(theme)
         }
@@ -104,6 +107,7 @@ struct FlacNestApp: App {
         playback.orderedAlbumsProvider = {
             LibraryAlbumSorting.sorted(libraryVM.library.albums, by: libraryVM.sortMode)
         }
+        playback.restoreCachedPlaybackIfAvailable()
         libraryVM.loadFromDisk()
         MediaRemoteController.shared.configure(playback: playback)
     }

@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 
 struct AlbumMetadataPreviewView: View {
+    @Environment(\.nestThemePalette) private var palette
     @EnvironmentObject private var libraryVM: LibraryViewModel
 
     let album: LibraryAlbum?
@@ -17,6 +18,7 @@ struct AlbumMetadataPreviewView: View {
                     }
                     .padding()
                 }
+                .nestThemedScrollSurface()
             } else {
                 ContentUnavailableView(
                     "No Album Selected",
@@ -26,7 +28,8 @@ struct AlbumMetadataPreviewView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(.background)
+        .nestThemedScreenBackground()
+        .nestThemedGroupBoxes()
     }
 
     private func artworkSection(for album: LibraryAlbum) -> some View {
@@ -34,8 +37,7 @@ struct AlbumMetadataPreviewView: View {
             artworkPreview(for: album)
                 .frame(maxWidth: .infinity)
                 .frame(height: 240)
-                .background(Color.secondary.opacity(0.12))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .nestThemedPlaceholderSurface(cornerRadius: 8)
                 .padding(4)
         }
     }
@@ -49,7 +51,7 @@ struct AlbumMetadataPreviewView: View {
         } else {
             Image(systemName: "music.note")
                 .font(.system(size: 48))
-                .foregroundStyle(.secondary)
+                .nestSecondaryForeground()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
@@ -78,32 +80,45 @@ struct AlbumMetadataPreviewView: View {
                     Text("Length").frame(width: 56, alignment: .trailing)
                 }
                 .font(.caption.bold())
-                .foregroundStyle(.secondary)
+                .nestSecondaryForeground()
                 .padding(.horizontal, 8)
                 .padding(.vertical, 6)
 
-                Divider()
+                trackDivider
 
                 ForEach(album.tracks) { track in
                     HStack(spacing: 8) {
                         Text("\(track.number)")
                             .frame(width: 28, alignment: .trailing)
-                            .foregroundStyle(.secondary)
+                            .nestSecondaryForeground()
 
                         Text(track.title)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .lineLimit(2)
+                            .nestPrimaryForeground()
 
                         Text(TrackTimeFormatting.formatDuration(start: track.startSeconds, end: track.endSeconds))
                             .frame(width: 56, alignment: .trailing)
                             .monospacedDigit()
-                            .foregroundStyle(.secondary)
+                            .nestSecondaryForeground()
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
 
-                    Divider()
+                    trackDivider
                 }
+            }
+        }
+    }
+
+    private var trackDivider: some View {
+        Group {
+            if let palette {
+                Rectangle()
+                    .fill(palette.secondary.opacity(0.25))
+                    .frame(height: 1)
+            } else {
+                Divider()
             }
         }
     }
@@ -111,6 +126,7 @@ struct AlbumMetadataPreviewView: View {
     private func metadataRow(_ label: String, value: String?) -> some View {
         GridRow {
             Text(label)
+                .nestSecondaryForeground()
             metadataValue(value)
                 .textSelection(.enabled)
         }
@@ -119,8 +135,13 @@ struct AlbumMetadataPreviewView: View {
     @ViewBuilder
     private func metadataValue(_ value: String?, placeholder: String = "—") -> some View {
         let text = metadataValueText(value)
-        Text(text)
-            .foregroundStyle(text == placeholder ? .secondary : .primary)
+        if text == placeholder {
+            Text(text)
+                .nestSecondaryForeground()
+        } else {
+            Text(text)
+                .nestPrimaryForeground()
+        }
     }
 
     private func metadataValueText(_ value: String?) -> String {

@@ -5,6 +5,7 @@ enum AppTheme: String, CaseIterable, Identifiable {
     case light
     case dark
     case nest
+    case darkNest
 
     var id: String { rawValue }
 
@@ -14,6 +15,7 @@ enum AppTheme: String, CaseIterable, Identifiable {
         case .light: return "Light"
         case .dark: return "Dark"
         case .nest: return "Nest"
+        case .darkNest: return "Dark Nest"
         }
     }
 
@@ -21,13 +23,14 @@ enum AppTheme: String, CaseIterable, Identifiable {
         switch self {
         case .system: return nil
         case .light, .nest: return .light
-        case .dark: return .dark
+        case .dark, .darkNest: return .dark
         }
     }
 
     var palette: NestThemePalette? {
         switch self {
         case .nest: return .nest
+        case .darkNest: return .darkNest
         case .system, .light, .dark: return nil
         }
     }
