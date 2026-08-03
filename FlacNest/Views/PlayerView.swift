@@ -74,6 +74,7 @@ struct PlayerView: View {
             minWidth: PlayerWindowSizing.minWidth,
             minHeight: PlayerWindowSizing.minHeight
         )
+        .nestThemedScreenBackground()
         .onAppear {
             artworkSize = AppSettings.playerArtworkSize(trackListVisible: showTrackList)
             PlayerWindowSizing.restoreSize(trackListVisible: showTrackList)

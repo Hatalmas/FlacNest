@@ -13,8 +13,8 @@ struct FlacNestApp: App {
     @StateObject private var libraryWindowTracker = LibraryWindowTracker()
     @StateObject private var barcodeEject = BarcodeEjectController()
 
-    private var preferredColorScheme: ColorScheme? {
-        (AppTheme(rawValue: themeRawValue) ?? .system).colorScheme
+    private var theme: AppTheme {
+        AppTheme(rawValue: themeRawValue) ?? .system
     }
 
     var body: some Scene {
@@ -42,7 +42,7 @@ struct FlacNestApp: App {
                 .onAppear {
                     configureSharedPlayback()
                 }
-                .preferredColorScheme(preferredColorScheme)
+                .appTheme(theme)
         }
         .windowResizability(.contentMinSize)
         .defaultSize(
@@ -67,24 +67,32 @@ struct FlacNestApp: App {
                 .onAppear {
                     configureSharedPlayback()
                 }
-                .preferredColorScheme(preferredColorScheme)
+                .appTheme(theme)
         }
         .defaultSize(width: 720, height: 560)
 
+        Window("Prepare Export", id: "prepareExport") {
+            PrepareExportView()
+                .environmentObject(libraryVM)
+                .appTheme(theme)
+        }
+        .defaultSize(width: 540, height: 520)
+
         Settings {
             SettingsView()
+                .environmentObject(libraryVM)
                 .onReceive(NotificationCenter.default.publisher(for: .flacNestLibraryRootDidChange)) { _ in
                     playback.configure(libraryRoot: AppSettings.libraryRootURL)
                     libraryVM.loadFromDisk()
                 }
-                .preferredColorScheme(preferredColorScheme)
+                .appTheme(theme)
         }
 
         MenuBarExtra(isInserted: $showStatusMenu) {
             StatusMenuContent()
                 .environment(playback)
                 .environmentObject(libraryVM)
-                .preferredColorScheme(preferredColorScheme)
+                .appTheme(theme)
         } label: {
             StatusMenuBarLabel()
         }

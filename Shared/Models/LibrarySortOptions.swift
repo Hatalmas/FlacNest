@@ -1,9 +1,29 @@
 import Foundation
 
-enum LibraryGroupMode: String, CaseIterable, Identifiable {
+enum LibrarySortMode: String, CaseIterable, Identifiable, Codable {
+    case artist
+    case album
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .artist: return "Artist"
+        case .album: return "Album Name"
+        }
+    }
+}
+
+struct PortableAlbumSection: Identifiable, Equatable {
+    let id: String
+    let title: String
+    let albums: [PortableAlbum]
+}
+
+enum PortableLibraryGroupMode: String, CaseIterable, Identifiable, Codable {
     case none
     case artist
-    case parentDirectory
+    case parentFolder
 
     var id: String { rawValue }
 
@@ -11,37 +31,13 @@ enum LibraryGroupMode: String, CaseIterable, Identifiable {
         switch self {
         case .none: return "None"
         case .artist: return "Artist"
-        case .parentDirectory: return "Parent Folder"
+        case .parentFolder: return "Parent Folder"
         }
     }
 }
 
-struct LibraryAlbumSection: Identifiable {
-    let id: String
-    let title: String
-    let albums: [LibraryAlbum]
-}
-
-extension LibraryAlbum {
-    var albumDirectoryRelativePath: String {
-        (cueRelativePath as NSString).deletingLastPathComponent
-    }
-
-    /// Parent of the folder containing the CUE file (often the artist folder).
-    var parentDirectoryName: String {
-        let parentPath = (albumDirectoryRelativePath as NSString).deletingLastPathComponent
-        let name = (parentPath as NSString).lastPathComponent
-        return name.isEmpty ? "Unknown" : name
-    }
-
-    var sortArtist: String {
-        let trimmed = performer.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? parentDirectoryName : trimmed
-    }
-}
-
-enum LibraryAlbumSorting {
-    static func sorted(_ albums: [LibraryAlbum], by sortMode: LibrarySortMode) -> [LibraryAlbum] {
+enum MobileLibrarySorting {
+    static func sorted(_ albums: [MobileLibraryAlbum], by sortMode: LibrarySortMode) -> [MobileLibraryAlbum] {
         albums.sorted { lhs, rhs in
             switch sortMode {
             case .artist:
@@ -61,26 +57,26 @@ enum LibraryAlbumSorting {
     }
 
     static func sections(
-        from albums: [LibraryAlbum],
+        from albums: [MobileLibraryAlbum],
         sortMode: LibrarySortMode,
-        groupMode: LibraryGroupMode
-    ) -> [LibraryAlbumSection] {
+        groupMode: PortableLibraryGroupMode
+    ) -> [MobileLibraryAlbumSection] {
         let sorted = sorted(albums, by: sortMode)
 
         switch groupMode {
         case .none:
-            return [LibraryAlbumSection(id: "all", title: "", albums: sorted)]
+            return [MobileLibraryAlbumSection(id: "all", title: "", albums: sorted)]
         case .artist:
             return groupedSections(sorted, groupKey: \.sortArtist)
-        case .parentDirectory:
-            return groupedSections(sorted, groupKey: \.parentDirectoryName)
+        case .parentFolder:
+            return groupedSections(sorted, groupKey: \.parentFolder)
         }
     }
 
     private static func groupedSections(
-        _ albums: [LibraryAlbum],
-        groupKey: KeyPath<LibraryAlbum, String>
-    ) -> [LibraryAlbumSection] {
+        _ albums: [MobileLibraryAlbum],
+        groupKey: KeyPath<MobileLibraryAlbum, String>
+    ) -> [MobileLibraryAlbumSection] {
         let grouped = Dictionary(grouping: albums) { album in
             album[keyPath: groupKey]
         }
@@ -88,7 +84,7 @@ enum LibraryAlbumSorting {
         return grouped.keys
             .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
             .map { key in
-                LibraryAlbumSection(
+                MobileLibraryAlbumSection(
                     id: key,
                     title: key,
                     albums: grouped[key] ?? []

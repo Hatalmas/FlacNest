@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.openURL) private var openURL
+    @EnvironmentObject private var libraryVM: LibraryViewModel
     @State private var libraryPath: String = AppSettings.libraryRootURL?.path ?? ""
     @State private var useCustomXMLLocation: Bool = AppSettings.useCustomLibraryXMLLocation
     @State private var customXMLPath: String = AppSettings.libraryXMLDirectoryURL?.path ?? ""
@@ -10,6 +11,8 @@ struct SettingsView: View {
     @State private var showStatusMenu: Bool = AppSettings.showStatusMenu
     @State private var continuousAlbumPlay: Bool = AppSettings.continuousAlbumPlay
     @State private var theme: AppTheme = AppSettings.theme
+    @State private var exportStatusMessage: String?
+    @State private var exportErrorMessage: String?
 
     var body: some View {
         Form {
@@ -75,9 +78,8 @@ struct SettingsView: View {
                         Text(theme.label).tag(theme)
                     }
                 }
-                .pickerStyle(.segmented)
             } footer: {
-                Text("Choose Light or Dark, or follow your Mac’s appearance setting.")
+                Text("Nest uses FlacNest cream, green, and brown tones. Light, Dark, and System follow your Mac appearance.")
             }
 
             Section {
@@ -90,6 +92,28 @@ struct SettingsView: View {
             }
 
             Section {
+                Button("Export Library for iPhone/iPad…") {
+                    exportPortableLibrary()
+                }
+                .disabled(libraryVM.library.albums.isEmpty || libraryVM.isScanning)
+
+                if let exportStatusMessage {
+                    Text(exportStatusMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                }
+
+                if let exportErrorMessage {
+                    Text(exportErrorMessage)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+            } footer: {
+                Text("Creates a read-only .flacnestexport package containing album metadata and artwork for the FlacNest mobile app. Audio files are not included in this first version.")
+            }
+
+            Section {
                 Text("Images provided by Vecteezy.com")
                 Button("Go to Vecteezy.com") {
                     openURL(URL(string: "https://www.vecteezy.com")!)
@@ -97,6 +121,7 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
+        .nestThemedScrollSurface()
         .frame(width: 480)
         .padding()
         .onAppear {
@@ -199,5 +224,21 @@ struct SettingsView: View {
         showStatusMenu = AppSettings.showStatusMenu
         continuousAlbumPlay = AppSettings.continuousAlbumPlay
         theme = AppSettings.theme
+        exportStatusMessage = nil
+        exportErrorMessage = nil
+    }
+
+    private func exportPortableLibrary() {
+        exportErrorMessage = nil
+        exportStatusMessage = nil
+
+        do {
+            let packageURL = try PortableLibraryExportPresenter.exportLibrary(libraryVM.library) { album in
+                libraryVM.artworkURL(for: album)
+            }
+            exportStatusMessage = packageURL.map { "Exported to \($0.path)" } ?? "Export finished."
+        } catch {
+            exportErrorMessage = error.localizedDescription
+        }
     }
 }

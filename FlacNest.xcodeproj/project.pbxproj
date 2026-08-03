@@ -11,35 +11,73 @@
 		481B4EA4D3B44131B1900241 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933EDE1C15F34CA28C687FCB /* SettingsView.swift */; };
 		52D20E3AAB4A4FA6937476FF /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF7E0354447347E2A4D1D633 /* AppDelegate.swift */; };
 		6FCBD5DCE2E6401DB05BF4F5 /* PlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE4AC6E7AC294B1CA4C026CE /* PlaybackController.swift */; };
-		MEDIAREMOTECTRL00000000001 /* MediaRemoteController.swift in Sources */ = {isa = PBXBuildFile; fileRef = MEDIAREMOTECTRL00000000002 /* MediaRemoteController.swift */; };
-		CUEFILEREADER00000000001 /* CUEFileReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CUEFILEREADER00000000002 /* CUEFileReader.swift */; };
-		LIBXMLLOC000000000000001 /* LibraryXMLLocationChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = LIBXMLLOC000000000000002 /* LibraryXMLLocationChange.swift */; };
-		FLACMETAREADER00000000001 /* FLACMetadataReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = FLACMETAREADER00000000002 /* FLACMetadataReader.swift */; };
-		CUEMETAREPAIR000000000001 /* CUEMetadataRepair.swift in Sources */ = {isa = PBXBuildFile; fileRef = CUEMETAREPAIR000000000002 /* CUEMetadataRepair.swift */; };
 		7340A06B94064A788C129404 /* FlacNestLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1027D3AE9647BF8B2779AB /* FlacNestLibraryStore.swift */; };
 		8EFB77A1B5654961B532CC26 /* PlayerChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25449D342ECE4BE588E8FAAC /* PlayerChrome.swift */; };
 		9286936E5259411C9EACBE81 /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 254F88484E9B4014B670207E /* PlayerView.swift */; };
 		98460537EA224F6D99E28175 /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3210805580DD44F782F1DFDA /* LibraryViewModel.swift */; };
+		ALBUMARTWORK0000000000001 /* AlbumArtworkImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = ALBUMARTWORK0000000000002 /* AlbumArtworkImporter.swift */; };
+		ALBUMMETADATA000000000001 /* AlbumMetadataEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ALBUMMETADATA000000000002 /* AlbumMetadataEditorView.swift */; };
+		ALBUMMETADATAPREV00000001 /* AlbumMetadataPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ALBUMMETADATAPREV00000002 /* AlbumMetadataPreviewView.swift */; };
+		APPTHEME000000000000000001 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = APPTHEME000000000000000002 /* AppTheme.swift */; };
+		ARTWORKCACHE00000000000001 /* ArtworkImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = ARTWORKCACHE00000000000002 /* ArtworkImageCache.swift */; };
 		B8B7C08A1ABE491C8DD15800 /* LibraryAlbum.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BADF80C6D4C4825A3D3C7BE /* LibraryAlbum.swift */; };
+		BARCODEEJECT00000000000001 /* BarcodeEjectController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BARCODEEJECT00000000000002 /* BarcodeEjectController.swift */; };
+		BARCODEEJECT00000000000003 /* BarcodeEjectSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BARCODEEJECT00000000000004 /* BarcodeEjectSheet.swift */; };
+		BARCODESCAN000000000000001 /* BarcodeScannerSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BARCODESCAN000000000000002 /* BarcodeScannerSession.swift */; };
+		CUEFILEREADER00000000001 /* CUEFileReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CUEFILEREADER00000000002 /* CUEFileReader.swift */; };
+		CUEMETAREPAIR000000000001 /* CUEMetadataRepair.swift in Sources */ = {isa = PBXBuildFile; fileRef = CUEMETAREPAIR000000000002 /* CUEMetadataRepair.swift */; };
 		D077439A5BF642E2B308468D /* CUEParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D36ED3A4ECF428EB28C6FF0 /* CUEParser.swift */; };
 		D6551E16AEE14122829696B7 /* LibraryManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25D0F4898D0B47CB8B72B311 /* LibraryManagerView.swift */; };
 		E344744CC50344B59769B0E2 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = C61C56BFEA324EC9AE90789E /* AppSettings.swift */; };
 		E99EAFC0A1BB48FDA27E650D /* FlacNestApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03655B3C213432FACF4FC37 /* FlacNestApp.swift */; };
+		EXPORT00000000000000000001 /* PortableLibraryExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EXPORT00000000000000000002 /* PortableLibraryExporter.swift */; };
+		EXPORT00000000000000000003 /* PortableLibraryExportPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EXPORT00000000000000000004 /* PortableLibraryExportPresenter.swift */; };
 		F0E9D014758B4BA2A3D23D0E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 795A41C3CFF84E27AB58D236 /* Assets.xcassets */; };
-		ALBUMMETADATA000000000001 /* AlbumMetadataEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ALBUMMETADATA000000000002 /* AlbumMetadataEditorView.swift */; };
-		ALBUMARTWORK0000000000001 /* AlbumArtworkImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = ALBUMARTWORK0000000000002 /* AlbumArtworkImporter.swift */; };
-		TRACKTIMEFMT0000000000001 /* TrackTimeFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRACKTIMEFMT0000000000002 /* TrackTimeFormatting.swift */; };
-		ARTWORKCACHE00000000000001 /* ArtworkImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = ARTWORKCACHE00000000000002 /* ArtworkImageCache.swift */; };
+		FLACMETAREADER00000000001 /* FLACMetadataReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = FLACMETAREADER00000000002 /* FLACMetadataReader.swift */; };
 		FLACNESTCMDS0000000000001 /* FlacNestCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = FLACNESTCMDS0000000000002 /* FlacNestCommands.swift */; };
 		FLACNESTFOCUS000000000001 /* FlacNestFocusedValues.swift in Sources */ = {isa = PBXBuildFile; fileRef = FLACNESTFOCUS000000000002 /* FlacNestFocusedValues.swift */; };
-		LIBDISPLAYOPTS000000000001 /* LibraryDisplayOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = LIBDISPLAYOPTS000000000002 /* LibraryDisplayOptions.swift */; };
 		LASTPLAYBACK0000000000001 /* LastPlaybackState.swift in Sources */ = {isa = PBXBuildFile; fileRef = LASTPLAYBACK0000000000002 /* LastPlaybackState.swift */; };
-		APPTHEME000000000000000001 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = APPTHEME000000000000000002 /* AppTheme.swift */; };
+		LIBDISPLAYOPTS000000000001 /* LibraryDisplayOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = LIBDISPLAYOPTS000000000002 /* LibraryDisplayOptions.swift */; };
+		LIBXMLLOC000000000000001 /* LibraryXMLLocationChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = LIBXMLLOC000000000000002 /* LibraryXMLLocationChange.swift */; };
+		MEDIAREMOTECTRL00000000001 /* MediaRemoteController.swift in Sources */ = {isa = PBXBuildFile; fileRef = MEDIAREMOTECTRL00000000002 /* MediaRemoteController.swift */; };
+		MOBILE00000000000000000001 /* FlacNestMobileApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILE00000000000000000002 /* FlacNestMobileApp.swift */; };
+		MOBILE00000000000000000005 /* MobileRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILE00000000000000000006 /* MobileRootView.swift */; };
+		MOBILE00000000000000000007 /* MobileLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILE00000000000000000008 /* MobileLibraryView.swift */; };
+		MOBILE00000000000000000009 /* MobileAlbumDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILE0000000000000000000A /* MobileAlbumDetailView.swift */; };
+		MOBILE0000000000000000000B /* MobilePlayerShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILE0000000000000000000C /* MobilePlayerShellView.swift */; };
+		MOBILE0000000000000000000D /* PortableLibraryManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHARED00000000000000000002 /* PortableLibraryManifest.swift */; };
+		MOBILE0000000000000000000E /* LibrarySortOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHARED00000000000000000004 /* LibrarySortOptions.swift */; };
+		MOBILE00000000000000000011 /* TrackTimeFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRACKTIMEFMT0000000000002 /* TrackTimeFormatting.swift */; };
+		MOBILE00000000000000000012 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = MOBILE00000000000000000013 /* Assets.xcassets */; };
+		MOBILEAPPTHEME000000000001 /* MobileAppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILEAPPTHEME000000000002 /* MobileAppTheme.swift */; };
+		MOBILEARTCACHE000000000001 /* MobileArtworkImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILEARTCACHE000000000002 /* MobileArtworkImageCache.swift */; };
+		MOBILELIBLOADER00000000001 /* FlacNestMobileLibraryLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILELIBLOADER00000000002 /* FlacNestMobileLibraryLoader.swift */; };
+		MOBILELIBMODELS00000000001 /* MobileLibraryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILELIBMODELS00000000002 /* MobileLibraryModels.swift */; };
+		MOBILELIBMODELS00000000003 /* MobileLibraryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILELIBMODELS00000000002 /* MobileLibraryModels.swift */; };
+		MOBILELIBSTORAGE00000000001 /* MobileLibraryStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILELIBSTORAGE00000000002 /* MobileLibraryStorage.swift */; };
+		MOBILELIBSTORE000000000001 /* MobileLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILELIBSTORE000000000002 /* MobileLibraryStore.swift */; };
+		MOBILEPLAYBACK000000000001 /* MobilePlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILEPLAYBACK000000000002 /* MobilePlaybackController.swift */; };
+		MOBILENOWPLAYING00000000001 /* MobileNowPlayingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILENOWPLAYING00000000002 /* MobileNowPlayingController.swift */; };
+		MOBILESETTINGS000000000002 /* MobileSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILESETTINGS000000000001 /* MobileSettingsView.swift */; };
+		NESTTHEME00000000000000001 /* NestThemePalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = NESTTHEME00000000000000002 /* NestThemePalette.swift */; };
+		NESTTHEME00000000000000003 /* NestThemePalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = NESTTHEME00000000000000002 /* NestThemePalette.swift */; };
+		CDCASELAYOUT000000000000001 /* CDCaseArtworkLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDCASELAYOUT000000000000002 /* CDCaseArtworkLayout.swift */; };
+		CDCASELAYOUT000000000000003 /* CDCaseArtworkLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDCASELAYOUT000000000000002 /* CDCaseArtworkLayout.swift */; };
+		MOBILEPLAYERCHROME000000001 /* MobilePlayerChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILEPLAYERCHROME000000002 /* MobilePlayerChrome.swift */; };
+		PREPAREXPORT000000000001 /* MobileExportBitrate.swift in Sources */ = {isa = PBXBuildFile; fileRef = PREPAREXPORT000000000002 /* MobileExportBitrate.swift */; };
+		PREPAREXPORT000000000003 /* ExportProcessLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = PREPAREXPORT000000000004 /* ExportProcessLog.swift */; };
+		PREPAREXPORT000000000005 /* FFmpegLocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = PREPAREXPORT000000000006 /* FFmpegLocator.swift */; };
+		PREPAREXPORT000000000007 /* FFmpegConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = PREPAREXPORT000000000008 /* FFmpegConverter.swift */; };
+		PREPAREXPORT000000000009 /* FlacNestMobileLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = PREPAREXPORT00000000000A /* FlacNestMobileLibraryStore.swift */; };
+		PREPAREXPORT00000000000B /* MobileLibraryPreparer.swift in Sources */ = {isa = PBXBuildFile; fileRef = PREPAREXPORT00000000000C /* MobileLibraryPreparer.swift */; };
+		PREPAREXPORT00000000000D /* PrepareExportViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = PREPAREXPORT00000000000E /* PrepareExportViewModel.swift */; };
+		PREPAREXPORT00000000000F /* PrepareExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PREPAREXPORT000000000010 /* PrepareExportView.swift */; };
+		PREPAREXPORT000000000011 /* ExportCancellation.swift in Sources */ = {isa = PBXBuildFile; fileRef = PREPAREXPORT000000000012 /* ExportCancellation.swift */; };
+		SHARED00000000000000000001 /* PortableLibraryManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHARED00000000000000000002 /* PortableLibraryManifest.swift */; };
+		SHARED00000000000000000003 /* LibrarySortOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHARED00000000000000000004 /* LibrarySortOptions.swift */; };
+		SHARED00000000000000000005 /* PortableLibraryLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHARED00000000000000000006 /* PortableLibraryLoader.swift */; };
 		STATUSMENU0000000000000001 /* StatusMenuContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = STATUSMENU0000000000000002 /* StatusMenuContent.swift */; };
-		BARCODESCAN000000000000001 /* BarcodeScannerSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BARCODESCAN000000000000002 /* BarcodeScannerSession.swift */; };
-		BARCODEEJECT00000000000001 /* BarcodeEjectController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BARCODEEJECT00000000000002 /* BarcodeEjectController.swift */; };
-		ALBUMMETADATAPREV00000001 /* AlbumMetadataPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ALBUMMETADATAPREV00000002 /* AlbumMetadataPreviewView.swift */; };
-		BARCODEEJECT00000000000003 /* BarcodeEjectSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BARCODEEJECT00000000000004 /* BarcodeEjectSheet.swift */; };
+		TRACKTIMEFMT0000000000001 /* TrackTimeFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRACKTIMEFMT0000000000002 /* TrackTimeFormatting.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -56,32 +94,75 @@
 		933EDE1C15F34CA28C687FCB /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A018AB49EFC34555AA5B5FD7 /* FlacNest.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FlacNest.entitlements; sourceTree = "<group>"; };
 		A03655B3C213432FACF4FC37 /* FlacNestApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlacNestApp.swift; sourceTree = "<group>"; };
-		C61C56BFEA324EC9AE90789E /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
-		DE4AC6E7AC294B1CA4C026CE /* PlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackController.swift; sourceTree = "<group>"; };
-		MEDIAREMOTECTRL00000000002 /* MediaRemoteController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaRemoteController.swift; sourceTree = "<group>"; };
-		CUEFILEREADER00000000002 /* CUEFileReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CUEFileReader.swift; sourceTree = "<group>"; };
-		LIBXMLLOC000000000000002 /* LibraryXMLLocationChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryXMLLocationChange.swift; sourceTree = "<group>"; };
-		FLACMETAREADER00000000002 /* FLACMetadataReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FLACMetadataReader.swift; sourceTree = "<group>"; };
-		CUEMETAREPAIR000000000002 /* CUEMetadataRepair.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CUEMetadataRepair.swift; sourceTree = "<group>"; };
-		EF7E0354447347E2A4D1D633 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		ALBUMMETADATA000000000002 /* AlbumMetadataEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumMetadataEditorView.swift; sourceTree = "<group>"; };
 		ALBUMARTWORK0000000000002 /* AlbumArtworkImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumArtworkImporter.swift; sourceTree = "<group>"; };
-		TRACKTIMEFMT0000000000002 /* TrackTimeFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackTimeFormatting.swift; sourceTree = "<group>"; };
+		ALBUMMETADATA000000000002 /* AlbumMetadataEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumMetadataEditorView.swift; sourceTree = "<group>"; };
+		ALBUMMETADATAPREV00000002 /* AlbumMetadataPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumMetadataPreviewView.swift; sourceTree = "<group>"; };
+		APPTHEME000000000000000002 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
 		ARTWORKCACHE00000000000002 /* ArtworkImageCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkImageCache.swift; sourceTree = "<group>"; };
+		BARCODEEJECT00000000000002 /* BarcodeEjectController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarcodeEjectController.swift; sourceTree = "<group>"; };
+		BARCODEEJECT00000000000004 /* BarcodeEjectSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarcodeEjectSheet.swift; sourceTree = "<group>"; };
+		BARCODESCAN000000000000002 /* BarcodeScannerSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarcodeScannerSession.swift; sourceTree = "<group>"; };
+		C61C56BFEA324EC9AE90789E /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		CUEFILEREADER00000000002 /* CUEFileReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CUEFileReader.swift; sourceTree = "<group>"; };
+		CUEMETAREPAIR000000000002 /* CUEMetadataRepair.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CUEMetadataRepair.swift; sourceTree = "<group>"; };
+		DE4AC6E7AC294B1CA4C026CE /* PlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackController.swift; sourceTree = "<group>"; };
+		EF7E0354447347E2A4D1D633 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		EXPORT00000000000000000002 /* PortableLibraryExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableLibraryExporter.swift; sourceTree = "<group>"; };
+		EXPORT00000000000000000004 /* PortableLibraryExportPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableLibraryExportPresenter.swift; sourceTree = "<group>"; };
+		FLACMETAREADER00000000002 /* FLACMetadataReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FLACMetadataReader.swift; sourceTree = "<group>"; };
 		FLACNESTCMDS0000000000002 /* FlacNestCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlacNestCommands.swift; sourceTree = "<group>"; };
 		FLACNESTFOCUS000000000002 /* FlacNestFocusedValues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlacNestFocusedValues.swift; sourceTree = "<group>"; };
-		LIBDISPLAYOPTS000000000002 /* LibraryDisplayOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryDisplayOptions.swift; sourceTree = "<group>"; };
 		LASTPLAYBACK0000000000002 /* LastPlaybackState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastPlaybackState.swift; sourceTree = "<group>"; };
-		APPTHEME000000000000000002 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+		LIBDISPLAYOPTS000000000002 /* LibraryDisplayOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryDisplayOptions.swift; sourceTree = "<group>"; };
+		LIBXMLLOC000000000000002 /* LibraryXMLLocationChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryXMLLocationChange.swift; sourceTree = "<group>"; };
+		MEDIAREMOTECTRL00000000002 /* MediaRemoteController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaRemoteController.swift; sourceTree = "<group>"; };
+		MOBILE00000000000000000002 /* FlacNestMobileApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlacNestMobileApp.swift; sourceTree = "<group>"; };
+		MOBILE00000000000000000006 /* MobileRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileRootView.swift; sourceTree = "<group>"; };
+		MOBILE00000000000000000008 /* MobileLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileLibraryView.swift; sourceTree = "<group>"; };
+		MOBILE0000000000000000000A /* MobileAlbumDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileAlbumDetailView.swift; sourceTree = "<group>"; };
+		MOBILE0000000000000000000C /* MobilePlayerShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobilePlayerShellView.swift; sourceTree = "<group>"; };
+		MOBILE00000000000000000013 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		MOBILE00000000000000000014 /* FlacNestMobile.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FlacNestMobile.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		MOBILEAPPTHEME000000000002 /* MobileAppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileAppTheme.swift; sourceTree = "<group>"; };
+		MOBILEARTCACHE000000000002 /* MobileArtworkImageCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileArtworkImageCache.swift; sourceTree = "<group>"; };
+		MOBILELIBLOADER00000000002 /* FlacNestMobileLibraryLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlacNestMobileLibraryLoader.swift; sourceTree = "<group>"; };
+		MOBILELIBMODELS00000000002 /* MobileLibraryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileLibraryModels.swift; sourceTree = "<group>"; };
+		MOBILELIBSTORAGE00000000002 /* MobileLibraryStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileLibraryStorage.swift; sourceTree = "<group>"; };
+		MOBILELIBSTORE000000000002 /* MobileLibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileLibraryStore.swift; sourceTree = "<group>"; };
+		MOBILEPLAYBACK000000000002 /* MobilePlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobilePlaybackController.swift; sourceTree = "<group>"; };
+		MOBILENOWPLAYING00000000002 /* MobileNowPlayingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileNowPlayingController.swift; sourceTree = "<group>"; };
+		MOBILESETTINGS000000000001 /* MobileSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileSettingsView.swift; sourceTree = "<group>"; };
+		NESTTHEME00000000000000002 /* NestThemePalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NestThemePalette.swift; sourceTree = "<group>"; };
+		CDCASELAYOUT000000000000002 /* CDCaseArtworkLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CDCaseArtworkLayout.swift; sourceTree = "<group>"; };
+		MOBILEPLAYERCHROME000000002 /* MobilePlayerChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobilePlayerChrome.swift; sourceTree = "<group>"; };
+		PREPAREXPORT000000000002 /* MobileExportBitrate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileExportBitrate.swift; sourceTree = "<group>"; };
+		PREPAREXPORT000000000004 /* ExportProcessLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportProcessLog.swift; sourceTree = "<group>"; };
+		PREPAREXPORT000000000006 /* FFmpegLocator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FFmpegLocator.swift; sourceTree = "<group>"; };
+		PREPAREXPORT000000000008 /* FFmpegConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FFmpegConverter.swift; sourceTree = "<group>"; };
+		PREPAREXPORT00000000000A /* FlacNestMobileLibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlacNestMobileLibraryStore.swift; sourceTree = "<group>"; };
+		PREPAREXPORT00000000000C /* MobileLibraryPreparer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileLibraryPreparer.swift; sourceTree = "<group>"; };
+		PREPAREXPORT00000000000E /* PrepareExportViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrepareExportViewModel.swift; sourceTree = "<group>"; };
+		PREPAREXPORT000000000010 /* PrepareExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrepareExportView.swift; sourceTree = "<group>"; };
+		PREPAREXPORT000000000012 /* ExportCancellation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportCancellation.swift; sourceTree = "<group>"; };
+		SCRIPT00000000000000000001 /* bundle-ffmpeg.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "bundle-ffmpeg.sh"; sourceTree = "<group>"; };
+		SCRIPT00000000000000000002 /* fetch-static-ffmpeg.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "fetch-static-ffmpeg.sh"; sourceTree = "<group>"; };
+		SHARED00000000000000000002 /* PortableLibraryManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableLibraryManifest.swift; sourceTree = "<group>"; };
+		SHARED00000000000000000004 /* LibrarySortOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrarySortOptions.swift; sourceTree = "<group>"; };
+		SHARED00000000000000000006 /* PortableLibraryLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableLibraryLoader.swift; sourceTree = "<group>"; };
+		SHARED00000000000000000008 /* PortableLibraryStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableLibraryStorage.swift; sourceTree = "<group>"; };
 		STATUSMENU0000000000000002 /* StatusMenuContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusMenuContent.swift; sourceTree = "<group>"; };
-		BARCODESCAN000000000000002 /* BarcodeScannerSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarcodeScannerSession.swift; sourceTree = "<group>"; };
-		BARCODEEJECT00000000000002 /* BarcodeEjectController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarcodeEjectController.swift; sourceTree = "<group>"; };
-		ALBUMMETADATAPREV00000002 /* AlbumMetadataPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumMetadataPreviewView.swift; sourceTree = "<group>"; };
-		BARCODEEJECT00000000000004 /* BarcodeEjectSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarcodeEjectSheet.swift; sourceTree = "<group>"; };
+		TRACKTIMEFMT0000000000002 /* TrackTimeFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackTimeFormatting.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		C6E6D226EF0C49BA9D3D5851 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		MOBILE00000000000000000015 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -114,6 +195,7 @@
 			isa = PBXGroup;
 			children = (
 				407D8C24F6264BDF871288DC /* FlacNest.app */,
+				MOBILE00000000000000000014 /* FlacNestMobile.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -122,17 +204,11 @@
 			isa = PBXGroup;
 			children = (
 				0F4A1DC3594F4876B000EDAE /* FlacNest */,
+				G1SHARED00000000000000001 /* Shared */,
+				G1MOBILE00000000000000001 /* FlacNestMobile */,
+				G1SCRIPTS00000000000000001 /* Scripts */,
 				17803E0F96F54783B49FF0BD /* Products */,
 			);
-			sourceTree = "<group>";
-		};
-		G1UTILS00000000000000001 /* Utils */ = {
-			isa = PBXGroup;
-			children = (
-				ARTWORKCACHE00000000000002 /* ArtworkImageCache.swift */,
-				TRACKTIMEFMT0000000000002 /* TrackTimeFormatting.swift */,
-			);
-			path = Utils;
 			sourceTree = "<group>";
 		};
 		G1COMPONENTS00000000000001 /* Components */ = {
@@ -143,15 +219,93 @@
 			path = Components;
 			sourceTree = "<group>";
 		};
+		G1MOBILE00000000000000001 /* FlacNestMobile */ = {
+			isa = PBXGroup;
+			children = (
+				MOBILE00000000000000000002 /* FlacNestMobileApp.swift */,
+				G1MOBILETHEME00000000000001 /* Theme */,
+				G1MOBILEVM00000000000000001 /* ViewModels */,
+				G1MOBILESERVICES00000000001 /* Services */,
+				G1MOBILEUTILS00000000000001 /* Utils */,
+				G1MOBILEVIEWS00000000000001 /* Views */,
+				MOBILE00000000000000000013 /* Assets.xcassets */,
+			);
+			path = FlacNestMobile;
+			sourceTree = "<group>";
+		};
+		G1MOBILESERVICES00000000001 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				MOBILEPLAYBACK000000000002 /* MobilePlaybackController.swift */,
+				MOBILENOWPLAYING00000000002 /* MobileNowPlayingController.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		G1MOBILETHEME00000000000001 /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				MOBILEAPPTHEME000000000002 /* MobileAppTheme.swift */,
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
+		G1MOBILEUTILS00000000000001 /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				MOBILEARTCACHE000000000002 /* MobileArtworkImageCache.swift */,
+			);
+			path = Utils;
+			sourceTree = "<group>";
+		};
+		G1MOBILECOMPONENTS000000001 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				MOBILEPLAYERCHROME000000002 /* MobilePlayerChrome.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		G1MOBILEVIEWS00000000000001 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				G1MOBILECOMPONENTS000000001 /* Components */,
+				MOBILE00000000000000000006 /* MobileRootView.swift */,
+				MOBILE00000000000000000008 /* MobileLibraryView.swift */,
+				MOBILE0000000000000000000A /* MobileAlbumDetailView.swift */,
+				MOBILE0000000000000000000C /* MobilePlayerShellView.swift */,
+				MOBILESETTINGS000000000001 /* MobileSettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		G1MOBILEVM00000000000000001 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				MOBILELIBSTORE000000000002 /* MobileLibraryStore.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
 		G1MODELS0000000000000001 /* Models */ = {
 			isa = PBXGroup;
 			children = (
 				6BADF80C6D4C4825A3D3C7BE /* LibraryAlbum.swift */,
+				PREPAREXPORT000000000002 /* MobileExportBitrate.swift */,
 				LIBDISPLAYOPTS000000000002 /* LibraryDisplayOptions.swift */,
 				LASTPLAYBACK0000000000002 /* LastPlaybackState.swift */,
 				APPTHEME000000000000000002 /* AppTheme.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		G1SCRIPTS00000000000000001 /* Scripts */ = {
+			isa = PBXGroup;
+			children = (
+				SCRIPT00000000000000000001 /* bundle-ffmpeg.sh */,
+				SCRIPT00000000000000000002 /* fetch-static-ffmpeg.sh */,
+			);
+			path = Scripts;
 			sourceTree = "<group>";
 		};
 		G1SERVICES000000000000001 /* Services */ = {
@@ -168,14 +322,80 @@
 				DE4AC6E7AC294B1CA4C026CE /* PlaybackController.swift */,
 				MEDIAREMOTECTRL00000000002 /* MediaRemoteController.swift */,
 				BARCODESCAN000000000000002 /* BarcodeScannerSession.swift */,
+				EXPORT00000000000000000002 /* PortableLibraryExporter.swift */,
+				EXPORT00000000000000000004 /* PortableLibraryExportPresenter.swift */,
+				PREPAREXPORT000000000004 /* ExportProcessLog.swift */,
+				PREPAREXPORT000000000012 /* ExportCancellation.swift */,
+				PREPAREXPORT000000000006 /* FFmpegLocator.swift */,
+				PREPAREXPORT000000000008 /* FFmpegConverter.swift */,
+				PREPAREXPORT00000000000A /* FlacNestMobileLibraryStore.swift */,
+				PREPAREXPORT00000000000C /* MobileLibraryPreparer.swift */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		G1SHARED00000000000000001 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				G1SHAREDMODELS000000000001 /* Models */,
+				G1SHAREDTHEME00000000000001 /* Theme */,
+				G1SHAREDUI00000000000000001 /* UI */,
+				G1SHAREDSERVICES00000000001 /* Services */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		G1SHAREDMODELS000000000001 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				SHARED00000000000000000002 /* PortableLibraryManifest.swift */,
+				SHARED00000000000000000004 /* LibrarySortOptions.swift */,
+				MOBILELIBMODELS00000000002 /* MobileLibraryModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		G1SHAREDSERVICES00000000001 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				SHARED00000000000000000006 /* PortableLibraryLoader.swift */,
+				SHARED00000000000000000008 /* PortableLibraryStorage.swift */,
+				MOBILELIBLOADER00000000002 /* FlacNestMobileLibraryLoader.swift */,
+				MOBILELIBSTORAGE00000000002 /* MobileLibraryStorage.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		G1SHAREDUI00000000000000001 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				CDCASELAYOUT000000000000002 /* CDCaseArtworkLayout.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		G1SHAREDTHEME00000000000001 /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				NESTTHEME00000000000000002 /* NestThemePalette.swift */,
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
+		G1UTILS00000000000000001 /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				ARTWORKCACHE00000000000002 /* ArtworkImageCache.swift */,
+				TRACKTIMEFMT0000000000002 /* TrackTimeFormatting.swift */,
+			);
+			path = Utils;
 			sourceTree = "<group>";
 		};
 		G1VIEWMODELS00000000000001 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
 				3210805580DD44F782F1DFDA /* LibraryViewModel.swift */,
+				PREPAREXPORT00000000000E /* PrepareExportViewModel.swift */,
 				BARCODEEJECT00000000000002 /* BarcodeEjectController.swift */,
 			);
 			path = ViewModels;
@@ -190,6 +410,7 @@
 				ALBUMMETADATA000000000002 /* AlbumMetadataEditorView.swift */,
 				ALBUMMETADATAPREV00000002 /* AlbumMetadataPreviewView.swift */,
 				933EDE1C15F34CA28C687FCB /* SettingsView.swift */,
+				PREPAREXPORT000000000010 /* PrepareExportView.swift */,
 				STATUSMENU0000000000000002 /* StatusMenuContent.swift */,
 				BARCODEEJECT00000000000004 /* BarcodeEjectSheet.swift */,
 			);
@@ -206,6 +427,7 @@
 				5F6E6A2AE8D04D3497EECFDF /* Sources */,
 				C6E6D226EF0C49BA9D3D5851 /* Frameworks */,
 				37AA40DA7A1C4D2284A231E8 /* Resources */,
+				BUNDLEFFMPEG00000000000001 /* Bundle FFmpeg */,
 			);
 			buildRules = (
 			);
@@ -214,6 +436,23 @@
 			name = FlacNest;
 			productName = FlacNest;
 			productReference = 407D8C24F6264BDF871288DC /* FlacNest.app */;
+			productType = "com.apple.product-type.application";
+		};
+		MOBILE00000000000000000016 /* FlacNestMobile */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = MOBILE00000000000000000017 /* Build configuration list for PBXNativeTarget "FlacNestMobile" */;
+			buildPhases = (
+				MOBILE00000000000000000018 /* Sources */,
+				MOBILE00000000000000000015 /* Frameworks */,
+				MOBILE00000000000000000019 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FlacNestMobile;
+			productName = FlacNestMobile;
+			productReference = MOBILE00000000000000000014 /* FlacNestMobile.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -241,6 +480,7 @@
 			projectRoot = "";
 			targets = (
 				57480D8A0EB04403807F1CF4 /* FlacNest */,
+				MOBILE00000000000000000016 /* FlacNestMobile */,
 			);
 		};
 /* End PBXProject section */
@@ -254,7 +494,40 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		MOBILE00000000000000000019 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				MOBILE00000000000000000012 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		BUNDLEFFMPEG00000000000001 /* Bundle FFmpeg */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Scripts/bundle-ffmpeg.sh",
+				"$(SRCROOT)/ThirdParty/ffmpeg",
+			);
+			name = "Bundle FFmpeg";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/bin/ffmpeg",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Scripts/bundle-ffmpeg.sh\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		5F6E6A2AE8D04D3497EECFDF /* Sources */ = {
@@ -289,10 +562,54 @@
 				LIBDISPLAYOPTS000000000001 /* LibraryDisplayOptions.swift in Sources */,
 				LASTPLAYBACK0000000000001 /* LastPlaybackState.swift in Sources */,
 				APPTHEME000000000000000001 /* AppTheme.swift in Sources */,
+				NESTTHEME00000000000000001 /* NestThemePalette.swift in Sources */,
+				CDCASELAYOUT000000000000001 /* CDCaseArtworkLayout.swift in Sources */,
 				STATUSMENU0000000000000001 /* StatusMenuContent.swift in Sources */,
 				BARCODESCAN000000000000001 /* BarcodeScannerSession.swift in Sources */,
 				BARCODEEJECT00000000000001 /* BarcodeEjectController.swift in Sources */,
 				BARCODEEJECT00000000000003 /* BarcodeEjectSheet.swift in Sources */,
+				SHARED00000000000000000001 /* PortableLibraryManifest.swift in Sources */,
+				SHARED00000000000000000003 /* LibrarySortOptions.swift in Sources */,
+				SHARED00000000000000000005 /* PortableLibraryLoader.swift in Sources */,
+				EXPORT00000000000000000001 /* PortableLibraryExporter.swift in Sources */,
+				EXPORT00000000000000000003 /* PortableLibraryExportPresenter.swift in Sources */,
+				PREPAREXPORT000000000001 /* MobileExportBitrate.swift in Sources */,
+				PREPAREXPORT000000000003 /* ExportProcessLog.swift in Sources */,
+				PREPAREXPORT000000000011 /* ExportCancellation.swift in Sources */,
+				PREPAREXPORT000000000005 /* FFmpegLocator.swift in Sources */,
+				PREPAREXPORT000000000007 /* FFmpegConverter.swift in Sources */,
+				PREPAREXPORT000000000009 /* FlacNestMobileLibraryStore.swift in Sources */,
+				PREPAREXPORT00000000000B /* MobileLibraryPreparer.swift in Sources */,
+				PREPAREXPORT00000000000D /* PrepareExportViewModel.swift in Sources */,
+				PREPAREXPORT00000000000F /* PrepareExportView.swift in Sources */,
+				MOBILELIBMODELS00000000001 /* MobileLibraryModels.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		MOBILE00000000000000000018 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				MOBILE00000000000000000001 /* FlacNestMobileApp.swift in Sources */,
+				MOBILELIBSTORE000000000001 /* MobileLibraryStore.swift in Sources */,
+				MOBILEPLAYBACK000000000001 /* MobilePlaybackController.swift in Sources */,
+				MOBILENOWPLAYING00000000001 /* MobileNowPlayingController.swift in Sources */,
+				MOBILEARTCACHE000000000001 /* MobileArtworkImageCache.swift in Sources */,
+				MOBILE00000000000000000005 /* MobileRootView.swift in Sources */,
+				MOBILE00000000000000000007 /* MobileLibraryView.swift in Sources */,
+				MOBILE00000000000000000009 /* MobileAlbumDetailView.swift in Sources */,
+				MOBILEPLAYERCHROME000000001 /* MobilePlayerChrome.swift in Sources */,
+				MOBILE0000000000000000000B /* MobilePlayerShellView.swift in Sources */,
+				MOBILESETTINGS000000000002 /* MobileSettingsView.swift in Sources */,
+				MOBILEAPPTHEME000000000001 /* MobileAppTheme.swift in Sources */,
+				NESTTHEME00000000000000003 /* NestThemePalette.swift in Sources */,
+				CDCASELAYOUT000000000000003 /* CDCaseArtworkLayout.swift in Sources */,
+				MOBILE0000000000000000000D /* PortableLibraryManifest.swift in Sources */,
+				MOBILE0000000000000000000E /* LibrarySortOptions.swift in Sources */,
+				MOBILELIBMODELS00000000003 /* MobileLibraryModels.swift in Sources */,
+				MOBILELIBLOADER00000000001 /* FlacNestMobileLibraryLoader.swift in Sources */,
+				MOBILELIBSTORAGE00000000001 /* MobileLibraryStorage.swift in Sources */,
+				MOBILE00000000000000000011 /* TrackTimeFormatting.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -313,6 +630,7 @@
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
@@ -344,6 +662,7 @@
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
@@ -455,6 +774,79 @@
 			};
 			name = Release;
 		};
+		MOBILE0000000000000000001A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = KS78XS3H2J;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FlacNestMobile/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FlacNest;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIBackgroundModes = audio;
+				INFOPLIST_KEY_UIFileSharingEnabled = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.flacnest.mobile;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		MOBILE0000000000000000001B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = KS78XS3H2J;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FlacNestMobile/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FlacNest;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIBackgroundModes = audio;
+				INFOPLIST_KEY_UIFileSharingEnabled = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.flacnest.mobile;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -472,6 +864,15 @@
 			buildConfigurations = (
 				8991A4DB158A4DEAAB3AEB44 /* Debug */,
 				00B6752A46AC43B1B3E26922 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		MOBILE00000000000000000017 /* Build configuration list for PBXNativeTarget "FlacNestMobile" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				MOBILE0000000000000000001A /* Debug */,
+				MOBILE0000000000000000001B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

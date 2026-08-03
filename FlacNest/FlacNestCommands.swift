@@ -75,6 +75,13 @@ struct FlacNestCommands: Commands {
             }
             .keyboardShortcut(.escape, modifiers: [])
             .disabled(libraryVM?.isScanning != true)
+
+            Divider()
+
+            Button("Prepare Export…") {
+                openWindow(id: "prepareExport")
+            }
+            .disabled(libraryVM?.library.albums.isEmpty == true || libraryVM?.isScanning == true)
         }
 
         CommandGroup(after: .windowArrangement) {

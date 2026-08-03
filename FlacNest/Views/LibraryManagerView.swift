@@ -197,6 +197,7 @@ struct LibraryManagerView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .allowsHitTesting(!libraryVM.isScanning)
         }
+        .nestThemedScreenBackground()
     }
 
     private var metadataPreviewPane: some View {
@@ -206,7 +207,7 @@ struct LibraryManagerView: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(.bar)
+                .nestSurfaceBackground()
 
             AlbumMetadataPreviewView(album: selectedAlbum)
         }
@@ -221,7 +222,7 @@ struct LibraryManagerView: View {
             .padding(.horizontal, 12)
             .padding(.top, 10)
             .padding(.bottom, 4)
-            .background(.bar)
+            .nestSurfaceBackground()
     }
 
     private var sortGroupMenu: some View {
