@@ -92,3 +92,54 @@ enum MobileLibrarySorting {
             }
     }
 }
+
+enum LibraryFilter {
+    static func normalizedQuery(_ text: String) -> String {
+        text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    static func matches(
+        query: String,
+        artist: String,
+        albumTitle: String,
+        tracks: [(title: String, performer: String?)]
+    ) -> Bool {
+        let needle = normalizedQuery(query).lowercased()
+        guard !needle.isEmpty else { return true }
+
+        if artist.lowercased().contains(needle) { return true }
+        if albumTitle.lowercased().contains(needle) { return true }
+
+        for track in tracks {
+            if track.title.lowercased().contains(needle) { return true }
+            if let performer = track.performer?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !performer.isEmpty,
+               performer.lowercased().contains(needle) {
+                return true
+            }
+        }
+        return false
+    }
+}
+
+extension MobileLibraryAlbum {
+    func matchesLibraryFilter(_ query: String) -> Bool {
+        LibraryFilter.matches(
+            query: query,
+            artist: sortArtist,
+            albumTitle: displayTitle,
+            tracks: tracks.map { ($0.title, $0.performer) }
+        )
+    }
+}
+
+extension Array where Element == MobileLibraryAlbumSection {
+    func filtered(by query: String) -> [MobileLibraryAlbumSection] {
+        guard !LibraryFilter.normalizedQuery(query).isEmpty else { return self }
+        return compactMap { section in
+            let albums = section.albums.filter { $0.matchesLibraryFilter(query) }
+            guard !albums.isEmpty else { return nil }
+            return MobileLibraryAlbumSection(id: section.id, title: section.title, albums: albums)
+        }
+    }
+}

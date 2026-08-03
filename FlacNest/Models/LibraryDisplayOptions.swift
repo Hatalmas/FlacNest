@@ -38,6 +38,15 @@ extension LibraryAlbum {
         let trimmed = performer.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? parentDirectoryName : trimmed
     }
+
+    func matchesLibraryFilter(_ query: String) -> Bool {
+        LibraryFilter.matches(
+            query: query,
+            artist: sortArtist,
+            albumTitle: displayTitle,
+            tracks: tracks.map { ($0.title, $0.performer) }
+        )
+    }
 }
 
 enum LibraryAlbumSorting {
@@ -94,5 +103,16 @@ enum LibraryAlbumSorting {
                     albums: grouped[key] ?? []
                 )
             }
+    }
+}
+
+extension Array where Element == LibraryAlbumSection {
+    func filtered(by query: String) -> [LibraryAlbumSection] {
+        guard !LibraryFilter.normalizedQuery(query).isEmpty else { return self }
+        return compactMap { section in
+            let albums = section.albums.filter { $0.matchesLibraryFilter(query) }
+            guard !albums.isEmpty else { return nil }
+            return LibraryAlbumSection(id: section.id, title: section.title, albums: albums)
+        }
     }
 }

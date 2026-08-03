@@ -18,7 +18,7 @@ struct LibraryManagerView: View {
     }
 
     private var displayedAlbums: [LibraryAlbum] {
-        libraryVM.displayedSections.flatMap(\.albums)
+        libraryVM.filteredDisplayedSections.flatMap(\.albums)
     }
 
     private let keyboardPageSize = 12
@@ -139,65 +139,69 @@ struct LibraryManagerView: View {
     }
 
     private var albumListScrollArea: some View {
-        ScrollViewReader { scrollProxy in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
-                    ForEach(libraryVM.displayedSections) { section in
-                        if libraryVM.groupMode == .none {
-                            ForEach(section.albums) { album in
-                                albumListRow(album)
-                                    .id(album.id)
-                            }
-                        } else {
-                            Section {
+        VStack(spacing: 0) {
+            libraryFilterField
+
+            ScrollViewReader { scrollProxy in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
+                        ForEach(libraryVM.filteredDisplayedSections) { section in
+                            if libraryVM.groupMode == .none {
                                 ForEach(section.albums) { album in
                                     albumListRow(album)
                                         .id(album.id)
                                 }
-                            } header: {
-                                sectionHeader(section.title)
+                            } else {
+                                Section {
+                                    ForEach(section.albums) { album in
+                                        albumListRow(album)
+                                            .id(album.id)
+                                    }
+                                } header: {
+                                    sectionHeader(section.title)
+                                }
                             }
                         }
                     }
+                    .padding(.vertical, 4)
                 }
-                .padding(.vertical, 4)
+                .focusable()
+                .focused($libraryListFocused)
+                .focusEffectDisabled()
+                .onKeyPress(.upArrow) {
+                    moveSelection(by: -1, using: scrollProxy)
+                    return .handled
+                }
+                .onKeyPress(.downArrow) {
+                    moveSelection(by: 1, using: scrollProxy)
+                    return .handled
+                }
+                .onKeyPress(.pageUp) {
+                    moveSelection(by: -keyboardPageSize, using: scrollProxy)
+                    return .handled
+                }
+                .onKeyPress(.pageDown) {
+                    moveSelection(by: keyboardPageSize, using: scrollProxy)
+                    return .handled
+                }
+                .onAppear {
+                    libraryListFocused = true
+                    focusPlayingAlbum(using: scrollProxy)
+                }
+                .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { notification in
+                    guard let window = notification.object as? NSWindow,
+                          PlayerWindowSizing.isLibraryWindow(window) else { return }
+                    libraryListFocused = true
+                    focusPlayingAlbum(using: scrollProxy)
+                }
+                .onChange(of: playback.currentAlbum?.id) { _, albumID in
+                    guard albumID != nil else { return }
+                    focusPlayingAlbum(using: scrollProxy)
+                }
             }
-            .focusable()
-            .focused($libraryListFocused)
-            .focusEffectDisabled()
-            .onKeyPress(.upArrow) {
-                moveSelection(by: -1, using: scrollProxy)
-                return .handled
-            }
-            .onKeyPress(.downArrow) {
-                moveSelection(by: 1, using: scrollProxy)
-                return .handled
-            }
-            .onKeyPress(.pageUp) {
-                moveSelection(by: -keyboardPageSize, using: scrollProxy)
-                return .handled
-            }
-            .onKeyPress(.pageDown) {
-                moveSelection(by: keyboardPageSize, using: scrollProxy)
-                return .handled
-            }
-            .onAppear {
-                libraryListFocused = true
-                focusPlayingAlbum(using: scrollProxy)
-            }
-            .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { notification in
-                guard let window = notification.object as? NSWindow,
-                      PlayerWindowSizing.isLibraryWindow(window) else { return }
-                libraryListFocused = true
-                focusPlayingAlbum(using: scrollProxy)
-            }
-            .onChange(of: playback.currentAlbum?.id) { _, albumID in
-                guard albumID != nil else { return }
-                focusPlayingAlbum(using: scrollProxy)
-            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .allowsHitTesting(!libraryVM.isLibraryBusy)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .allowsHitTesting(!libraryVM.isLibraryBusy)
         .overlay {
             if libraryVM.isLibraryBusy {
                 LibraryBusyOverlay(
@@ -208,6 +212,29 @@ struct LibraryManagerView: View {
                 )
             }
         }
+    }
+
+    private var libraryFilterField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .nestSecondaryForeground()
+
+            TextField("Filter by artist, album, or track", text: $libraryVM.filterText)
+                .textFieldStyle(.plain)
+
+            if !libraryVM.filterText.isEmpty {
+                Button {
+                    libraryVM.filterText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                }
+                .buttonStyle(.borderless)
+                .help("Clear filter")
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .nestSurfaceBackground()
     }
 
     private var metadataPreviewPane: some View {

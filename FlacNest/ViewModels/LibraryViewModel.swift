@@ -17,6 +17,7 @@ final class LibraryViewModel: ObservableObject {
     @Published var sortMode: LibrarySortMode = AppSettings.librarySortMode
     @Published var groupMode: LibraryGroupMode = AppSettings.libraryGroupMode
     @Published var showFavoritesOnly: Bool = AppSettings.libraryShowFavoritesOnly
+    @Published var filterText = ""
 
     private var scanTask: Task<Void, Never>?
     private var loadTask: Task<Void, Never>?
@@ -27,6 +28,10 @@ final class LibraryViewModel: ObservableObject {
 
     var isLibraryBusy: Bool {
         isLoadingLibrary || isScanning || isPreparingLibraryUI
+    }
+
+    var filteredDisplayedSections: [LibraryAlbumSection] {
+        displayedSections.filtered(by: filterText)
     }
 
     init() {

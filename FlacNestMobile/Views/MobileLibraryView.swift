@@ -67,30 +67,58 @@ struct MobileLibraryView: View {
     }
 
     private var libraryContent: some View {
-        List {
-            if let status = libraryStore.statusMessage {
-                Text(status)
-                    .font(.caption)
+        @Bindable var libraryStore = libraryStore
+
+        return VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
                     .mobileSecondaryForeground()
-            }
 
-            if let error = libraryStore.errorMessage {
-                Text(error)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-            }
+                TextField("Filter by artist, album, or track", text: $libraryStore.filterText)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
 
-            ForEach(libraryStore.displayedSections) { section in
-                if !section.title.isEmpty {
-                    Section(section.title) {
-                        albumRows(section.albums)
+                if !libraryStore.filterText.isEmpty {
+                    Button {
+                        libraryStore.filterText = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
                     }
-                } else {
-                    albumRows(section.albums)
+                    .buttonStyle(.borderless)
                 }
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .mobileThemedPlaceholderSurface(cornerRadius: 10)
+            .padding(.horizontal, 12)
+            .padding(.top, 8)
+            .padding(.bottom, 4)
+
+            List {
+                if let status = libraryStore.statusMessage {
+                    Text(status)
+                        .font(.caption)
+                        .mobileSecondaryForeground()
+                }
+
+                if let error = libraryStore.errorMessage {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+
+                ForEach(libraryStore.displayedSections) { section in
+                    if !section.title.isEmpty {
+                        Section(section.title) {
+                            albumRows(section.albums)
+                        }
+                    } else {
+                        albumRows(section.albums)
+                    }
+                }
+            }
+            .mobileThemedListSurface()
         }
-        .mobileThemedListSurface()
         .navigationDestination(for: String.self) { albumID in
             if let album = libraryStore.package?.albums.first(where: { $0.id == albumID }) {
                 MobileAlbumDetailView(album: album)
