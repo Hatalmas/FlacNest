@@ -23,7 +23,8 @@ struct PlayerView: View {
         GeometryReader { geometry in
             let maxArtworkSize = PlayerArtworkSizing.maxSize(
                 forWidth: geometry.size.width,
-                showsSpinningCD: showsSpinningCD
+                showsSpinningCD: showsSpinningCD,
+                reservesTrailingToolbar: false
             )
 
             VStack(spacing: 0) {
@@ -32,7 +33,7 @@ struct PlayerView: View {
                     isPlaying: playback.isPlaying,
                     hasAlbum: playback.currentAlbum != nil,
                     artworkSize: artworkSize,
-                    trailingControls: { playerToolbar }
+                    trailingControls: { EmptyView() }
                 )
                 .padding(.horizontal, 20)
                 .padding(.top, 20)
@@ -76,6 +77,12 @@ struct PlayerView: View {
             minHeight: PlayerWindowSizing.minHeight
         )
         .nestThemedScreenBackground()
+        .toolbar {
+            ToolbarItemGroup(placement: .automatic) {
+                playerToolbarButtons
+            }
+        }
+        .nestMacWindowChrome()
         .onAppear {
             artworkSize = AppSettings.playerArtworkSize(trackListVisible: showTrackList)
             PlayerWindowSizing.restoreSize(trackListVisible: showTrackList)
@@ -112,10 +119,11 @@ struct PlayerView: View {
     }
 
     private var playbackInfoSection: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 14) {
             PlayerNowPlayingInfoView(
                 album: playback.currentAlbum,
-                track: playback.currentTrack
+                track: playback.currentTrack,
+                onOpenLibrary: openLibrary
             )
             PlaybackProgressView(playback: playback, style: .player)
             TransportControls(playback: playback, style: .player) {
@@ -135,56 +143,62 @@ struct PlayerView: View {
         .padding(.bottom, 8)
     }
 
-    private var playerToolbar: some View {
-        PlayerToolbarIconGroup {
-            Button {
+    @ViewBuilder
+    private var playerToolbarButtons: some View {
+        Toggle(isOn: $showTrackList) {
+            Label("Track List", systemImage: "list.bullet")
+        }
+        .toggleStyle(.button)
+        .help(showTrackList ? "Hide track list" : "Show track list")
+        .disabled(playback.currentAlbum == nil)
+
+        Toggle(isOn: Binding(
+            get: { libraryWindowTracker.isOpen },
+            set: { _ in
+                PlayerWindowSizing.toggleLibrary(
+                    openWindow: openWindow,
+                    dismissWindow: dismissWindow,
+                    tracker: libraryWindowTracker
+                )
+            }
+        )) {
+            Label("Library", systemImage: "square.stack")
+        }
+        .toggleStyle(.button)
+        .help(libraryWindowTracker.isOpen ? "Close Library (⌘2)" : "Open Library (⌘2)")
+
+        Menu {
+            Button("Mini Player", systemImage: "dock.rectangle") {
                 DockMiniPlayerWindowSizing.enterDockMiniMode(
                     dismissWindow: dismissWindow,
                     openWindow: openWindow,
                     playerTracker: playerWindowTracker,
                     dockMiniTracker: dockMiniPlayerWindowTracker
                 )
-            } label: {
-                Image(systemName: dockMiniPlayerWindowTracker.isOpen ? "dock.rectangle.fill" : "dock.rectangle")
             }
-            .buttonStyle(.borderless)
-            .help("Dock mini player")
-
-            Button {
+            Button("Attach to Library Window", systemImage: "rectangle.bottomthird.inset.filled") {
                 PlayerWindowSizing.attach(
                     dismissWindow: dismissWindow,
                     openWindow: openWindow,
                     tracker: playerWindowTracker
                 )
-            } label: {
-                Image(systemName: "rectangle.portrait.and.arrow.right")
-                    .scaleEffect(x: -1, y: 1)
             }
-            .buttonStyle(.borderless)
-            .help("Attach to Library")
-
-            Button {
-                showTrackList.toggle()
-            } label: {
-                Image(systemName: showTrackList ? "list.bullet.circle.fill" : "list.bullet.circle")
-            }
-            .buttonStyle(.borderless)
-            .help("Show track list")
-            .disabled(playback.currentAlbum == nil)
-
-            Button {
-                PlayerWindowSizing.toggleLibrary(
-                    openWindow: openWindow,
-                    dismissWindow: dismissWindow,
-                    tracker: libraryWindowTracker
-                )
-            } label: {
-                Image(systemName: libraryWindowTracker.isOpen ? "book.fill" : "book")
-            }
-            .buttonStyle(.borderless)
-            .help(libraryWindowTracker.isOpen ? "Close Library (⌘2)" : "Open Library (⌘2)")
+        } label: {
+            Label("Window Mode", systemImage: "rectangle.on.rectangle")
         }
-        .frame(width: PlayerArtworkSizing.toolbarWidth, alignment: .center)
+        .help("Switch to the mini player or attach controls to the library")
+    }
+
+    private func openLibrary() {
+        if libraryWindowTracker.isOpen {
+            PlayerWindowSizing.bringLibraryToFront()
+        } else {
+            PlayerWindowSizing.toggleLibrary(
+                openWindow: openWindow,
+                dismissWindow: dismissWindow,
+                tracker: libraryWindowTracker
+            )
+        }
     }
 
     private func persistCurrentPlayerLayout(trackListVisible: Bool? = nil) {
@@ -194,7 +208,12 @@ struct PlayerView: View {
     }
 
     private func clampArtworkSize(forWidth width: CGFloat) {
-        let clamped = PlayerArtworkSizing.clamp(artworkSize, forWidth: width, showsSpinningCD: showsSpinningCD)
+        let clamped = PlayerArtworkSizing.clamp(
+            artworkSize,
+            forWidth: width,
+            showsSpinningCD: showsSpinningCD,
+            reservesTrailingToolbar: false
+        )
         guard clamped != artworkSize else { return }
         artworkSize = clamped
     }

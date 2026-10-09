@@ -75,7 +75,7 @@ struct FlacNestApp: App {
                 }
                 .appTheme(theme)
         }
-        .defaultSize(width: 720, height: 560)
+        .defaultSize(width: 960, height: 620)
 
         Window("FlacNest Dock Mini", id: "dockMiniPlayer") {
             DockMiniPlayerView()
@@ -94,7 +94,7 @@ struct FlacNestApp: App {
                 .environmentObject(libraryVM)
                 .appTheme(theme)
         }
-        .defaultSize(width: 540, height: 520)
+        .defaultSize(width: 560, height: 560)
 
         Settings {
             SettingsView()
@@ -110,7 +110,7 @@ struct FlacNestApp: App {
             StatusMenuContent()
                 .environment(playback)
                 .environmentObject(libraryVM)
-                .appTheme(theme)
+                .appTheme(theme, showsBackdrop: false)
         } label: {
             StatusMenuBarLabel()
         }
@@ -130,9 +130,9 @@ struct FlacNestApp: App {
 
 enum PlayerWindowSizing {
     static let minWidth: CGFloat = 380
-    static let minHeight: CGFloat = 420
-    static let defaultCompactSize = NSSize(width: 380, height: 420)
-    static let defaultExpandedSize = NSSize(width: 380, height: 560)
+    static let minHeight: CGFloat = 480
+    static let defaultCompactSize = NSSize(width: 380, height: 480)
+    static let defaultExpandedSize = NSSize(width: 380, height: 640)
 
     static func savedSize(trackListVisible: Bool) -> NSSize {
         let saved = trackListVisible ? AppSettings.playerExpandedWindowFrame : AppSettings.playerCompactWindowFrame

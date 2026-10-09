@@ -1,8 +1,37 @@
 import SwiftUI
 
+private enum SettingsTab: String, CaseIterable, Identifiable {
+    case library
+    case playback
+    case appearance
+    case mobile
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .library: return "Library"
+        case .playback: return "Playback"
+        case .appearance: return "Appearance"
+        case .mobile: return "Mobile"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .library: return "folder"
+        case .playback: return "play.circle"
+        case .appearance: return "paintpalette"
+        case .mobile: return "iphone"
+        }
+    }
+}
+
 struct SettingsView: View {
     @Environment(\.openURL) private var openURL
+    @Environment(\.openWindow) private var openWindow
     @EnvironmentObject private var libraryVM: LibraryViewModel
+    @State private var selectedTab: SettingsTab = .library
     @State private var libraryPath: String = AppSettings.libraryRootURL?.path ?? ""
     @State private var useCustomXMLLocation: Bool = AppSettings.useCustomLibraryXMLLocation
     @State private var customXMLPath: String = AppSettings.libraryXMLDirectoryURL?.path ?? ""
@@ -16,13 +45,41 @@ struct SettingsView: View {
     @State private var exportErrorMessage: String?
 
     var body: some View {
+        TabView(selection: $selectedTab) {
+            libraryTab
+                .tabItem { Label(SettingsTab.library.title, systemImage: SettingsTab.library.systemImage) }
+                .tag(SettingsTab.library)
+
+            playbackTab
+                .tabItem { Label(SettingsTab.playback.title, systemImage: SettingsTab.playback.systemImage) }
+                .tag(SettingsTab.playback)
+
+            appearanceTab
+                .tabItem { Label(SettingsTab.appearance.title, systemImage: SettingsTab.appearance.systemImage) }
+                .tag(SettingsTab.appearance)
+
+            mobileTab
+                .tabItem { Label(SettingsTab.mobile.title, systemImage: SettingsTab.mobile.systemImage) }
+                .tag(SettingsTab.mobile)
+        }
+        .formStyle(.grouped)
+        .nestThemedScrollSurface()
+        .frame(width: 560)
+        .frame(minHeight: 420)
+        .onAppear {
+            syncFromAppSettings()
+        }
+    }
+
+    private var libraryTab: some View {
         Form {
             Section {
                 LabeledContent("Library home") {
                     Text(libraryPath.isEmpty ? "Not set" : libraryPath)
                         .lineLimit(2)
                         .truncationMode(.middle)
-                        .frame(maxWidth: 280, alignment: .trailing)
+                        .frame(maxWidth: 300, alignment: .trailing)
+                        .textSelection(.enabled)
                 }
                 HStack {
                     Button("Choose Folder…") {
@@ -38,7 +95,7 @@ struct SettingsView: View {
                         }
                         .disabled(libraryVM.library.albums.isEmpty)
 
-                        Button("Clear") {
+                        Button("Clear", role: .destructive) {
                             AppSettings.libraryRootURL = nil
                             libraryPath = ""
                             NotificationCenter.default.post(name: .flacNestLibraryRootDidChange, object: nil)
@@ -46,7 +103,7 @@ struct SettingsView: View {
                     }
                 }
             } footer: {
-                Text("Album CUE sheets and FLAC files are scanned under this folder. Use Re-locate Folder when your FLAC library has moved to a new path.")
+                Text("Album CUE sheets and FLAC files are scanned under this folder. Use Re-locate Folder when your library has moved.")
             }
 
             Section {
@@ -57,7 +114,8 @@ struct SettingsView: View {
                         Text(customXMLPath.isEmpty ? "Not set" : customXMLPath)
                             .lineLimit(2)
                             .truncationMode(.middle)
-                            .frame(maxWidth: 280, alignment: .trailing)
+                            .frame(maxWidth: 300, alignment: .trailing)
+                            .textSelection(.enabled)
                     }
                     Button("Choose Folder…") {
                         chooseCustomXMLDirectory()
@@ -67,25 +125,26 @@ struct SettingsView: View {
                         Text(defaultXMLPathLabel)
                             .lineLimit(2)
                             .truncationMode(.middle)
-                            .frame(maxWidth: 280, alignment: .trailing)
+                            .frame(maxWidth: 300, alignment: .trailing)
+                            .textSelection(.enabled)
                     }
                 }
             } footer: {
-                if useCustomXMLLocation {
-                    Text("flacnest.xml will be stored in the selected folder.")
-                } else {
-                    Text("flacnest.xml will be stored in your library home folder.")
-                }
+                Text(useCustomXMLLocation
+                     ? "flacnest.xml will be stored in the selected folder."
+                     : "flacnest.xml will be stored in your library home folder.")
             }
+        }
+    }
 
+    private var playbackTab: some View {
+        Form {
             Section {
-                Picker("Theme", selection: themeBinding) {
-                    ForEach(AppTheme.allCases) { theme in
-                        Text(theme.label).tag(theme)
-                    }
-                }
+                Toggle("Save last played album and position", isOn: saveLastPlayedToggle)
+                Toggle("Continuous album play", isOn: continuousAlbumPlayToggle)
+                Toggle("Show spinning CD while playing", isOn: showSpinningCDToggle)
             } footer: {
-                Text("Nest and Dark Nest use FlacNest cream, green, and brown tones. Light, Dark, and System follow your Mac appearance.")
+                Text("Continuous play advances to the next album in the current library sort order when the last track finishes.")
             }
 
             Section {
@@ -95,15 +154,43 @@ struct SettingsView: View {
                         Text(orientation.label).tag(orientation)
                     }
                 }
-                Toggle("Save last played album and position", isOn: saveLastPlayedToggle)
-                Toggle("Continuous album play", isOn: continuousAlbumPlayToggle)
-                Toggle("Show spinning CD while playing", isOn: showSpinningCDToggle)
             } footer: {
-                Text("The status menu adds a FlacNest icon to the menu bar with playback controls and now playing info. The dock mini player is a compact window sized for the empty space beside the Dock. Saving last played album caches the full album entry so the player can restore immediately on launch without waiting for the library to load. Continuous album play advances to the next album in the current library sort order when the last track finishes.")
+                Text("The status menu adds a menu bar icon with playback controls. The dock mini player is a compact window beside the Dock.")
+            }
+        }
+    }
+
+    private var appearanceTab: some View {
+        Form {
+            Section {
+                Picker("Theme", selection: themeBinding) {
+                    ForEach(AppTheme.allCases) { theme in
+                        Text(theme.label).tag(theme)
+                    }
+                }
+                .pickerStyle(.radioGroup)
+            } footer: {
+                Text("Nest themes use FlacNest cream, green, and brown tones. System follows your Mac appearance.")
             }
 
             Section {
-                Button("Export Library for iPhone/iPad…") {
+                Text("Images provided by Vecteezy.com")
+                Button("Go to Vecteezy.com") {
+                    openURL(URL(string: "https://www.vecteezy.com")!)
+                }
+            }
+        }
+    }
+
+    private var mobileTab: some View {
+        Form {
+            Section {
+                Button("Prepare MP3 Export…") {
+                    openWindow(id: "prepareExport")
+                }
+                .disabled(libraryVM.library.albums.isEmpty || libraryVM.isLibraryBusy)
+
+                Button("Export Metadata Package…") {
                     exportPortableLibrary()
                 }
                 .disabled(libraryVM.library.albums.isEmpty || libraryVM.isLibraryBusy)
@@ -121,22 +208,8 @@ struct SettingsView: View {
                         .foregroundStyle(.red)
                 }
             } footer: {
-                Text("Creates a read-only .flacnestexport package containing album metadata and artwork for the FlacNest mobile app. Audio files are not included in this first version.")
+                Text("Prepare Export converts FLAC to MP3 and writes flacnestmobile.xml for the iOS app. The metadata package is a read-only .flacnestexport bundle (no audio).")
             }
-
-            Section {
-                Text("Images provided by Vecteezy.com")
-                Button("Go to Vecteezy.com") {
-                    openURL(URL(string: "https://www.vecteezy.com")!)
-                }
-            }
-        }
-        .formStyle(.grouped)
-        .nestThemedScrollSurface()
-        .frame(width: 480)
-        .padding()
-        .onAppear {
-            syncFromAppSettings()
         }
     }
 

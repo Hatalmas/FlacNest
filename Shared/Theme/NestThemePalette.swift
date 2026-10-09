@@ -47,6 +47,7 @@ extension Color {
 struct NestAppThemeModifier: ViewModifier {
     let palette: NestThemePalette?
     let colorScheme: ColorScheme?
+    var showsBackdrop = true
 
     func body(content: Content) -> some View {
         if let palette {
@@ -55,8 +56,10 @@ struct NestAppThemeModifier: ViewModifier {
                 .tint(palette.accent)
                 .environment(\.nestThemePalette, palette)
                 .background {
-                    NestLiquidBackdrop(palette: palette)
-                        .ignoresSafeArea()
+                    if showsBackdrop {
+                        NestLiquidBackdrop(palette: palette)
+                            .ignoresSafeArea()
+                    }
                 }
                 .nestToolbarBackground(palette.background.opacity(0.001))
         } else {
@@ -64,8 +67,10 @@ struct NestAppThemeModifier: ViewModifier {
                 .preferredColorScheme(colorScheme)
                 .environment(\.nestThemePalette, nil)
                 .background {
-                    NestLiquidBackdrop(palette: nil)
-                        .ignoresSafeArea()
+                    if showsBackdrop {
+                        NestLiquidBackdrop(palette: nil)
+                            .ignoresSafeArea()
+                    }
                 }
         }
     }
@@ -184,8 +189,8 @@ private struct NestThemedGroupBoxModifier: ViewModifier {
 }
 
 extension View {
-    func nestAppTheme(palette: NestThemePalette?, colorScheme: ColorScheme?) -> some View {
-        modifier(NestAppThemeModifier(palette: palette, colorScheme: colorScheme))
+    func nestAppTheme(palette: NestThemePalette?, colorScheme: ColorScheme?, showsBackdrop: Bool = true) -> some View {
+        modifier(NestAppThemeModifier(palette: palette, colorScheme: colorScheme, showsBackdrop: showsBackdrop))
     }
 
     func nestThemedScrollSurface() -> some View {

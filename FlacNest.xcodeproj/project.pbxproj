@@ -54,6 +54,7 @@
 		MOBILEARTCACHE000000000001 /* MobileArtworkImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILEARTCACHE000000000002 /* MobileArtworkImageCache.swift */; };
 		MOBILELIBLOADER00000000001 /* FlacNestMobileLibraryLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILELIBLOADER00000000002 /* FlacNestMobileLibraryLoader.swift */; };
 		MOBILELIBLOADER00000000003 /* FlacNestMobileLibraryLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILELIBLOADER00000000002 /* FlacNestMobileLibraryLoader.swift */; };
+		MACOSDS000000000000000001 /* MacOSDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = MACOSDS000000000000000002 /* MacOSDesignSystem.swift */; };
 		MOBILELIBMODELS00000000001 /* MobileLibraryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILELIBMODELS00000000002 /* MobileLibraryModels.swift */; };
 		MOBILELIBMODELS00000000003 /* MobileLibraryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILELIBMODELS00000000002 /* MobileLibraryModels.swift */; };
 		MOBILELIBSTORAGE00000000001 /* MobileLibraryStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILELIBSTORAGE00000000002 /* MobileLibraryStorage.swift */; };
@@ -161,6 +162,7 @@
 		SHARED00000000000000000008 /* PortableLibraryStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableLibraryStorage.swift; sourceTree = "<group>"; };
 		STATUSMENU0000000000000002 /* StatusMenuContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusMenuContent.swift; sourceTree = "<group>"; };
 		TRACKTIMEFMT0000000000002 /* TrackTimeFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackTimeFormatting.swift; sourceTree = "<group>"; };
+		MACOSDS000000000000000002 /* MacOSDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacOSDesignSystem.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -194,6 +196,7 @@
 				G1SERVICES000000000000001 /* Services */,
 				G1VIEWMODELS00000000000001 /* ViewModels */,
 				G1VIEWS000000000000000001 /* Views */,
+				G1MACUI000000000000000001 /* UI */,
 				795A41C3CFF84E27AB58D236 /* Assets.xcassets */,
 				A018AB49EFC34555AA5B5FD7 /* FlacNest.entitlements */,
 			);
@@ -403,6 +406,14 @@
 			path = Utils;
 			sourceTree = "<group>";
 		};
+		G1MACUI000000000000000001 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				MACOSDS000000000000000002 /* MacOSDesignSystem.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
 		G1VIEWMODELS00000000000001 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
@@ -601,6 +612,7 @@
 				PREPAREXPORT00000000000F /* PrepareExportView.swift in Sources */,
 				MOBILELIBMODELS00000000001 /* MobileLibraryModels.swift in Sources */,
 				MOBILELIBLOADER00000000003 /* FlacNestMobileLibraryLoader.swift in Sources */,
+				MACOSDS000000000000000001 /* MacOSDesignSystem.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -14,38 +14,35 @@ struct AlbumMetadataEditorView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text("Edit Album Metadata")
-                    .font(.title2)
-                Spacer()
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                artworkSection
+                metadataSection
+                tracksSection
+
+                if let errorMessage {
+                    Text(errorMessage)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+            }
+            .padding(NestMacMetrics.contentPadding)
+        }
+        .frame(minWidth: 720, minHeight: 560)
+        .nestThemedScreenBackground()
+        .nestThemedScrollSurface()
+        .nestThemedGroupBoxes()
+        .navigationTitle("Edit Album Metadata")
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") { dismiss() }
+            }
+            ToolbarItem(placement: .confirmationAction) {
                 Button("Save") { saveChanges() }
                     .keyboardShortcut(.defaultAction)
                     .disabled(libraryVM.isLibraryBusy)
             }
-            .padding()
-
-            Divider()
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    artworkSection
-                    metadataSection
-                    tracksSection
-                }
-                .padding()
-            }
-
-            if let errorMessage {
-                Text(errorMessage)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-                    .padding(.horizontal)
-                    .padding(.bottom, 8)
-            }
         }
-        .frame(minWidth: 720, minHeight: 560)
     }
 
     private var artworkSection: some View {

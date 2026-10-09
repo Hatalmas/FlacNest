@@ -37,7 +37,7 @@ enum AppTheme: String, CaseIterable, Identifiable {
 }
 
 extension View {
-    func appTheme(_ theme: AppTheme) -> some View {
-        nestAppTheme(palette: theme.palette, colorScheme: theme.colorScheme)
+    func appTheme(_ theme: AppTheme, showsBackdrop: Bool = true) -> some View {
+        nestAppTheme(palette: theme.palette, colorScheme: theme.colorScheme, showsBackdrop: showsBackdrop)
     }
 }

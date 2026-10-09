@@ -40,8 +40,8 @@ struct NestLiquidBackdrop: View {
             } else {
                 LinearGradient(
                     colors: [
-                        Color(nsColor: .windowBackgroundColor),
-                        Color(nsColor: .controlBackgroundColor).opacity(0.85),
+                        Self.systemBackground,
+                        Self.secondarySystemBackground.opacity(0.85),
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -49,6 +49,14 @@ struct NestLiquidBackdrop: View {
             }
         }
     }
+
+    #if os(macOS)
+    private static let systemBackground = Color(nsColor: .windowBackgroundColor)
+    private static let secondarySystemBackground = Color(nsColor: .controlBackgroundColor)
+    #else
+    private static let systemBackground = Color(uiColor: .systemBackground)
+    private static let secondarySystemBackground = Color(uiColor: .secondarySystemBackground)
+    #endif
 
     private var accentColor: Color {
         palette?.accent ?? Color.accentColor

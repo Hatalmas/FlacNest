@@ -25,90 +25,89 @@ struct TransportControls: View {
     private var isDisabled: Bool { playback.currentAlbum == nil }
 
     var body: some View {
-        HStack(spacing: style == .player ? 20 : 16) {
-            transportButton(
-                systemName: "backward.fill",
-                role: .secondary,
-                help: "Previous track (⌘←)",
-                action: { playback.previousTrack() }
-            )
-
-            if playback.isPlaying {
-                transportButton(
-                    systemName: "pause.fill",
-                    role: .primary,
-                    help: "Pause (Space)",
-                    action: { playback.pause() }
-                )
-            } else {
-                transportButton(
-                    systemName: "play.fill",
-                    role: .primary,
-                    help: "Play (Space)",
-                    action: { playback.play() }
-                )
+        HStack(spacing: style == .player ? 18 : 14) {
+            transportButton("Stop", systemName: "stop.fill", role: .tertiary, help: "Stop (⌘.)") {
+                playback.stop()
             }
 
-            transportButton(
-                systemName: "stop.fill",
-                role: .secondary,
-                help: "Stop (⌘.)",
-                action: { playback.stop() }
-            )
+            transportButton("Previous Track", systemName: "backward.fill", role: .secondary, help: "Previous track (⌘←)") {
+                playback.previousTrack()
+            }
 
-            transportButton(
-                systemName: "forward.fill",
-                role: .secondary,
-                help: "Next track (⌘→)",
-                action: { playback.nextTrack() }
-            )
+            playPauseButton
+
+            transportButton("Next Track", systemName: "forward.fill", role: .secondary, help: "Next track (⌘→)") {
+                playback.nextTrack()
+            }
 
             if let onEject {
-                transportButton(
-                    systemName: "eject.fill",
-                    role: .secondary,
-                    help: "Eject — scan CD barcode (⌘⇧E)",
-                    action: onEject
-                )
+                transportButton("Eject", systemName: "eject.fill", role: .tertiary, help: "Eject — scan CD barcode (⌘⇧E)", action: onEject)
             }
         }
+        .labelStyle(.iconOnly)
+        .disabled(isDisabled)
     }
 
     private enum ButtonRole {
-        case primary
         case secondary
+        case tertiary
     }
 
-    @ViewBuilder
+    private var accent: Color {
+        palette?.accent ?? Color.accentColor
+    }
+
+    private var playPauseButton: some View {
+        Button {
+            playback.togglePlayPause()
+        } label: {
+            Label(
+                playback.isPlaying ? "Pause" : "Play",
+                systemImage: playback.isPlaying ? "pause.fill" : "play.fill"
+            )
+            .font(style == .player ? .title2 : .title3)
+            .foregroundStyle(.white)
+            .offset(x: playback.isPlaying ? 0 : 1.5)
+            .frame(width: primarySize, height: primarySize)
+            .background(isDisabled ? Color.secondary.opacity(0.35) : accent, in: Circle())
+            .shadow(color: accent.opacity(isDisabled ? 0 : 0.35), radius: 6, y: 2)
+            .contentShape(Circle())
+        }
+        .buttonStyle(TransportPressButtonStyle())
+        .help(playback.isPlaying ? "Pause (Space)" : "Play (Space)")
+    }
+
+    private var primarySize: CGFloat {
+        style == .player ? 52 : 40
+    }
+
     private func transportButton(
+        _ title: String,
         systemName: String,
         role: ButtonRole,
         help: String,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            styledIcon(systemName: systemName, role: role)
+            Label(title, systemImage: systemName)
+                .font(role == .secondary ? .title2 : .body)
+                .foregroundStyle(role == .secondary ? (palette?.primary ?? Color.primary) : (palette?.secondary ?? Color.secondary))
+                .frame(width: role == .secondary ? 36 : 28, height: 36)
+                .contentShape(Rectangle())
         }
-        .buttonStyle(.borderless)
+        .buttonStyle(TransportPressButtonStyle())
         .help(help)
-        .disabled(isDisabled)
     }
+}
 
-    @ViewBuilder
-    private func styledIcon(systemName: String, role: ButtonRole) -> some View {
-        let image = Image(systemName: systemName)
-            .font(role == .primary && style == .player ? .largeTitle : .title2)
+private struct TransportPressButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
 
-        if style == .player {
-            switch role {
-            case .primary:
-                image.foregroundStyle(palette?.accent ?? Color.accentColor)
-            case .secondary:
-                image.foregroundStyle(palette?.primary ?? Color.primary)
-            }
-        } else {
-            image
-        }
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(isEnabled ? (configuration.isPressed ? 0.7 : 1) : 0.4)
+            .scaleEffect(configuration.isPressed ? 0.92 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }
 }
 
@@ -122,85 +121,133 @@ struct PlaybackProgressView: View {
     var style: Style = .standard
 
     private var trackProgressLabel: String {
-        switch style {
-        case .standard:
-            return "Track"
-        case .player:
-            guard let track = playback.currentTrack else { return "Track" }
-            return String(format: "TRACK %02d", track.number)
-        }
+        guard let album = playback.currentAlbum, playback.currentTrack != nil else { return "Track" }
+        return "Track \(playback.currentTrackIndex + 1) of \(album.tracks.count)"
     }
 
     var body: some View {
-        VStack(spacing: 8) {
-            progressRow(
+        VStack(spacing: style == .player ? 12 : 8) {
+            PlaybackProgressRow(
                 label: trackProgressLabel,
                 progress: playback.trackProgress,
-                elapsed: TrackTimeFormatting.formatClock(playback.trackElapsed),
-                total: TrackTimeFormatting.formatClock(playback.trackDuration)
+                elapsed: playback.trackElapsed,
+                duration: playback.trackDuration
             ) { fraction in
                 playback.seekToTrackProgress(fraction)
             }
 
-            progressRow(
+            PlaybackProgressRow(
                 label: "Album",
                 progress: playback.albumProgress,
-                elapsed: TrackTimeFormatting.formatClock(playback.currentTime),
-                total: TrackTimeFormatting.formatClock(playback.albumDuration)
+                elapsed: playback.currentTime,
+                duration: playback.albumDuration
             ) { fraction in
                 playback.seekToAlbumProgress(fraction)
             }
         }
         .disabled(playback.currentAlbum == nil)
     }
+}
 
-    private func progressRow(
-        label: String,
-        progress: Double,
-        elapsed: String,
-        total: String,
-        onSeek: @escaping (Double) -> Void
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
+private struct PlaybackProgressRow: View {
+    let label: String
+    let progress: Double
+    let elapsed: Double
+    let duration: Double
+    let onSeek: (Double) -> Void
+
+    @State private var scrubFraction: Double?
+
+    private var shownElapsed: Double {
+        guard let scrubFraction else { return elapsed }
+        return scrubFraction * duration
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label.uppercased())
+                .font(.caption2.weight(.semibold))
+                .tracking(0.6)
+                .nestSecondaryForeground()
+
+            SeekableProgressBar(progress: progress, height: 5, scrubFraction: $scrubFraction, onSeek: onSeek)
+                .accessibilityLabel("\(label) position")
+
             HStack {
-                Text(label)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                Text(TrackTimeFormatting.formatClock(shownElapsed))
                 Spacer()
-                Text("\(elapsed) / \(total)")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
+                Text("-" + TrackTimeFormatting.formatClock(max(0, duration - shownElapsed)))
             }
-
-            SeekableProgressBar(progress: progress, onSeek: onSeek)
+            .font(.caption.monospacedDigit())
+            .nestSecondaryForeground()
         }
     }
 }
 
-private struct SeekableProgressBar: View {
+struct SeekableProgressBar: View {
     let progress: Double
+    var height: CGFloat = 6
+    var scrubFraction: Binding<Double?>? = nil
     let onSeek: (Double) -> Void
+
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.nestThemePalette) private var palette
+    @State private var dragFraction: Double?
+    @State private var isHovering = false
+
+    private var isActive: Bool {
+        isEnabled && (isHovering || dragFraction != nil)
+    }
 
     var body: some View {
         GeometryReader { geometry in
+            let width = max(1, geometry.size.width)
+            let shown = (dragFraction ?? progress).clamped(to: 0...1)
+            let barHeight = isActive ? height + 2 : height
+            let knobSize = barHeight + 8
+
             ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(Color.secondary.opacity(0.25))
+                    .fill(Color.secondary.opacity(0.22))
+                    .frame(height: barHeight)
                 Capsule()
-                    .fill(Color.accentColor)
-                    .frame(width: max(0, geometry.size.width * progress))
+                    .fill(isEnabled ? (palette?.accent ?? Color.accentColor) : Color.secondary.opacity(0.4))
+                    .frame(width: width * shown, height: barHeight)
+                Circle()
+                    .fill(.white)
+                    .shadow(color: .black.opacity(0.3), radius: 1.5, y: 0.5)
+                    .frame(width: knobSize, height: knobSize)
+                    .offset(x: width * shown - knobSize / 2)
+                    .opacity(isActive ? 1 : 0)
             }
+            .frame(width: width, height: geometry.size.height, alignment: .leading)
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
-                        let fraction = (value.location.x / geometry.size.width).clamped(to: 0...1)
-                        onSeek(fraction)
+                        let fraction = (value.location.x / width).clamped(to: 0...1)
+                        dragFraction = fraction
+                        scrubFraction?.wrappedValue = fraction
+                    }
+                    .onEnded { value in
+                        onSeek((value.location.x / width).clamped(to: 0...1))
+                        dragFraction = nil
+                        scrubFraction?.wrappedValue = nil
                     }
             )
+            .onHover { isHovering = $0 }
+            .animation(.easeOut(duration: 0.12), value: isActive)
         }
-        .frame(height: 6)
+        .frame(height: height + 12)
+        .accessibilityElement()
+        .accessibilityValue("\(Int((progress * 100).rounded())) percent")
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment: onSeek(min(1, progress + 0.05))
+            case .decrement: onSeek(max(0, progress - 0.05))
+            @unknown default: break
+            }
+        }
     }
 }
 
@@ -214,81 +261,165 @@ struct SpinningCDView: View {
     let isSpinning: Bool
     let size: CGFloat
 
-    @State private var angle: Double = 0
-    @State private var angularVelocity: Double = 0
-
-    private let secondsPerRotation = 4.0
-    private let spinUpDuration = 0.7
-    private let spinDownDuration = 1.5
-    private let frameInterval = 1.0 / 60.0
-
-    private var targetAngularVelocity: Double {
-        360.0 / secondsPerRotation
-    }
-
-    private var spinUpAcceleration: Double {
-        targetAngularVelocity / spinUpDuration
-    }
-
-    private var spinDownDeceleration: Double {
-        targetAngularVelocity / spinDownDuration
-    }
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        cdImage
-            .onAppear(perform: advanceRotationIfNeeded)
-            .onChange(of: isSpinning) { _, _ in advanceRotationIfNeeded() }
-            .modifier(SpinningCDTimerModifier(isActive: isSpinning || angularVelocity > 0) {
-                advanceRotation()
-            })
-    }
-
-    private var cdImage: some View {
-        Image("cd")
-            .highQualityScaled(contentMode: .fit)
+        SpinningDiscLayerView(isSpinning: isSpinning && !reduceMotion)
             .frame(width: size, height: size)
-            .rotationEffect(.degrees(angle))
-    }
-
-    private func advanceRotation() {
-        if isSpinning {
-            if angularVelocity < targetAngularVelocity {
-                angularVelocity = min(
-                    targetAngularVelocity,
-                    angularVelocity + spinUpAcceleration * frameInterval
-                )
-            }
-        } else if angularVelocity > 0 {
-            angularVelocity = max(0, angularVelocity - spinDownDeceleration * frameInterval)
-        }
-
-        guard angularVelocity > 0 else { return }
-
-        angle += angularVelocity * frameInterval
-        if angle >= 360 {
-            angle -= 360
-        }
-    }
-
-    private func advanceRotationIfNeeded() {
-        if isSpinning || angularVelocity > 0 {
-            advanceRotation()
-        }
+            .accessibilityHidden(true)
     }
 }
 
-private struct SpinningCDTimerModifier: ViewModifier {
-    let isActive: Bool
-    let onTick: () -> Void
+/// Rotation runs as a Core Animation layer animation in the render server, so SwiftUI does no per-frame work.
+private struct SpinningDiscLayerView: NSViewRepresentable {
+    let isSpinning: Bool
 
-    func body(content: Content) -> some View {
-        if isActive {
-            content.onReceive(Timer.publish(every: 1.0 / 60.0, on: .main, in: .common).autoconnect()) { _ in
-                onTick()
-            }
-        } else {
-            content
+    func makeNSView(context: Context) -> SpinningDiscNSView {
+        let view = SpinningDiscNSView()
+        view.setSpinning(isSpinning, animated: false)
+        return view
+    }
+
+    func updateNSView(_ nsView: SpinningDiscNSView, context: Context) {
+        nsView.setSpinning(isSpinning, animated: true)
+    }
+}
+
+private final class SpinningDiscNSView: NSView {
+    private static let rotationKeyPath = "transform.rotation.z"
+    private static let spinUpKey = "spinUp"
+    private static let spinKey = "spin"
+    private static let spinDownKey = "spinDown"
+
+    private let secondsPerRotation: CFTimeInterval = 4.0
+    private let spinUpDuration: CFTimeInterval = 0.7
+    private let spinDownDuration: CFTimeInterval = 1.5
+
+    // Bezier curves that trace t² and 1-(1-t)², i.e. constant acceleration with no velocity jump at either end.
+    private let accelerateTiming = CAMediaTimingFunction(controlPoints: 1.0 / 3.0, 0, 2.0 / 3.0, 1.0 / 3.0)
+    private let decelerateTiming = CAMediaTimingFunction(controlPoints: 1.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0, 1)
+
+    private let discLayer = CALayer()
+    private var isSpinning = false
+
+    /// Negative because positive z-rotation is counter-clockwise in AppKit's unflipped layer space.
+    private var angularVelocity: CGFloat {
+        -2 * .pi / CGFloat(secondsPerRotation)
+    }
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+        layer?.masksToBounds = false
+
+        discLayer.contentsGravity = .resizeAspect
+        discLayer.minificationFilter = .trilinear
+        discLayer.magnificationFilter = .linear
+        discLayer.actions = ["transform": NSNull(), "bounds": NSNull(), "position": NSNull(), "contents": NSNull()]
+        if let image = NSImage(named: "cd") {
+            discLayer.contents = image.layerContents(forContentsScale: image.recommendedLayerContentsScale(0))
         }
+        layer?.addSublayer(discLayer)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
+    }
+
+    override func layout() {
+        super.layout()
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        discLayer.bounds = bounds
+        discLayer.position = CGPoint(x: bounds.midX, y: bounds.midY)
+        CATransaction.commit()
+    }
+
+    override func viewDidChangeBackingProperties() {
+        super.viewDidChangeBackingProperties()
+        let scale = window?.backingScaleFactor ?? 2
+        discLayer.contentsScale = scale
+        if let image = NSImage(named: "cd") {
+            discLayer.contents = image.layerContents(forContentsScale: image.recommendedLayerContentsScale(scale))
+        }
+    }
+
+    func setSpinning(_ spinning: Bool, animated: Bool) {
+        guard spinning != isSpinning else { return }
+        isSpinning = spinning
+
+        let startAngle = currentAngle
+        discLayer.removeAllAnimations()
+
+        if spinning {
+            startSpinning(from: startAngle, rampUp: animated)
+        } else {
+            stopSpinning(from: startAngle, rampDown: animated)
+        }
+    }
+
+    private var currentAngle: CGFloat {
+        let layer = discLayer.presentation() ?? discLayer
+        return (layer.value(forKeyPath: Self.rotationKeyPath) as? CGFloat) ?? 0
+    }
+
+    private func startSpinning(from startAngle: CGFloat, rampUp: Bool) {
+        let now = discLayer.convertTime(CACurrentMediaTime(), from: nil)
+        var loopStartAngle = startAngle
+        var loopBeginTime = now
+
+        if rampUp {
+            loopStartAngle = startAngle + angularVelocity * CGFloat(spinUpDuration) / 2
+            loopBeginTime = now + spinUpDuration
+
+            let rampAnimation = CABasicAnimation(keyPath: Self.rotationKeyPath)
+            rampAnimation.fromValue = startAngle
+            rampAnimation.toValue = loopStartAngle
+            rampAnimation.duration = spinUpDuration
+            rampAnimation.beginTime = now
+            rampAnimation.timingFunction = accelerateTiming
+            discLayer.add(rampAnimation, forKey: Self.spinUpKey)
+        }
+
+        let loopAnimation = CABasicAnimation(keyPath: Self.rotationKeyPath)
+        loopAnimation.fromValue = loopStartAngle
+        loopAnimation.toValue = loopStartAngle + angularVelocity * CGFloat(secondsPerRotation)
+        loopAnimation.duration = secondsPerRotation
+        loopAnimation.beginTime = loopBeginTime
+        loopAnimation.repeatCount = .infinity
+        loopAnimation.isRemovedOnCompletion = false
+        discLayer.add(loopAnimation, forKey: Self.spinKey)
+
+        setModelAngle(loopStartAngle)
+    }
+
+    private func stopSpinning(from startAngle: CGFloat, rampDown: Bool) {
+        guard rampDown else {
+            setModelAngle(startAngle)
+            return
+        }
+
+        let endAngle = startAngle + angularVelocity * CGFloat(spinDownDuration) / 2
+        let decelerateAnimation = CABasicAnimation(keyPath: Self.rotationKeyPath)
+        decelerateAnimation.fromValue = startAngle
+        decelerateAnimation.toValue = endAngle
+        decelerateAnimation.duration = spinDownDuration
+        decelerateAnimation.timingFunction = decelerateTiming
+        discLayer.add(decelerateAnimation, forKey: Self.spinDownKey)
+
+        setModelAngle(endAngle)
+    }
+
+    private func setModelAngle(_ angle: CGFloat) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        discLayer.setValue(angle, forKeyPath: Self.rotationKeyPath)
+        CATransaction.commit()
     }
 }
 
@@ -296,55 +427,114 @@ struct PlayerTrackListView: View {
     var playback: PlaybackController
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                if let album = playback.currentAlbum {
-                    ForEach(Array(album.tracks.enumerated()), id: \.element.id) { index, track in
-                        trackRow(index: index, track: track)
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 2) {
+                    if let album = playback.currentAlbum {
+                        ForEach(Array(album.tracks.enumerated()), id: \.element.id) { index, track in
+                            PlayerTrackRow(
+                                track: track,
+                                albumPerformer: album.performer,
+                                isCurrent: index == playback.currentTrackIndex,
+                                isPlaying: playback.isPlaying
+                            ) {
+                                playback.playTrack(at: index)
+                            }
+                            .id(track.id)
+                        }
                     }
                 }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
             }
-            .padding(.vertical, 4)
+            .onAppear { scrollToCurrentTrack(proxy, animated: false) }
+            .onChange(of: playback.currentTrackIndex) { _, _ in
+                scrollToCurrentTrack(proxy, animated: true)
+            }
         }
         .frame(minHeight: 120)
     }
 
-    private func trackRow(index: Int, track: LibraryTrack) -> some View {
-        Button {
-            playback.playTrack(at: index)
-        } label: {
-            HStack(spacing: 8) {
-                Text("\(track.number)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 24, alignment: .trailing)
-                    .monospacedDigit()
-
-                Text(track.title)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                if index == playback.currentTrackIndex {
-                    Image(systemName: "speaker.wave.2.fill")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Text(TrackTimeFormatting.formatDuration(start: track.startSeconds, end: track.endSeconds))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .contentShape(Rectangle())
+    private func scrollToCurrentTrack(_ proxy: ScrollViewProxy, animated: Bool) {
+        guard let id = playback.currentTrack?.id else { return }
+        if animated {
+            withAnimation { proxy.scrollTo(id) }
+        } else {
+            proxy.scrollTo(id, anchor: .center)
         }
-        .buttonStyle(.plain)
+    }
+}
+
+private struct PlayerTrackRow: View {
+    let track: LibraryTrack
+    let albumPerformer: String
+    let isCurrent: Bool
+    let isPlaying: Bool
+    let onPlay: () -> Void
+
+    @State private var isHovering = false
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Group {
+                if isCurrent {
+                    Image(systemName: isPlaying ? "speaker.wave.2.fill" : "pause.fill")
+                        .foregroundStyle(.tint)
+                } else if isHovering {
+                    Image(systemName: "play.fill")
+                        .nestSecondaryForeground()
+                } else {
+                    Text("\(track.number)")
+                        .nestSecondaryForeground()
+                }
+            }
+            .font(.caption.monospacedDigit())
+            .frame(width: 22, alignment: .trailing)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(track.title)
+                    .font(.callout.weight(isCurrent ? .semibold : .regular))
+                    .nestPrimaryForeground()
+                    .lineLimit(1)
+                if let performer = trackPerformer {
+                    Text(performer)
+                        .font(.caption)
+                        .nestSecondaryForeground()
+                        .lineLimit(1)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text(TrackTimeFormatting.formatDuration(start: track.startSeconds, end: track.endSeconds))
+                .font(.caption.monospacedDigit())
+                .nestSecondaryForeground()
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
         .background(
-            index == playback.currentTrackIndex
-                ? Color.accentColor.opacity(0.18)
-                : Color.clear
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(rowFill)
         )
+        .contentShape(Rectangle())
+        .onHover { isHovering = $0 }
+        .onTapGesture(count: 2, perform: onPlay)
+        .help("Double-click to play")
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction(named: "Play", onPlay)
+    }
+
+    private var rowFill: Color {
+        if isCurrent { return Color.accentColor.opacity(0.16) }
+        if isHovering { return Color.primary.opacity(0.05) }
+        return .clear
+    }
+
+    private var trackPerformer: String? {
+        guard let performer = track.performer?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !performer.isEmpty,
+              performer != albumPerformer else { return nil }
+        return performer
     }
 }
 
@@ -483,20 +673,28 @@ enum PlayerArtworkSizing {
     static let headerVerticalPadding: CGFloat = 24
     static let displayPadding: CGFloat = 12
 
-    static func maxSize(forWidth width: CGFloat, showsSpinningCD: Bool) -> CGFloat {
+    static func maxSize(
+        forWidth width: CGFloat,
+        showsSpinningCD: Bool,
+        reservesTrailingToolbar: Bool = true
+    ) -> CGFloat {
         let contentWidth = max(width, minSize)
-        let reservedWidth = horizontalPadding + toolbarWidth + rowSpacing
+        let toolbarReserve = reservesTrailingToolbar ? toolbarWidth + rowSpacing : 0
+        let reservedWidth = horizontalPadding + toolbarReserve
         if showsSpinningCD {
-            // case + spacing + cd + spacing + toolbar (height drives both case and cd)
             let availableWidth = contentWidth - reservedWidth - rowSpacing
             return max(minSize, availableWidth / (CDCaseArtworkLayout.aspectRatio + 1))
         }
-        // case + spacing + toolbar
         return max(minSize, (contentWidth - reservedWidth) / CDCaseArtworkLayout.aspectRatio)
     }
 
-    static func clamp(_ size: CGFloat, forWidth width: CGFloat, showsSpinningCD: Bool) -> CGFloat {
-        max(minSize, min(size, maxSize(forWidth: width, showsSpinningCD: showsSpinningCD)))
+    static func clamp(
+        _ size: CGFloat,
+        forWidth width: CGFloat,
+        showsSpinningCD: Bool,
+        reservesTrailingToolbar: Bool = true
+    ) -> CGFloat {
+        max(minSize, min(size, maxSize(forWidth: width, showsSpinningCD: showsSpinningCD, reservesTrailingToolbar: reservesTrailingToolbar)))
     }
 }
 
@@ -730,22 +928,40 @@ struct PlayerArtworkHeaderView<Trailing: View>: View {
 struct PlayerNowPlayingInfoView: View {
     let album: LibraryAlbum?
     let track: LibraryTrack?
+    var onOpenLibrary: (() -> Void)? = nil
 
     var body: some View {
-        VStack(spacing: 4) {
-            Text(track?.title ?? "No track")
-                .font(.headline)
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
-            Text(trackPerformer)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-            Text(album?.displayTitle ?? "No album loaded")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
+        VStack(spacing: 3) {
+            if let album {
+                Text(track?.title ?? album.displayTitle)
+                    .font(.title3.weight(.semibold))
+                    .nestPrimaryForeground()
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .textSelection(.enabled)
+                if !trackPerformer.isEmpty {
+                    Text(trackPerformer)
+                        .font(.body)
+                        .nestSecondaryForeground()
+                        .lineLimit(1)
+                }
+                Text(album.displayTitle)
+                    .font(.callout)
+                    .nestSecondaryForeground()
+                    .lineLimit(1)
+            } else {
+                Text("Nothing Playing")
+                    .font(.title3.weight(.semibold))
+                    .nestPrimaryForeground()
+                Text("Choose an album in your library to start listening.")
+                    .font(.callout)
+                    .nestSecondaryForeground()
+                    .multilineTextAlignment(.center)
+                if let onOpenLibrary {
+                    Button("Open Library", action: onOpenLibrary)
+                        .padding(.top, 6)
+                }
+            }
         }
         .frame(maxWidth: .infinity)
     }
