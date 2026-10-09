@@ -68,13 +68,27 @@ enum LibraryScanner {
         shouldCancel: (@Sendable () -> Bool)? = nil,
         reportProgress: ProgressHandler? = nil
     ) -> LibraryScanResult {
+        scan(
+            in: libraryRoot,
+            libraryRoot: libraryRoot,
+            shouldCancel: shouldCancel,
+            reportProgress: reportProgress
+        )
+    }
+
+    static func scan(
+        in scanRoot: URL,
+        libraryRoot: URL,
+        shouldCancel: (@Sendable () -> Bool)? = nil,
+        reportProgress: ProgressHandler? = nil
+    ) -> LibraryScanResult {
         if shouldCancel?() == true {
             return LibraryScanResult(library: FlacNestLibrary(), skippedCues: [])
         }
 
         reportProgress?(ScanProgress(phase: .discovering))
 
-        let cueFiles = discoverCueFiles(in: libraryRoot)
+        let cueFiles = discoverCueFiles(in: scanRoot)
         let total = cueFiles.count
 
         var albums: [LibraryAlbum] = []
@@ -160,11 +174,10 @@ enum LibraryScanner {
 
     private static func parseAlbum(cueURL: URL, cueRelativePath: String, libraryRoot: URL) throws -> LibraryAlbum? {
         let parsed = try CUEParser.parse(url: cueURL)
-        guard !parsed.flacFileName.isEmpty else { return nil }
-
         let cueDir = cueURL.deletingLastPathComponent()
-        let flacURL = cueDir.appendingPathComponent(parsed.flacFileName)
-        guard FileManager.default.fileExists(atPath: flacURL.path) else { return nil }
+        guard let flacURL = resolveFlacURL(in: cueDir, referencedName: parsed.flacFileName) else {
+            return nil
+        }
 
         let metadata = CUEMetadataRepair.repair(parsed, flacURL: flacURL)
         let flacRelative = relativePath(from: libraryRoot.path, to: flacURL.path)
@@ -173,6 +186,9 @@ enum LibraryScanner {
             cueArtworkFileName: metadata.artworkFileName,
             libraryRootPath: libraryRoot.path
         )
+
+        let albumFolderURL = cueURL.deletingLastPathComponent()
+        let parentFolder = albumFolderURL.deletingLastPathComponent().lastPathComponent
 
         var libraryTracks: [LibraryTrack] = []
         for (index, track) in metadata.tracks.enumerated() {
@@ -207,6 +223,7 @@ enum LibraryScanner {
             artworkRelativePath: artwork,
             barcode: nil,
             isFavorite: false,
+            parentFolder: parentFolder,
             tracks: libraryTracks
         )
     }
@@ -256,6 +273,49 @@ enum LibraryScanner {
         return contents.first { fileURL in
             fileURL.lastPathComponent.caseInsensitiveCompare(name) == .orderedSame
         }
+    }
+
+    private struct DirectoryContents {
+        var cueFiles: [URL]
+        var flacFiles: [URL]
+    }
+
+    private static func directoryContents(in directory: URL) -> DirectoryContents? {
+        guard let contents = try? FileManager.default.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return nil
+        }
+
+        return DirectoryContents(
+            cueFiles: contents.filter { $0.pathExtension.lowercased() == "cue" },
+            flacFiles: contents.filter { $0.pathExtension.lowercased() == "flac" }
+        )
+    }
+
+    private static func resolveFlacURL(in cueDir: URL, referencedName: String) -> URL? {
+        guard let contents = directoryContents(in: cueDir) else { return nil }
+
+        if !referencedName.isEmpty {
+            let exact = cueDir.appendingPathComponent(referencedName)
+            if FileManager.default.fileExists(atPath: exact.path) {
+                return exact
+            }
+
+            if let match = contents.flacFiles.first(where: {
+                $0.lastPathComponent.caseInsensitiveCompare(referencedName) == .orderedSame
+            }) {
+                return match
+            }
+        }
+
+        if contents.cueFiles.count == 1, contents.flacFiles.count == 1 {
+            return contents.flacFiles[0]
+        }
+
+        return nil
     }
 
     private static func relativePath(from root: String, to target: String) -> String {

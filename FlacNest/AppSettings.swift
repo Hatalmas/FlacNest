@@ -19,6 +19,7 @@ enum AppSettings {
     private static let showSpinningCDWhilePlayingKey = "showSpinningCDWhilePlaying"
     static let themeKey = "appTheme"
     static let showStatusMenuKey = "showStatusMenu"
+    static let dockMiniPlayerOrientationKey = "dockMiniPlayerOrientation"
     static let continuousAlbumPlayKey = "continuousAlbumPlay"
     static let libraryMetadataPreviewVisibleKey = "libraryMetadataPreviewVisible"
     static let libraryShowFavoritesOnlyKey = "libraryShowFavoritesOnly"
@@ -26,6 +27,8 @@ enum AppSettings {
     static let playerArtworkSizeKey = "playerArtworkSize"
     private static let playerCompactWindowFrameKey = "playerCompactWindowFrame"
     private static let playerExpandedWindowFrameKey = "playerExpandedWindowFrame"
+    private static let dockMiniPlayerHorizontalFrameKey = "dockMiniPlayerHorizontalFrame"
+    private static let dockMiniPlayerVerticalFrameKey = "dockMiniPlayerVerticalFrame"
 
     private static let libraryXMLFileName = "flacnest.xml"
 
@@ -95,6 +98,17 @@ enum AppSettings {
         set { UserDefaults.standard.set(newValue, forKey: showStatusMenuKey) }
     }
 
+    static var dockMiniPlayerOrientation: DockMiniPlayerOrientation {
+        get {
+            guard let raw = UserDefaults.standard.string(forKey: dockMiniPlayerOrientationKey),
+                  let orientation = DockMiniPlayerOrientation(rawValue: raw) else {
+                return .horizontal
+            }
+            return orientation
+        }
+        set { UserDefaults.standard.set(newValue.rawValue, forKey: dockMiniPlayerOrientationKey) }
+    }
+
     static var continuousAlbumPlay: Bool {
         get { UserDefaults.standard.bool(forKey: continuousAlbumPlayKey) }
         set { UserDefaults.standard.set(newValue, forKey: continuousAlbumPlayKey) }
@@ -129,6 +143,14 @@ enum AppSettings {
     static var playerExpandedWindowFrame: PlayerWindowFrame? {
         get { decodeFrame(forKey: playerExpandedWindowFrameKey) }
         set { encodeFrame(newValue, forKey: playerExpandedWindowFrameKey) }
+    }
+
+    static func dockMiniPlayerWindowFrame(for orientation: DockMiniPlayerOrientation) -> PlayerWindowFrame? {
+        decodeFrame(forKey: dockMiniPlayerFrameKey(for: orientation))
+    }
+
+    static func setDockMiniPlayerWindowFrame(_ frame: PlayerWindowFrame?, for orientation: DockMiniPlayerOrientation) {
+        encodeFrame(frame, forKey: dockMiniPlayerFrameKey(for: orientation))
     }
 
     static func playerArtworkSize(trackListVisible: Bool) -> CGFloat {
@@ -322,6 +344,15 @@ enum AppSettings {
             UserDefaults.standard.set(data, forKey: key)
         } else {
             UserDefaults.standard.removeObject(forKey: key)
+        }
+    }
+
+    private static func dockMiniPlayerFrameKey(for orientation: DockMiniPlayerOrientation) -> String {
+        switch orientation {
+        case .horizontal:
+            return dockMiniPlayerHorizontalFrameKey
+        case .vertical:
+            return dockMiniPlayerVerticalFrameKey
         }
     }
 }

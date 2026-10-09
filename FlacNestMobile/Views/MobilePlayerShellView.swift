@@ -41,6 +41,7 @@ struct MobilePlayerShellView: View {
 
             MobilePlaybackProgressView(playback: playback)
                 .padding(.horizontal)
+                .nestGlassPanel(cornerRadius: 18, padding: 14)
 
             HStack(spacing: 28) {
                 Button {
@@ -71,6 +72,9 @@ struct MobilePlayerShellView: View {
                 }
                 .disabled(album == nil || playback.isLoadingAudio)
             }
+            .padding(.vertical, 12)
+            .padding(.horizontal, 20)
+            .nestGlassPanel(cornerRadius: 24, padding: 0)
 
             if let error = playback.lastError {
                 Text(error)

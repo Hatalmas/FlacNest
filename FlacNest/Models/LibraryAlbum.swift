@@ -28,6 +28,7 @@ struct LibraryAlbum: Codable, Equatable, Identifiable {
     var artworkBookmark: Data? = nil
     var barcode: String?
     var isFavorite = false
+    var parentFolder: String = ""
     var tracks: [LibraryTrack]
 
     var displayTitle: String {

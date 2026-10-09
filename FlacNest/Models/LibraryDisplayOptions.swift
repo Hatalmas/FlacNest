@@ -29,6 +29,10 @@ extension LibraryAlbum {
 
     /// Parent of the folder containing the CUE file (often the artist folder).
     var parentDirectoryName: String {
+        if !parentFolder.isEmpty {
+            return parentFolder
+        }
+
         let parentPath = (albumDirectoryRelativePath as NSString).deletingLastPathComponent
         let name = (parentPath as NSString).lastPathComponent
         return name.isEmpty ? "Unknown" : name

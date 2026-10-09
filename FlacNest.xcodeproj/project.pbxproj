@@ -39,6 +39,7 @@
 		LASTPLAYBACK0000000000001 /* LastPlaybackState.swift in Sources */ = {isa = PBXBuildFile; fileRef = LASTPLAYBACK0000000000002 /* LastPlaybackState.swift */; };
 		LIBDISPLAYOPTS000000000001 /* LibraryDisplayOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = LIBDISPLAYOPTS000000000002 /* LibraryDisplayOptions.swift */; };
 		LIBXMLLOC000000000000001 /* LibraryXMLLocationChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = LIBXMLLOC000000000000002 /* LibraryXMLLocationChange.swift */; };
+		LIBROOTRELOC000000000001 /* LibraryRootRelocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = LIBROOTRELOC000000000002 /* LibraryRootRelocation.swift */; };
 		MEDIAREMOTECTRL00000000001 /* MediaRemoteController.swift in Sources */ = {isa = PBXBuildFile; fileRef = MEDIAREMOTECTRL00000000002 /* MediaRemoteController.swift */; };
 		MOBILE00000000000000000001 /* FlacNestMobileApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILE00000000000000000002 /* FlacNestMobileApp.swift */; };
 		MOBILE00000000000000000005 /* MobileRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILE00000000000000000006 /* MobileRootView.swift */; };
@@ -52,6 +53,7 @@
 		MOBILEAPPTHEME000000000001 /* MobileAppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILEAPPTHEME000000000002 /* MobileAppTheme.swift */; };
 		MOBILEARTCACHE000000000001 /* MobileArtworkImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILEARTCACHE000000000002 /* MobileArtworkImageCache.swift */; };
 		MOBILELIBLOADER00000000001 /* FlacNestMobileLibraryLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILELIBLOADER00000000002 /* FlacNestMobileLibraryLoader.swift */; };
+		MOBILELIBLOADER00000000003 /* FlacNestMobileLibraryLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILELIBLOADER00000000002 /* FlacNestMobileLibraryLoader.swift */; };
 		MOBILELIBMODELS00000000001 /* MobileLibraryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILELIBMODELS00000000002 /* MobileLibraryModels.swift */; };
 		MOBILELIBMODELS00000000003 /* MobileLibraryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILELIBMODELS00000000002 /* MobileLibraryModels.swift */; };
 		MOBILELIBSTORAGE00000000001 /* MobileLibraryStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILELIBSTORAGE00000000002 /* MobileLibraryStorage.swift */; };
@@ -59,6 +61,7 @@
 		MOBILEPLAYBACK000000000001 /* MobilePlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILEPLAYBACK000000000002 /* MobilePlaybackController.swift */; };
 		MOBILENOWPLAYING00000000001 /* MobileNowPlayingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILENOWPLAYING00000000002 /* MobileNowPlayingController.swift */; };
 		MOBILESETTINGS000000000002 /* MobileSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOBILESETTINGS000000000001 /* MobileSettingsView.swift */; };
+		NESTGLASS00000000000000001 /* NestGlassStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = NESTGLASS00000000000000002 /* NestGlassStyle.swift */; };
 		NESTTHEME00000000000000001 /* NestThemePalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = NESTTHEME00000000000000002 /* NestThemePalette.swift */; };
 		NESTTHEME00000000000000003 /* NestThemePalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = NESTTHEME00000000000000002 /* NestThemePalette.swift */; };
 		CDCASELAYOUT000000000000001 /* CDCaseArtworkLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDCASELAYOUT000000000000002 /* CDCaseArtworkLayout.swift */; };
@@ -76,6 +79,8 @@
 		SHARED00000000000000000001 /* PortableLibraryManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHARED00000000000000000002 /* PortableLibraryManifest.swift */; };
 		SHARED00000000000000000003 /* LibrarySortOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHARED00000000000000000004 /* LibrarySortOptions.swift */; };
 		SHARED00000000000000000005 /* PortableLibraryLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHARED00000000000000000006 /* PortableLibraryLoader.swift */; };
+		DOCKMINIPLAYER00000000001 /* DockMiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DOCKMINIPLAYER00000000002 /* DockMiniPlayerView.swift */; };
+		DOCKMINIORIENT000000000001 /* DockMiniPlayerOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = DOCKMINIORIENT000000000002 /* DockMiniPlayerOrientation.swift */; };
 		STATUSMENU0000000000000001 /* StatusMenuContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = STATUSMENU0000000000000002 /* StatusMenuContent.swift */; };
 		TRACKTIMEFMT0000000000001 /* TrackTimeFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRACKTIMEFMT0000000000002 /* TrackTimeFormatting.swift */; };
 /* End PBXBuildFile section */
@@ -105,6 +110,8 @@
 		C61C56BFEA324EC9AE90789E /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		CUEFILEREADER00000000002 /* CUEFileReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CUEFileReader.swift; sourceTree = "<group>"; };
 		CUEMETAREPAIR000000000002 /* CUEMetadataRepair.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CUEMetadataRepair.swift; sourceTree = "<group>"; };
+		DOCKMINIPLAYER00000000002 /* DockMiniPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockMiniPlayerView.swift; sourceTree = "<group>"; };
+		DOCKMINIORIENT000000000002 /* DockMiniPlayerOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockMiniPlayerOrientation.swift; sourceTree = "<group>"; };
 		DE4AC6E7AC294B1CA4C026CE /* PlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackController.swift; sourceTree = "<group>"; };
 		EF7E0354447347E2A4D1D633 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		EXPORT00000000000000000002 /* PortableLibraryExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableLibraryExporter.swift; sourceTree = "<group>"; };
@@ -115,6 +122,7 @@
 		LASTPLAYBACK0000000000002 /* LastPlaybackState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastPlaybackState.swift; sourceTree = "<group>"; };
 		LIBDISPLAYOPTS000000000002 /* LibraryDisplayOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryDisplayOptions.swift; sourceTree = "<group>"; };
 		LIBXMLLOC000000000000002 /* LibraryXMLLocationChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryXMLLocationChange.swift; sourceTree = "<group>"; };
+		LIBROOTRELOC000000000002 /* LibraryRootRelocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryRootRelocation.swift; sourceTree = "<group>"; };
 		MEDIAREMOTECTRL00000000002 /* MediaRemoteController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaRemoteController.swift; sourceTree = "<group>"; };
 		MOBILE00000000000000000002 /* FlacNestMobileApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlacNestMobileApp.swift; sourceTree = "<group>"; };
 		MOBILE00000000000000000006 /* MobileRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileRootView.swift; sourceTree = "<group>"; };
@@ -132,6 +140,7 @@
 		MOBILEPLAYBACK000000000002 /* MobilePlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobilePlaybackController.swift; sourceTree = "<group>"; };
 		MOBILENOWPLAYING00000000002 /* MobileNowPlayingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileNowPlayingController.swift; sourceTree = "<group>"; };
 		MOBILESETTINGS000000000001 /* MobileSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileSettingsView.swift; sourceTree = "<group>"; };
+		NESTGLASS00000000000000002 /* NestGlassStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NestGlassStyle.swift; sourceTree = "<group>"; };
 		NESTTHEME00000000000000002 /* NestThemePalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NestThemePalette.swift; sourceTree = "<group>"; };
 		CDCASELAYOUT000000000000002 /* CDCaseArtworkLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CDCaseArtworkLayout.swift; sourceTree = "<group>"; };
 		MOBILEPLAYERCHROME000000002 /* MobilePlayerChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobilePlayerChrome.swift; sourceTree = "<group>"; };
@@ -295,6 +304,7 @@
 				LIBDISPLAYOPTS000000000002 /* LibraryDisplayOptions.swift */,
 				LASTPLAYBACK0000000000002 /* LastPlaybackState.swift */,
 				APPTHEME000000000000000002 /* AppTheme.swift */,
+				DOCKMINIORIENT000000000002 /* DockMiniPlayerOrientation.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -314,6 +324,7 @@
 				6D36ED3A4ECF428EB28C6FF0 /* CUEParser.swift */,
 				CUEFILEREADER00000000002 /* CUEFileReader.swift */,
 				LIBXMLLOC000000000000002 /* LibraryXMLLocationChange.swift */,
+				LIBROOTRELOC000000000002 /* LibraryRootRelocation.swift */,
 				FLACMETAREADER00000000002 /* FLACMetadataReader.swift */,
 				CUEMETAREPAIR000000000002 /* CUEMetadataRepair.swift */,
 				ALBUMARTWORK0000000000002 /* AlbumArtworkImporter.swift */,
@@ -378,6 +389,7 @@
 			isa = PBXGroup;
 			children = (
 				NESTTHEME00000000000000002 /* NestThemePalette.swift */,
+				NESTGLASS00000000000000002 /* NestGlassStyle.swift */,
 			);
 			path = Theme;
 			sourceTree = "<group>";
@@ -412,6 +424,7 @@
 				933EDE1C15F34CA28C687FCB /* SettingsView.swift */,
 				PREPAREXPORT000000000010 /* PrepareExportView.swift */,
 				STATUSMENU0000000000000002 /* StatusMenuContent.swift */,
+				DOCKMINIPLAYER00000000002 /* DockMiniPlayerView.swift */,
 				BARCODEEJECT00000000000004 /* BarcodeEjectSheet.swift */,
 			);
 			path = Views;
@@ -545,6 +558,7 @@
 				MEDIAREMOTECTRL00000000001 /* MediaRemoteController.swift in Sources */,
 				CUEFILEREADER00000000001 /* CUEFileReader.swift in Sources */,
 				LIBXMLLOC000000000000001 /* LibraryXMLLocationChange.swift in Sources */,
+				LIBROOTRELOC000000000001 /* LibraryRootRelocation.swift in Sources */,
 				FLACMETAREADER00000000001 /* FLACMetadataReader.swift in Sources */,
 				CUEMETAREPAIR000000000001 /* CUEMetadataRepair.swift in Sources */,
 				98460537EA224F6D99E28175 /* LibraryViewModel.swift in Sources */,
@@ -562,9 +576,12 @@
 				LIBDISPLAYOPTS000000000001 /* LibraryDisplayOptions.swift in Sources */,
 				LASTPLAYBACK0000000000001 /* LastPlaybackState.swift in Sources */,
 				APPTHEME000000000000000001 /* AppTheme.swift in Sources */,
+				DOCKMINIORIENT000000000001 /* DockMiniPlayerOrientation.swift in Sources */,
+				NESTGLASS00000000000000001 /* NestGlassStyle.swift in Sources */,
 				NESTTHEME00000000000000001 /* NestThemePalette.swift in Sources */,
 				CDCASELAYOUT000000000000001 /* CDCaseArtworkLayout.swift in Sources */,
 				STATUSMENU0000000000000001 /* StatusMenuContent.swift in Sources */,
+				DOCKMINIPLAYER00000000001 /* DockMiniPlayerView.swift in Sources */,
 				BARCODESCAN000000000000001 /* BarcodeScannerSession.swift in Sources */,
 				BARCODEEJECT00000000000001 /* BarcodeEjectController.swift in Sources */,
 				BARCODEEJECT00000000000003 /* BarcodeEjectSheet.swift in Sources */,
@@ -583,6 +600,7 @@
 				PREPAREXPORT00000000000D /* PrepareExportViewModel.swift in Sources */,
 				PREPAREXPORT00000000000F /* PrepareExportView.swift in Sources */,
 				MOBILELIBMODELS00000000001 /* MobileLibraryModels.swift in Sources */,
+				MOBILELIBLOADER00000000003 /* FlacNestMobileLibraryLoader.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -602,6 +620,7 @@
 				MOBILE0000000000000000000B /* MobilePlayerShellView.swift in Sources */,
 				MOBILESETTINGS000000000002 /* MobileSettingsView.swift in Sources */,
 				MOBILEAPPTHEME000000000001 /* MobileAppTheme.swift in Sources */,
+				NESTGLASS00000000000000001 /* NestGlassStyle.swift in Sources */,
 				NESTTHEME00000000000000003 /* NestThemePalette.swift in Sources */,
 				CDCASELAYOUT000000000000003 /* CDCaseArtworkLayout.swift in Sources */,
 				MOBILE0000000000000000000D /* PortableLibraryManifest.swift in Sources */,

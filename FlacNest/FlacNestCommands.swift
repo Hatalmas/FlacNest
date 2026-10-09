@@ -1,57 +1,60 @@
 import SwiftUI
 
 struct FlacNestCommands: Commands {
+    var playback: PlaybackController
+    @ObservedObject var barcodeEject: BarcodeEjectController
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismissWindow) private var dismissWindow
-    @FocusedValue(\.focusedPlayback) private var playback
     @FocusedValue(\.focusedLibraryViewModel) private var libraryVM
     @FocusedValue(\.focusedEditMetadata) private var editMetadata
-    @FocusedValue(\.focusedEject) private var eject
+
+    private var hasLoadedAlbum: Bool {
+        playback.currentAlbum != nil
+    }
 
     var body: some Commands {
         CommandGroup(replacing: .newItem) { }
 
         CommandMenu("Playback") {
             Button("Play / Pause") {
-                playback?.togglePlayPause()
+                playback.togglePlayPause()
             }
             .keyboardShortcut(.space, modifiers: [])
-            .disabled(playback?.currentAlbum == nil)
+            .disabled(!hasLoadedAlbum)
 
             Button("Stop") {
-                playback?.stop()
+                playback.stop()
             }
             .keyboardShortcut(".", modifiers: .command)
-            .disabled(playback?.currentAlbum == nil)
+            .disabled(!hasLoadedAlbum)
 
             Divider()
 
             Button("Next Track") {
-                playback?.nextTrack()
+                playback.nextTrack()
             }
             .keyboardShortcut(.rightArrow, modifiers: .command)
-            .disabled(playback?.currentAlbum == nil)
+            .disabled(!hasLoadedAlbum)
 
             Button("Previous Track") {
-                playback?.previousTrack()
+                playback.previousTrack()
             }
             .keyboardShortcut(.leftArrow, modifiers: .command)
-            .disabled(playback?.currentAlbum == nil)
+            .disabled(!hasLoadedAlbum)
 
             Divider()
 
             Button("Eject — Scan Barcode") {
-                eject?()
+                barcodeEject.presentEject()
             }
             .keyboardShortcut("e", modifiers: [.command, .shift])
-            .disabled(eject == nil)
         }
 
         CommandMenu("Library") {
             Button("Play Selected Album") {
                 guard let libraryVM, let album = libraryVM.selectedAlbum else { return }
-                playback?.load(album: album)
-                playback?.play()
+                playback.load(album: album)
+                playback.play()
             }
             .keyboardShortcut(.return, modifiers: [])
             .disabled(libraryVM?.selectedAlbum == nil || libraryVM?.isLibraryBusy == true)
@@ -69,6 +72,12 @@ struct FlacNestCommands: Commands {
             }
             .keyboardShortcut("r", modifiers: .command)
             .disabled(libraryVM?.isLibraryBusy == true)
+
+            Button("Scan Subfolder…") {
+                libraryVM?.scanSubfolder()
+            }
+            .keyboardShortcut("r", modifiers: [.command, .shift])
+            .disabled(libraryVM?.isLibraryBusy == true || AppSettings.libraryRootURL == nil)
 
             Button("Cancel Scan") {
                 libraryVM?.cancelScan()

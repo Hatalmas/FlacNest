@@ -122,6 +122,7 @@ enum FlacNestLibraryStore {
             artworkBookmark: artworkBookmark,
             barcode: element.attribute(forName: "barcode")?.stringValue,
             isFavorite: parseBoolAttribute(element.attribute(forName: "favorite")?.stringValue),
+            parentFolder: element.attribute(forName: "parentFolder")?.stringValue ?? "",
             tracks: tracks
         )
     }
@@ -158,6 +159,7 @@ enum FlacNestLibraryStore {
         if let comment = album.comment { attributes["comment"] = comment }
         if let barcode = album.barcode { attributes["barcode"] = barcode }
         if album.isFavorite { attributes["favorite"] = "true" }
+        if !album.parentFolder.isEmpty { attributes["parentFolder"] = album.parentFolder }
 
         let fileElement = XMLElement(name: "file")
         fileElement.setAttributesWith(attributes)

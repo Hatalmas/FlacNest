@@ -57,6 +57,14 @@ struct PrepareExportView: View {
             .pickerStyle(.menu)
             .disabled(viewModel.isRunning)
 
+            Picker("MP3 layout", selection: $viewModel.mp3Layout) {
+                ForEach(MobileExportLayout.allCases) { option in
+                    Text(option.label).tag(option)
+                }
+            }
+            .pickerStyle(.menu)
+            .disabled(viewModel.isRunning)
+
             HStack(spacing: 8) {
                 TextField("Export directory", text: $viewModel.exportDirectoryPath)
                     .textFieldStyle(.roundedBorder)
@@ -133,6 +141,12 @@ struct PrepareExportView: View {
             }
 
             Spacer()
+
+            Button("Flatten Export") {
+                viewModel.flattenExport()
+            }
+            .disabled(!viewModel.canFlatten)
+            .help("Move MP3 files from subfolders into the export root and update flacnestmobile.xml. Parent folder metadata is kept for sorting.")
 
             Button("Start Export") {
                 viewModel.startExport(library: libraryVM.library) { album in

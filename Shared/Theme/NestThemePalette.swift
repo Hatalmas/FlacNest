@@ -54,12 +54,19 @@ struct NestAppThemeModifier: ViewModifier {
                 .preferredColorScheme(colorScheme ?? .light)
                 .tint(palette.accent)
                 .environment(\.nestThemePalette, palette)
-                .background(palette.background.ignoresSafeArea())
-                .nestToolbarBackground(palette.background)
+                .background {
+                    NestLiquidBackdrop(palette: palette)
+                        .ignoresSafeArea()
+                }
+                .nestToolbarBackground(palette.background.opacity(0.001))
         } else {
             content
                 .preferredColorScheme(colorScheme)
                 .environment(\.nestThemePalette, nil)
+                .background {
+                    NestLiquidBackdrop(palette: nil)
+                        .ignoresSafeArea()
+                }
         }
     }
 }
@@ -68,10 +75,9 @@ private struct NestThemedScrollSurfaceModifier: ViewModifier {
     @Environment(\.nestThemePalette) private var palette
 
     func body(content: Content) -> some View {
-        if let palette {
+        if palette != nil {
             content
                 .scrollContentBackground(.hidden)
-                .background(palette.background)
         } else {
             content
         }
@@ -85,9 +91,11 @@ private struct NestThemedListSurfaceModifier: ViewModifier {
         if let palette {
             content
                 .scrollContentBackground(.hidden)
-                .background(palette.background)
-                .listRowBackground(palette.surface)
-                .listRowSeparatorTint(palette.secondary.opacity(0.25))
+                .listRowBackground(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(palette.surface.opacity(NestGlassSupport.isAvailable ? 0.35 : 0.82))
+                )
+                .listRowSeparatorTint(palette.secondary.opacity(0.2))
         } else {
             content
         }
@@ -95,28 +103,15 @@ private struct NestThemedListSurfaceModifier: ViewModifier {
 }
 
 private struct NestThemedScreenBackgroundModifier: ViewModifier {
-    @Environment(\.nestThemePalette) private var palette
-
     func body(content: Content) -> some View {
-        if let palette {
-            content
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(palette.background)
-        } else {
-            content
-        }
+        content
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
 private struct NestSurfaceBackgroundModifier: ViewModifier {
-    @Environment(\.nestThemePalette) private var palette
-
     func body(content: Content) -> some View {
-        if let palette {
-            content.background(palette.surface)
-        } else {
-            content.background(.bar)
-        }
+        content.nestGlassSurface(cornerRadius: 0)
     }
 }
 
@@ -156,7 +151,7 @@ private struct NestGroupBoxStyle: GroupBoxStyle {
             configuration.content
                 .padding(10)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(surfaceColor, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .nestGlassSurface(cornerRadius: 10)
         }
     }
 
@@ -166,16 +161,13 @@ private struct NestGroupBoxStyle: GroupBoxStyle {
         }
         return Color.primary
     }
+}
 
-    private var surfaceColor: Color {
-        if let palette {
-            return palette.surface
-        }
-        #if os(macOS)
-        return Color(nsColor: .controlBackgroundColor)
-        #else
-        return Color(.secondarySystemBackground)
-        #endif
+private struct NestThemedPlaceholderSurfaceModifier: ViewModifier {
+    let cornerRadius: CGFloat
+
+    func body(content: Content) -> some View {
+        content.nestGlassSurface(cornerRadius: cornerRadius)
     }
 }
 
@@ -187,22 +179,6 @@ private struct NestThemedGroupBoxModifier: ViewModifier {
             content.groupBoxStyle(NestGroupBoxStyle())
         } else {
             content
-        }
-    }
-}
-
-private struct NestThemedPlaceholderSurfaceModifier: ViewModifier {
-    @Environment(\.nestThemePalette) private var palette
-    let cornerRadius: CGFloat
-
-    func body(content: Content) -> some View {
-        if let palette {
-            content
-                .background(palette.surface)
-                .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        } else {
-            content
-                .nestDefaultPlaceholderSurface(cornerRadius: cornerRadius)
         }
     }
 }

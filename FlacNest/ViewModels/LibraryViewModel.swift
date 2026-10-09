@@ -207,6 +207,25 @@ final class LibraryViewModel: ObservableObject {
         }
     }
 
+    func scanSubfolder() {
+        guard let libraryRoot = AppSettings.libraryRootURL else {
+            statusMessage = "Set a library folder in Settings first."
+            return
+        }
+
+        guard let subfolder = FolderPicker.chooseSubfolder(relativeTo: libraryRoot) else { return }
+
+        guard FolderPicker.isDirectory(subfolder, containedIn: libraryRoot) else {
+            statusMessage = "The selected folder must be inside your library home folder."
+            return
+        }
+
+        scanTask?.cancel()
+        scanTask = Task {
+            await performSubfolderScan(subfolder: subfolder, libraryRoot: libraryRoot)
+        }
+    }
+
     func cancelScan() {
         scanTask?.cancel()
     }
@@ -242,7 +261,23 @@ final class LibraryViewModel: ObservableObject {
         guard let index = library.albums.firstIndex(where: { $0.id == album.id }) else { return }
         library.albums[index] = album
         try saveLibraryToDisk()
+        rebuildDisplayedSections()
         statusMessage = "Saved metadata for \(album.displayTitle)."
+    }
+
+    func removeAlbum(withID albumID: String) throws {
+        guard let index = library.albums.firstIndex(where: { $0.id == albumID }) else { return }
+
+        let title = library.albums[index].displayTitle
+        library.albums.remove(at: index)
+
+        if selectedAlbumID == albumID {
+            selectedAlbumID = nil
+        }
+
+        try saveLibraryToDisk()
+        rebuildDisplayedSections()
+        statusMessage = "Removed \(title) from library."
     }
 
     func album(forBarcode barcode: String) -> LibraryAlbum? {
@@ -377,6 +412,97 @@ final class LibraryViewModel: ObservableObject {
         postLibraryDidLoad()
     }
 
+    private func performSubfolderScan(subfolder: URL, libraryRoot: URL) async {
+        guard AppSettings.libraryXMLURL != nil else {
+            statusMessage = "Library data file location is not configured."
+            return
+        }
+
+        isScanning = true
+        lastProgressUpdate = .distantPast
+        applyScanProgress(ScanProgress(phase: .discovering), force: true)
+        statusMessage = "Discovering CUE files in \(subfolder.lastPathComponent)…"
+
+        let existingCuePaths = Set(library.albums.map(\.cueRelativePath))
+        let existingFlacPaths = Set(library.albums.map(\.flacRelativePath))
+
+        let result: LibraryScanResult = await withTaskGroup(of: LibraryScanResult.self) { group in
+            group.addTask(priority: .userInitiated) {
+                LibraryScanner.scan(
+                    in: subfolder,
+                    libraryRoot: libraryRoot,
+                    shouldCancel: { Task.isCancelled }
+                ) { progress in
+                    Task { @MainActor in
+                        self.handleScanProgress(progress)
+                    }
+                }
+            }
+            return await group.next() ?? LibraryScanResult(library: FlacNestLibrary(), skippedCues: [])
+        }
+
+        guard !Task.isCancelled else {
+            finishScan(cancelled: true)
+            return
+        }
+
+        let newAlbums = result.library.albums.filter { album in
+            !existingCuePaths.contains(album.cueRelativePath)
+                && !existingFlacPaths.contains(album.flacRelativePath)
+        }
+        let skippedExistingCount = result.library.albums.count - newAlbums.count
+
+        guard !newAlbums.isEmpty else {
+            var message = "No new albums found in \(subfolder.lastPathComponent)."
+            if skippedExistingCount > 0 {
+                message += " \(skippedExistingCount) album(s) were already in the library."
+            }
+            if !result.skippedCues.isEmpty {
+                message += " Skipped \(result.skippedCues.count) CUE file(s)."
+            }
+            statusMessage = message
+            finishScan(cancelled: false)
+            return
+        }
+
+        applyScanProgress(ScanProgress(phase: .saving), force: true)
+        statusMessage = "Saving flacnest.xml…"
+
+        library.albums.append(contentsOf: newAlbums)
+        library.scannedAt = Date()
+
+        if let xmlURL = AppSettings.libraryXMLURL {
+            do {
+                try await Task(priority: .utility) {
+                    try FlacNestLibraryStore.save(library, to: xmlURL)
+                }.value
+            } catch {
+                library.albums.removeLast(newAlbums.count)
+                statusMessage = "Found \(newAlbums.count) new album(s), but saving flacnest.xml failed: \(error.localizedDescription)"
+                finishScan(cancelled: false)
+                return
+            }
+        }
+
+        guard !Task.isCancelled else {
+            library.albums.removeLast(newAlbums.count)
+            finishScan(cancelled: true)
+            return
+        }
+
+        var message = "Added \(newAlbums.count) album(s) from \(subfolder.lastPathComponent)."
+        if skippedExistingCount > 0 {
+            message += " Skipped \(skippedExistingCount) album(s) already in the library."
+        }
+        if !result.skippedCues.isEmpty {
+            message += " Skipped \(result.skippedCues.count) CUE file(s)."
+        }
+        statusMessage = message
+        await rebuildDisplayedSectionsAndWait(for: library)
+        finishScan(cancelled: false)
+        postLibraryDidLoad()
+    }
+
     private func handleScanProgress(_ progress: ScanProgress) {
         guard isScanning else { return }
         applyScanProgress(progress)
@@ -437,7 +563,18 @@ enum FolderPicker {
     static func chooseLibraryFolder() -> URL? {
         chooseDirectory(
             title: "Choose FLAC Library Home",
-            message: "Select the folder that contains your FLAC albums and CUE sheets."
+            message: "Select the folder that contains your FLAC albums and CUE sheets.",
+            canCreateDirectories: true
+        )
+    }
+
+    @MainActor
+    static func chooseRelocatedLibraryFolder() -> URL? {
+        chooseDirectory(
+            title: "Re-locate Library Home",
+            message: "Select the folder where your FLAC library has been moved.",
+            canCreateDirectories: false,
+            directoryURL: AppSettings.libraryRootURL
         )
     }
 
@@ -445,20 +582,47 @@ enum FolderPicker {
     static func chooseLibraryXMLFolder() -> URL? {
         chooseDirectory(
             title: "Choose Library Data Folder",
-            message: "Select the folder where flacnest.xml should be stored."
+            message: "Select the folder where flacnest.xml should be stored.",
+            canCreateDirectories: true
         )
     }
 
     @MainActor
-    private static func chooseDirectory(title: String, message: String) -> URL? {
+    static func chooseSubfolder(relativeTo libraryRoot: URL) -> URL? {
+        chooseDirectory(
+            title: "Scan Subfolder",
+            message: "Select a folder inside your library home to scan for new CUE/FLAC albums.",
+            canCreateDirectories: false,
+            directoryURL: libraryRoot
+        )
+    }
+
+    @MainActor
+    static func isDirectory(_ directory: URL, containedIn parent: URL) -> Bool {
+        let parentPath = parent.standardizedFileURL.path
+        let directoryPath = directory.standardizedFileURL.path
+        guard !parentPath.isEmpty else { return false }
+        return directoryPath == parentPath || directoryPath.hasPrefix(parentPath + "/")
+    }
+
+    @MainActor
+    private static func chooseDirectory(
+        title: String,
+        message: String,
+        canCreateDirectories: Bool = false,
+        directoryURL: URL? = nil
+    ) -> URL? {
         let panel = NSOpenPanel()
         panel.title = title
         panel.message = message
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
-        panel.canCreateDirectories = true
+        panel.canCreateDirectories = canCreateDirectories
         panel.allowsMultipleSelection = false
         panel.prompt = "Choose"
+        if let directoryURL {
+            panel.directoryURL = directoryURL
+        }
 
         NSApp.activate(ignoringOtherApps: true)
         let response = panel.runModal()

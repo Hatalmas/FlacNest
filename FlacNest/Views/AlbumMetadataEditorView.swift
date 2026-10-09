@@ -110,6 +110,10 @@ struct AlbumMetadataEditorView: View {
                     TextField("Performer", text: $draft.performer)
                 }
                 GridRow {
+                    Text("Parent Folder")
+                    TextField("Parent Folder", text: $draft.parentFolder)
+                }
+                GridRow {
                     Text("Genre")
                     TextField("Genre", text: optionalBinding($draft.genre))
                 }

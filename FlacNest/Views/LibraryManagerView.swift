@@ -61,6 +61,14 @@ struct LibraryManagerView: View {
                     }
                 } else {
                     Button {
+                        libraryVM.scanSubfolder()
+                    } label: {
+                        Label("Scan Subfolder", systemImage: "folder.badge.plus")
+                    }
+                    .disabled(AppSettings.libraryRootURL == nil)
+                    .help("Scan a folder inside the library home and add new CUE/FLAC albums")
+
+                    Button {
                         libraryVM.refreshLibrary()
                     } label: {
                         Label("Refresh Library", systemImage: "arrow.clockwise")
@@ -321,6 +329,11 @@ struct LibraryManagerView: View {
                 Button(isAlbumFavorite(album) ? "Remove from Favorites" : "Add to Favorites") {
                     toggleFavorite(for: album)
                 }
+                Divider()
+                Button("Remove from Library…", role: .destructive) {
+                    removeAlbum(album)
+                }
+                .disabled(libraryVM.isLibraryBusy)
             }
     }
 
@@ -388,6 +401,20 @@ struct LibraryManagerView: View {
             try libraryVM.toggleFavorite(for: album.id)
         } catch {
             libraryVM.statusMessage = "Could not update favorite: \(error.localizedDescription)"
+        }
+    }
+
+    private func removeAlbum(_ album: LibraryAlbum) {
+        do {
+            if playback.currentAlbum?.id == album.id {
+                playback.stop()
+            }
+            if selectedAlbumID == album.id {
+                selectedAlbumID = nil
+            }
+            try libraryVM.removeAlbum(withID: album.id)
+        } catch {
+            libraryVM.statusMessage = "Could not remove album: \(error.localizedDescription)"
         }
     }
 

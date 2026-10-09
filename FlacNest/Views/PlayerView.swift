@@ -7,6 +7,7 @@ struct PlayerView: View {
     @EnvironmentObject private var libraryVM: LibraryViewModel
     @EnvironmentObject private var playerWindowTracker: PlayerWindowTracker
     @EnvironmentObject private var libraryWindowTracker: LibraryWindowTracker
+    @EnvironmentObject private var dockMiniPlayerWindowTracker: DockMiniPlayerWindowTracker
     @EnvironmentObject private var barcodeEject: BarcodeEjectController
     @AppStorage("playerTrackListVisible") private var showTrackList = false
     @AppStorage("showSpinningCDWhilePlaying") private var showSpinningCDWhilePlaying = true
@@ -129,10 +130,26 @@ struct PlayerView: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .top)
+        .nestGlassPanel(cornerRadius: 22, padding: 0)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 8)
     }
 
     private var playerToolbar: some View {
         PlayerToolbarIconGroup {
+            Button {
+                DockMiniPlayerWindowSizing.enterDockMiniMode(
+                    dismissWindow: dismissWindow,
+                    openWindow: openWindow,
+                    playerTracker: playerWindowTracker,
+                    dockMiniTracker: dockMiniPlayerWindowTracker
+                )
+            } label: {
+                Image(systemName: dockMiniPlayerWindowTracker.isOpen ? "dock.rectangle.fill" : "dock.rectangle")
+            }
+            .buttonStyle(.borderless)
+            .help("Dock mini player")
+
             Button {
                 PlayerWindowSizing.attach(
                     dismissWindow: dismissWindow,

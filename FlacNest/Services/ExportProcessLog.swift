@@ -48,4 +48,12 @@ enum ExportProcessLog {
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "\\", with: "/")
     }
+
+    static func rewrite(withRelativePaths paths: [String], in exportDirectory: URL) throws {
+        let normalized = paths
+            .map { normalizeRelativePath($0) }
+            .filter { !$0.isEmpty }
+        let content = normalized.isEmpty ? "" : normalized.joined(separator: "\n") + "\n"
+        try content.write(to: logURL(in: exportDirectory), atomically: true, encoding: .utf8)
+    }
 }

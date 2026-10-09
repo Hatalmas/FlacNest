@@ -14,6 +14,13 @@ enum FlacNestMobileLibraryStore {
         try data.write(to: url, options: .atomic)
     }
 
+    static func save(library: MobileLibrary, to exportDirectory: URL) throws {
+        let url = exportDirectory.appendingPathComponent(xmlFilename, isDirectory: false)
+        let doc = makeMobileXMLDocument(from: library)
+        let data = doc.xmlData(options: [.nodePrettyPrint])
+        try data.write(to: url, options: .atomic)
+    }
+
     private static func makeMobileXMLDocument(
         library: FlacNestLibrary,
         albumMP3Paths: [String: String]
@@ -35,6 +42,24 @@ enum FlacNestMobileLibraryStore {
         return doc
     }
 
+    private static func makeMobileXMLDocument(from library: MobileLibrary) -> XMLDocument {
+        let root = XMLElement(name: "flacnest")
+        root.setAttributesWith(["version": String(library.version)])
+
+        let scannedAt = XMLElement(name: "scannedAt")
+        scannedAt.stringValue = formatDate(library.scannedAt)
+        root.addChild(scannedAt)
+
+        for album in library.albums {
+            root.addChild(makeMobileFileElement(album))
+        }
+
+        let doc = XMLDocument(rootElement: root)
+        doc.version = "1.0"
+        doc.characterEncoding = "UTF-8"
+        return doc
+    }
+
     private static func makeMobileFileElement(_ album: LibraryAlbum, mp3RelativePath: String?) -> XMLElement {
         var attributes: [String: String] = [
             "id": album.id,
@@ -47,6 +72,50 @@ enum FlacNestMobileLibraryStore {
         if let mp3RelativePath {
             attributes["mp3"] = mp3RelativePath
         }
+
+        if let genre = album.genre { attributes["genre"] = genre }
+        if let date = album.date { attributes["date"] = date }
+        if let discID = album.discID { attributes["discID"] = discID }
+        if let comment = album.comment { attributes["comment"] = comment }
+        if let barcode = album.barcode { attributes["barcode"] = barcode }
+        if album.isFavorite { attributes["favorite"] = "true" }
+
+        let fileElement = XMLElement(name: "file")
+        fileElement.setAttributesWith(attributes)
+
+        if let artwork = album.artworkRelativePath {
+            let art = XMLElement(name: "artwork")
+            art.setAttributesWith(["path": artwork])
+            fileElement.addChild(art)
+        }
+
+        for track in album.tracks {
+            var trackAttributes: [String: String] = [
+                "id": track.id,
+                "number": String(track.number),
+                "title": track.title,
+                "start": formatSeconds(track.startSeconds),
+            ]
+            if let performer = track.performer { trackAttributes["performer"] = performer }
+            if let end = track.endSeconds { trackAttributes["end"] = formatSeconds(end) }
+
+            let trackElement = XMLElement(name: "track")
+            trackElement.setAttributesWith(trackAttributes)
+            fileElement.addChild(trackElement)
+        }
+
+        return fileElement
+    }
+
+    private static func makeMobileFileElement(_ album: MobileLibraryAlbum) -> XMLElement {
+        var attributes: [String: String] = [
+            "id": album.id,
+            "cue": album.cueRelativePath,
+            "mp3": album.mp3RelativePath,
+            "title": album.title,
+            "performer": album.performer,
+            "parentFolder": album.parentFolder,
+        ]
 
         if let genre = album.genre { attributes["genre"] = genre }
         if let date = album.date { attributes["date"] = date }

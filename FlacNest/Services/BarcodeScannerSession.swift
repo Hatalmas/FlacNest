@@ -128,7 +128,6 @@ final class BarcodeScannerSession: NSObject, ObservableObject {
             .builtInWideAngleCamera,
             .external,
             .continuityCamera,
-            .externalUnknown,
         ]
         let discoverySession = AVCaptureDevice.DiscoverySession(
             deviceTypes: deviceTypes,

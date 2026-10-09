@@ -48,6 +48,8 @@ struct StatusMenuContent: View {
             .padding(.top, 12)
             .padding(.trailing, 10)
         }
+        .padding(8)
+        .nestGlassPanel(cornerRadius: 18, padding: 4)
         .frame(width: 300)
     }
 

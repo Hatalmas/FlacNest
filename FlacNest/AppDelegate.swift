@@ -12,7 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if let existingInstance = otherInstances.first {
             isPrimaryInstance = false
-            existingInstance.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+            existingInstance.activate(options: [.activateAllWindows])
             NSApp.terminate(nil)
         }
     }

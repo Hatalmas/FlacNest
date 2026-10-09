@@ -7,7 +7,6 @@ final class MediaRemoteController {
 
     private weak var playback: PlaybackController?
     private var commandsConfigured = false
-    private var mediaKeyMonitor: Any?
     private var lastNowPlayingRefresh = Date.distantPast
     private var lastElapsedSecond = -1
     private var lastPlaybackStateKey = ""
@@ -17,7 +16,6 @@ final class MediaRemoteController {
     func configure(playback: PlaybackController) {
         self.playback = playback
         configureRemoteCommandsIfNeeded()
-        startMediaKeyMonitorIfNeeded()
         refresh(from: playback, force: true)
     }
 
@@ -82,41 +80,6 @@ final class MediaRemoteController {
             }
         }
         return result
-    }
-
-    private func startMediaKeyMonitorIfNeeded() {
-        guard mediaKeyMonitor == nil else { return }
-
-        mediaKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .systemDefined) { [weak self] event in
-            guard let self else { return event }
-            guard event.subtype.rawValue == 8 else { return event }
-
-            let keyCode = Int((event.data1 & 0xFFFF0000) >> 16)
-            let keyFlags = event.data1 & 0x0000FFFF
-            let isKeyDown = ((keyFlags & 0xFF00) >> 8) == 0x0A
-            guard isKeyDown else { return event }
-
-            guard self.handlePhysicalMediaKey(keyCode) else { return event }
-            return nil
-        }
-    }
-
-    @discardableResult
-    private func handlePhysicalMediaKey(_ keyCode: Int) -> Bool {
-        switch keyCode {
-        case MediaKeyCode.play:
-            return handleTogglePlayPause() == .success
-        case MediaKeyCode.next:
-            return handleNextTrack() == .success
-        case MediaKeyCode.previous:
-            return handlePreviousTrack() == .success
-        case MediaKeyCode.fastForward:
-            return handleNextTrack() == .success
-        case MediaKeyCode.rewind:
-            return handlePreviousTrack() == .success
-        default:
-            return false
-        }
     }
 
     private func handlePlay() -> MPRemoteCommandHandlerStatus {
@@ -188,12 +151,4 @@ final class MediaRemoteController {
             MPNowPlayingInfoPropertyMediaType: MPNowPlayingInfoMediaType.audio.rawValue,
         ]
     }
-}
-
-private enum MediaKeyCode {
-    static let play = 16
-    static let next = 17
-    static let previous = 18
-    static let fastForward = 19
-    static let rewind = 20
 }

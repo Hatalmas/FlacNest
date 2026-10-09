@@ -9,6 +9,7 @@ struct SettingsView: View {
     @State private var saveLastPlayedPosition: Bool = AppSettings.saveLastPlayedPosition
     @State private var showSpinningCDWhilePlaying: Bool = AppSettings.showSpinningCDWhilePlaying
     @State private var showStatusMenu: Bool = AppSettings.showStatusMenu
+    @State private var dockMiniPlayerOrientation: DockMiniPlayerOrientation = AppSettings.dockMiniPlayerOrientation
     @State private var continuousAlbumPlay: Bool = AppSettings.continuousAlbumPlay
     @State private var theme: AppTheme = AppSettings.theme
     @State private var exportStatusMessage: String?
@@ -32,6 +33,11 @@ struct SettingsView: View {
                         }
                     }
                     if !libraryPath.isEmpty {
+                        Button("Re-locate Folder…") {
+                            relocateLibraryHome()
+                        }
+                        .disabled(libraryVM.library.albums.isEmpty)
+
                         Button("Clear") {
                             AppSettings.libraryRootURL = nil
                             libraryPath = ""
@@ -40,7 +46,7 @@ struct SettingsView: View {
                     }
                 }
             } footer: {
-                Text("Album CUE sheets and FLAC files are scanned under this folder.")
+                Text("Album CUE sheets and FLAC files are scanned under this folder. Use Re-locate Folder when your FLAC library has moved to a new path.")
             }
 
             Section {
@@ -84,11 +90,16 @@ struct SettingsView: View {
 
             Section {
                 Toggle("Show status menu", isOn: showStatusMenuToggle)
+                Picker("Dock mini player layout", selection: dockMiniPlayerOrientationBinding) {
+                    ForEach(DockMiniPlayerOrientation.allCases) { orientation in
+                        Text(orientation.label).tag(orientation)
+                    }
+                }
                 Toggle("Save last played album and position", isOn: saveLastPlayedToggle)
                 Toggle("Continuous album play", isOn: continuousAlbumPlayToggle)
                 Toggle("Show spinning CD while playing", isOn: showSpinningCDToggle)
             } footer: {
-                Text("The status menu adds a FlacNest icon to the menu bar with playback controls and now playing info. Saving last played album caches the full album entry so the player can restore immediately on launch without waiting for the library to load. Continuous album play advances to the next album in the current library sort order when the last track finishes.")
+                Text("The status menu adds a FlacNest icon to the menu bar with playback controls and now playing info. The dock mini player is a compact window sized for the empty space beside the Dock. Saving last played album caches the full album entry so the player can restore immediately on launch without waiting for the library to load. Continuous album play advances to the next album in the current library sort order when the last track finishes.")
             }
 
             Section {
@@ -145,6 +156,18 @@ struct SettingsView: View {
             set: { enabled in
                 showStatusMenu = enabled
                 AppSettings.showStatusMenu = enabled
+            }
+        )
+    }
+
+    private var dockMiniPlayerOrientationBinding: Binding<DockMiniPlayerOrientation> {
+        Binding(
+            get: { dockMiniPlayerOrientation },
+            set: { orientation in
+                dockMiniPlayerOrientation = orientation
+                AppSettings.dockMiniPlayerOrientation = orientation
+                DockMiniPlayerWindowSizing.applyOrientation(orientation)
+                DockMiniPlayerWindowSizing.restoreSize(for: orientation)
             }
         )
     }
@@ -222,6 +245,7 @@ struct SettingsView: View {
         saveLastPlayedPosition = AppSettings.saveLastPlayedPosition
         showSpinningCDWhilePlaying = AppSettings.showSpinningCDWhilePlaying
         showStatusMenu = AppSettings.showStatusMenu
+        dockMiniPlayerOrientation = AppSettings.dockMiniPlayerOrientation
         continuousAlbumPlay = AppSettings.continuousAlbumPlay
         theme = AppSettings.theme
         exportStatusMessage = nil
@@ -239,6 +263,12 @@ struct SettingsView: View {
             exportStatusMessage = packageURL.map { "Exported to \($0.path)" } ?? "Export finished."
         } catch {
             exportErrorMessage = error.localizedDescription
+        }
+    }
+
+    private func relocateLibraryHome() {
+        if let newRoot = LibraryRootRelocation.relocateLibrary(currentLibrary: libraryVM.library) {
+            libraryPath = newRoot.path
         }
     }
 }

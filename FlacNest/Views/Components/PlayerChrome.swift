@@ -501,7 +501,6 @@ enum PlayerArtworkSizing {
 }
 
 struct PlayerToolbarIconGroup<Content: View>: View {
-    @Environment(\.nestThemePalette) private var palette
     @ViewBuilder var content: () -> Content
 
     var body: some View {
@@ -512,19 +511,7 @@ struct PlayerToolbarIconGroup<Content: View>: View {
         .labelStyle(.iconOnly)
         .padding(.horizontal, 10)
         .padding(.vertical, 12)
-        .background {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(groupBackground)
-        }
-        .compositingGroup()
-        .shadow(color: .black.opacity(0.22), radius: 8, x: 0, y: 4)
-    }
-
-    private var groupBackground: Color {
-        if let palette {
-            return palette.background
-        }
-        return Color(nsColor: .windowBackgroundColor)
+        .nestGlassToolbarBackground(cornerRadius: 14)
     }
 }
 

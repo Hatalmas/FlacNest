@@ -61,6 +61,7 @@ struct AlbumMetadataPreviewView: View {
             Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 12, verticalSpacing: 10) {
                 metadataRow("Title", value: album.title)
                 metadataRow("Performer", value: album.performer)
+                metadataRow("Parent Folder", value: album.parentFolder.isEmpty ? nil : album.parentFolder)
                 metadataRow("Genre", value: album.genre)
                 metadataRow("Date", value: album.date)
                 metadataRow("Disc ID", value: album.discID)

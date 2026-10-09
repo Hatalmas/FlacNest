@@ -11,6 +11,7 @@ struct FlacNestApp: App {
     @StateObject private var libraryVM = LibraryViewModel()
     @StateObject private var playerWindowTracker = PlayerWindowTracker()
     @StateObject private var libraryWindowTracker = LibraryWindowTracker()
+    @StateObject private var dockMiniPlayerWindowTracker = DockMiniPlayerWindowTracker()
     @StateObject private var barcodeEject = BarcodeEjectController()
 
     private var theme: AppTheme {
@@ -24,6 +25,7 @@ struct FlacNestApp: App {
                 .environmentObject(libraryVM)
                 .environmentObject(playerWindowTracker)
                 .environmentObject(libraryWindowTracker)
+                .environmentObject(dockMiniPlayerWindowTracker)
                 .environmentObject(barcodeEject)
                 .flacNestFocusedCommands(
                     playback: playback,
@@ -50,7 +52,7 @@ struct FlacNestApp: App {
             height: PlayerWindowSizing.savedSize(trackListVisible: playerTrackListVisible).height
         )
         .commands {
-            FlacNestCommands()
+            FlacNestCommands(playback: playback, barcodeEject: barcodeEject)
         }
 
         Window("FlacNest Library", id: "library") {
@@ -59,6 +61,7 @@ struct FlacNestApp: App {
                 .environmentObject(libraryVM)
                 .environmentObject(playerWindowTracker)
                 .environmentObject(libraryWindowTracker)
+                .environmentObject(dockMiniPlayerWindowTracker)
                 .environmentObject(barcodeEject)
                 .onReceive(NotificationCenter.default.publisher(for: .flacNestLibraryRootDidChange)) { _ in
                     playback.configure(libraryRoot: AppSettings.libraryRootURL)
@@ -73,6 +76,18 @@ struct FlacNestApp: App {
                 .appTheme(theme)
         }
         .defaultSize(width: 720, height: 560)
+
+        Window("FlacNest Dock Mini", id: "dockMiniPlayer") {
+            DockMiniPlayerView()
+                .environment(playback)
+                .environmentObject(libraryVM)
+                .environmentObject(playerWindowTracker)
+                .environmentObject(dockMiniPlayerWindowTracker)
+                .appTheme(theme)
+        }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentMinSize)
+        .defaultSize(DockMiniPlayerWindowSizing.savedSize(for: AppSettings.dockMiniPlayerOrientation))
 
         Window("Prepare Export", id: "prepareExport") {
             PrepareExportView()
@@ -157,6 +172,7 @@ enum PlayerWindowSizing {
     }
 
     static func bringPlayerToFront() {
+        DockMiniPlayerWindowSizing.closeIfOpen()
         DockIconVisibility.prepareToShowMainWindow()
         NSApp.activate(ignoringOtherApps: true)
         playerWindow?.makeKeyAndOrderFront(nil)
@@ -240,6 +256,157 @@ enum PlayerWindowSizing {
     }
 }
 
+enum DockMiniPlayerWindowSizing {
+    static func isDockMiniPlayerWindow(_ window: NSWindow) -> Bool {
+        window.title == "FlacNest Dock Mini" || window.identifier?.rawValue == "dockMiniPlayer"
+    }
+
+    static var isDockMiniPlayerWindowOpen: Bool {
+        NSApp.windows.contains { isDockMiniPlayerWindow($0) && PlayerWindowSizing.isMainWindowShown($0) }
+    }
+
+    static func configure(_ window: NSWindow) {
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.styleMask.insert(.fullSizeContentView)
+        window.isMovableByWindowBackground = true
+        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+    }
+
+    static func applyWindowChrome() {
+        guard let window = dockMiniPlayerWindow else { return }
+        configure(window)
+    }
+
+    static func applyOrientation(_ orientation: DockMiniPlayerOrientation) {
+        DispatchQueue.main.async {
+            guard let window = dockMiniPlayerWindow else { return }
+            configure(window)
+            window.minSize = orientation.minSize
+            window.maxSize = NSSize(width: 2_000, height: 2_000)
+
+            let current = window.contentLayoutRect.size
+            let clamped = NSSize(
+                width: max(orientation.minWidth, current.width),
+                height: max(orientation.minHeight, current.height)
+            )
+            if current != clamped {
+                window.setContentSize(clamped)
+            }
+        }
+    }
+
+    static func savedSize(for orientation: DockMiniPlayerOrientation) -> NSSize {
+        let saved = AppSettings.dockMiniPlayerWindowFrame(for: orientation)
+        let width = max(orientation.minWidth, saved.map { CGFloat($0.width) } ?? orientation.defaultWidth)
+        let height = max(orientation.minHeight, saved.map { CGFloat($0.height) } ?? orientation.defaultHeight)
+        return NSSize(width: width, height: height)
+    }
+
+    static func restoreSize(for orientation: DockMiniPlayerOrientation) {
+        DispatchQueue.main.async {
+            dockMiniPlayerWindow?.setContentSize(savedSize(for: orientation))
+        }
+    }
+
+    static func saveCurrentSize(for orientation: DockMiniPlayerOrientation) {
+        guard let window = dockMiniPlayerWindow else { return }
+        let frame = PlayerWindowFrame(
+            width: window.contentLayoutRect.width,
+            height: window.contentLayoutRect.height,
+            artworkSize: nil
+        )
+        AppSettings.setDockMiniPlayerWindowFrame(frame, for: orientation)
+    }
+
+    static func bringDockMiniToFront() {
+        DockIconVisibility.prepareToShowMainWindow()
+        NSApp.activate(ignoringOtherApps: true)
+        dockMiniPlayerWindow?.makeKeyAndOrderFront(nil)
+    }
+
+    static func closeIfOpen() {
+        guard let window = dockMiniPlayerWindow else { return }
+        window.close()
+    }
+
+    static func enterDockMiniMode(
+        dismissWindow: DismissWindowAction,
+        openWindow: OpenWindowAction,
+        playerTracker: PlayerWindowTracker,
+        dockMiniTracker: DockMiniPlayerWindowTracker
+    ) {
+        dismissWindow(id: "player")
+        openWindow(id: "dockMiniPlayer")
+        DispatchQueue.main.async {
+            applyWindowChrome()
+            applyOrientation(AppSettings.dockMiniPlayerOrientation)
+            restoreSize(for: AppSettings.dockMiniPlayerOrientation)
+            bringDockMiniToFront()
+            playerTracker.refresh()
+            dockMiniTracker.refresh()
+            DockIconVisibility.sync()
+        }
+    }
+
+    static func showFullPlayer(
+        dismissWindow: DismissWindowAction,
+        openWindow: OpenWindowAction,
+        dockMiniTracker: DockMiniPlayerWindowTracker,
+        playerTracker: PlayerWindowTracker
+    ) {
+        dismissWindow(id: "dockMiniPlayer")
+        openWindow(id: "player")
+        DispatchQueue.main.async {
+            PlayerWindowSizing.bringPlayerToFront()
+            dockMiniTracker.refresh()
+            playerTracker.refresh()
+            DockIconVisibility.sync()
+        }
+    }
+
+    private static var dockMiniPlayerWindow: NSWindow? {
+        NSApp.windows.first(where: isDockMiniPlayerWindow)
+    }
+}
+
+@MainActor
+final class DockMiniPlayerWindowTracker: ObservableObject {
+    @Published private(set) var isOpen = false
+
+    private var observers: [NSObjectProtocol] = []
+
+    init() {
+        let center = NotificationCenter.default
+        observers.append(
+            center.addObserver(
+                forName: .flacNestMainWindowVisibilityDidChange,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in
+                    self?.refresh()
+                }
+            }
+        )
+
+        DispatchQueue.main.async { [weak self] in
+            self?.refresh()
+        }
+    }
+
+    deinit {
+        for observer in observers {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+
+    func refresh() {
+        isOpen = DockMiniPlayerWindowSizing.isDockMiniPlayerWindowOpen
+        DockIconVisibility.sync()
+    }
+}
+
 @MainActor
 final class PlayerWindowTracker: ObservableObject {
     @Published private(set) var isOpen = false
@@ -254,7 +421,9 @@ final class PlayerWindowTracker: ObservableObject {
                 object: nil,
                 queue: .main
             ) { [weak self] _ in
-                self?.refresh()
+                Task { @MainActor in
+                    self?.refresh()
+                }
             }
         )
 
@@ -284,6 +453,7 @@ enum DockIconVisibility {
         apply(
             showInDock: PlayerWindowSizing.isPlayerWindowOpen
                 || PlayerWindowSizing.isLibraryWindowOpen
+                || DockMiniPlayerWindowSizing.isDockMiniPlayerWindowOpen
         )
     }
 
@@ -308,7 +478,9 @@ final class LibraryWindowTracker: ObservableObject {
                 object: nil,
                 queue: .main
             ) { [weak self] _ in
-                self?.refresh()
+                Task { @MainActor in
+                    self?.refresh()
+                }
             }
         )
 
@@ -348,7 +520,9 @@ struct MainWindowLifecycleMonitor: NSViewRepresentable {
                 return
             }
 
-            guard PlayerWindowSizing.isPlayerWindow(window) || PlayerWindowSizing.isLibraryWindow(window) else {
+            guard PlayerWindowSizing.isPlayerWindow(window)
+                || PlayerWindowSizing.isLibraryWindow(window)
+                || DockMiniPlayerWindowSizing.isDockMiniPlayerWindow(window) else {
                 return
             }
 
