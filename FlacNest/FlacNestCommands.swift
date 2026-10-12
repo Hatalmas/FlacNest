@@ -87,10 +87,15 @@ struct FlacNestCommands: Commands {
 
             Divider()
 
-            Button("Prepare Export…") {
+            Button("Export to Mobile App…") {
                 openWindow(id: "prepareExport")
             }
             .disabled(libraryVM?.library.albums.isEmpty == true || libraryVM?.isLibraryBusy == true)
+
+            Button("Export to Other Desktop…") {
+                openWindow(id: "transferMetadata")
+            }
+            .disabled(libraryVM?.isLibraryBusy == true)
         }
 
         CommandGroup(after: .windowArrangement) {

@@ -17,6 +17,10 @@ enum AppSettings {
     private static let saveLastPlayedPositionKey = "saveLastPlayedPosition"
     private static let lastPlaybackStateKey = "lastPlaybackState"
     private static let showSpinningCDWhilePlayingKey = "showSpinningCDWhilePlaying"
+    private static let playbackVolumeKey = "playbackVolume"
+    private static let cdSpinUpSoundModeKey = "cdSpinUpSoundMode"
+    private static let cdSpinUpSoundVolumeKey = "cdSpinUpSoundVolume"
+    private static let cdSpinUpOutputDeviceUIDKey = "cdSpinUpOutputDeviceUID"
     static let themeKey = "appTheme"
     static let showStatusMenuKey = "showStatusMenu"
     static let dockMiniPlayerOrientationKey = "dockMiniPlayerOrientation"
@@ -72,6 +76,14 @@ enum AppSettings {
         }
     }
 
+    static var playbackVolume: Float {
+        get {
+            guard UserDefaults.standard.object(forKey: playbackVolumeKey) != nil else { return 1 }
+            return min(1, max(0, Float(UserDefaults.standard.double(forKey: playbackVolumeKey))))
+        }
+        set { UserDefaults.standard.set(Double(min(1, max(0, newValue))), forKey: playbackVolumeKey) }
+    }
+
     static var showSpinningCDWhilePlaying: Bool {
         get {
             if UserDefaults.standard.object(forKey: showSpinningCDWhilePlayingKey) == nil {
@@ -80,6 +92,39 @@ enum AppSettings {
             return UserDefaults.standard.bool(forKey: showSpinningCDWhilePlayingKey)
         }
         set { UserDefaults.standard.set(newValue, forKey: showSpinningCDWhilePlayingKey) }
+    }
+
+    static var cdSpinUpSoundMode: CDSpinUpSoundMode {
+        get {
+            guard let raw = UserDefaults.standard.string(forKey: cdSpinUpSoundModeKey),
+                  let mode = CDSpinUpSoundMode(rawValue: raw) else {
+                return .never
+            }
+            return mode
+        }
+        set { UserDefaults.standard.set(newValue.rawValue, forKey: cdSpinUpSoundModeKey) }
+    }
+
+    static var cdSpinUpSoundVolume: CDSpinUpSoundVolume {
+        get {
+            guard let raw = UserDefaults.standard.string(forKey: cdSpinUpSoundVolumeKey),
+                  let volume = CDSpinUpSoundVolume(rawValue: raw) else {
+                return .loud
+            }
+            return volume
+        }
+        set { UserDefaults.standard.set(newValue.rawValue, forKey: cdSpinUpSoundVolumeKey) }
+    }
+
+    static var cdSpinUpOutputDeviceUID: String? {
+        get { UserDefaults.standard.string(forKey: cdSpinUpOutputDeviceUIDKey) }
+        set {
+            if let newValue, !newValue.isEmpty {
+                UserDefaults.standard.set(newValue, forKey: cdSpinUpOutputDeviceUIDKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: cdSpinUpOutputDeviceUIDKey)
+            }
+        }
     }
 
     static var theme: AppTheme {

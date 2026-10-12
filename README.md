@@ -94,9 +94,9 @@ The **FlacNestMobile** target is a companion app for listening to albums exporte
 
 **Getting music onto your device**
 
-1. On Mac, use **Library → Prepare Export…** to convert each album FLAC to a single MP3 (track boundaries from CUE metadata, same as desktop). Choose bitrate and export folder; conversion can be resumed—albums listed in `process.txt` are skipped.
+1. On Mac, use **Library → Export to Mobile App…** to convert each album FLAC to a single MP3 (track boundaries from CUE metadata, same as desktop). Choose bitrate and export folder; conversion can be resumed—albums listed in `process.txt` are skipped.
 2. Copy the export folder to your iPhone/iPad (USB, Files, etc.) into the app **Documents** folder, or choose a custom library folder in mobile Settings.
-3. Optionally use **Settings → Export Library for iPhone/iPad…** on Mac for a lightweight metadata-only `.flacnestexport` package (artwork + `flacnestmobile.xml`; no audio).
+3. Optionally use **Settings → Mobile → Export Mobile Metadata Package…** on Mac for a lightweight metadata-only `.flacnestexport` package (artwork + `flacnestmobile.xml`; no audio).
 
 **Using the mobile app**
 
@@ -106,6 +106,10 @@ The **FlacNestMobile** target is a companion app for listening to albums exporte
 - Player shell with artwork, progress, and transport controls; **Now Playing** integration
 - Theme: **Nest**, **Dark Nest**, or **System**
 - iPad supports a split layout with library and player side by side
+
+### Moving to another Mac
+
+Use **Library → Export to Other Desktop…** (also in **Settings → Library**) to pack album metadata, favorites, barcodes and all artwork — including covers stored outside the library folder — into `export.zip.flacnest`. On the other Mac, copy your FLAC folder over, then open the package (double-click it or use **Import** in the same window) and choose the moved FLAC folder.
 
 ### Themes
 
@@ -118,7 +122,7 @@ Both Mac and iOS support custom **Nest** and **Dark Nest** palettes (warm cream/
 - **macOS 14** or later
 - FLAC files with accompanying CUE sheets in your library folder
 - Camera access (for barcode scanning only)
-- **FFmpeg** (bundled via project scripts for Prepare Export, or available on `PATH`)
+- **FFmpeg** (bundled via project scripts for Export to Mobile App, or available on `PATH`)
 
 ### iOS (FlacNestMobile)
 

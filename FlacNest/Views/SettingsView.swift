@@ -37,6 +37,10 @@ struct SettingsView: View {
     @State private var customXMLPath: String = AppSettings.libraryXMLDirectoryURL?.path ?? ""
     @State private var saveLastPlayedPosition: Bool = AppSettings.saveLastPlayedPosition
     @State private var showSpinningCDWhilePlaying: Bool = AppSettings.showSpinningCDWhilePlaying
+    @State private var cdSpinUpSoundMode: CDSpinUpSoundMode = AppSettings.cdSpinUpSoundMode
+    @State private var cdSpinUpSoundVolume: CDSpinUpSoundVolume = AppSettings.cdSpinUpSoundVolume
+    @State private var cdSpinUpOutputDeviceUID: String = AppSettings.cdSpinUpOutputDeviceUID ?? ""
+    @State private var audioOutputDevices: [AudioOutputDevice] = []
     @State private var showStatusMenu: Bool = AppSettings.showStatusMenu
     @State private var dockMiniPlayerOrientation: DockMiniPlayerOrientation = AppSettings.dockMiniPlayerOrientation
     @State private var continuousAlbumPlay: Bool = AppSettings.continuousAlbumPlay
@@ -68,6 +72,7 @@ struct SettingsView: View {
         .frame(minHeight: 420)
         .onAppear {
             syncFromAppSettings()
+            refreshAudioOutputDevices()
         }
     }
 
@@ -134,6 +139,17 @@ struct SettingsView: View {
                      ? "flacnest.xml will be stored in the selected folder."
                      : "flacnest.xml will be stored in your library home folder.")
             }
+
+            Section {
+                LabeledContent("Other desktop") {
+                    Button("Export to Other Desktop…") {
+                        openWindow(id: "transferMetadata")
+                    }
+                    .disabled(libraryVM.isLibraryBusy)
+                }
+            } footer: {
+                Text("Pack album metadata and all artwork into \(MetadataTransferPackage.fileName) for another Mac, or import one there after moving your FLAC folder.")
+            }
         }
     }
 
@@ -145,6 +161,29 @@ struct SettingsView: View {
                 Toggle("Show spinning CD while playing", isOn: showSpinningCDToggle)
             } footer: {
                 Text("Continuous play advances to the next album in the current library sort order when the last track finishes.")
+            }
+
+            Section {
+                Picker("Play CD spin up sound", selection: cdSpinUpSoundModeBinding) {
+                    ForEach(CDSpinUpSoundMode.allCases) { mode in
+                        Text(mode.label).tag(mode)
+                    }
+                }
+                Picker("CD spin up volume", selection: cdSpinUpSoundVolumeBinding) {
+                    ForEach(CDSpinUpSoundVolume.allCases) { volume in
+                        Text(volume.label).tag(volume)
+                    }
+                }
+                .disabled(cdSpinUpSoundMode == .never)
+                Picker("CD spin up output", selection: cdSpinUpOutputDeviceBinding) {
+                    Text("System Default").tag("")
+                    ForEach(audioOutputDevices) { device in
+                        Text(device.name).tag(device.uid)
+                    }
+                }
+                .disabled(cdSpinUpSoundMode == .never)
+            } footer: {
+                Text("The spin-up sound plays at the same time as FLAC playback when you start from pause or stop. Choose a different output — for example the MacBook speakers — so it doesn’t mix into your DAC or headphones.")
             }
 
             Section {
@@ -185,12 +224,12 @@ struct SettingsView: View {
     private var mobileTab: some View {
         Form {
             Section {
-                Button("Prepare MP3 Export…") {
+                Button("Export to Mobile App…") {
                     openWindow(id: "prepareExport")
                 }
                 .disabled(libraryVM.library.albums.isEmpty || libraryVM.isLibraryBusy)
 
-                Button("Export Metadata Package…") {
+                Button("Export Mobile Metadata Package…") {
                     exportPortableLibrary()
                 }
                 .disabled(libraryVM.library.albums.isEmpty || libraryVM.isLibraryBusy)
@@ -208,7 +247,7 @@ struct SettingsView: View {
                         .foregroundStyle(.red)
                 }
             } footer: {
-                Text("Prepare Export converts FLAC to MP3 and writes flacnestmobile.xml for the iOS app. The metadata package is a read-only .flacnestexport bundle (no audio).")
+                Text("Export to Mobile App converts FLAC to MP3 and writes flacnestmobile.xml for the iOS app. The mobile metadata package is a read-only .flacnestexport bundle (no audio).")
             }
         }
     }
@@ -265,6 +304,36 @@ struct SettingsView: View {
         )
     }
 
+    private var cdSpinUpSoundModeBinding: Binding<CDSpinUpSoundMode> {
+        Binding(
+            get: { cdSpinUpSoundMode },
+            set: { mode in
+                cdSpinUpSoundMode = mode
+                AppSettings.cdSpinUpSoundMode = mode
+            }
+        )
+    }
+
+    private var cdSpinUpSoundVolumeBinding: Binding<CDSpinUpSoundVolume> {
+        Binding(
+            get: { cdSpinUpSoundVolume },
+            set: { volume in
+                cdSpinUpSoundVolume = volume
+                AppSettings.cdSpinUpSoundVolume = volume
+            }
+        )
+    }
+
+    private var cdSpinUpOutputDeviceBinding: Binding<String> {
+        Binding(
+            get: { cdSpinUpOutputDeviceUID },
+            set: { uid in
+                cdSpinUpOutputDeviceUID = uid
+                AppSettings.cdSpinUpOutputDeviceUID = uid.isEmpty ? nil : uid
+            }
+        )
+    }
+
     private var saveLastPlayedToggle: Binding<Bool> {
         Binding(
             get: { saveLastPlayedPosition },
@@ -317,6 +386,9 @@ struct SettingsView: View {
         customXMLPath = AppSettings.libraryXMLDirectoryURL?.path ?? ""
         saveLastPlayedPosition = AppSettings.saveLastPlayedPosition
         showSpinningCDWhilePlaying = AppSettings.showSpinningCDWhilePlaying
+        cdSpinUpSoundMode = AppSettings.cdSpinUpSoundMode
+        cdSpinUpSoundVolume = AppSettings.cdSpinUpSoundVolume
+        cdSpinUpOutputDeviceUID = AppSettings.cdSpinUpOutputDeviceUID ?? ""
         showStatusMenu = AppSettings.showStatusMenu
         dockMiniPlayerOrientation = AppSettings.dockMiniPlayerOrientation
         continuousAlbumPlay = AppSettings.continuousAlbumPlay
@@ -336,6 +408,15 @@ struct SettingsView: View {
             exportStatusMessage = packageURL.map { "Exported to \($0.path)" } ?? "Export finished."
         } catch {
             exportErrorMessage = error.localizedDescription
+        }
+    }
+
+    private func refreshAudioOutputDevices() {
+        audioOutputDevices = AudioOutputDeviceList.devices()
+        if !cdSpinUpOutputDeviceUID.isEmpty,
+           !audioOutputDevices.contains(where: { $0.uid == cdSpinUpOutputDeviceUID }) {
+            cdSpinUpOutputDeviceUID = ""
+            AppSettings.cdSpinUpOutputDeviceUID = nil
         }
     }
 

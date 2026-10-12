@@ -14,7 +14,10 @@ enum FlacNestLibraryStore {
     }()
 
     static func load(from url: URL) throws -> FlacNestLibrary {
-        let data = try Data(contentsOf: url)
+        try load(data: Data(contentsOf: url))
+    }
+
+    static func load(data: Data) throws -> FlacNestLibrary {
         if data.isEmpty {
             return FlacNestLibrary()
         }
@@ -37,9 +40,11 @@ enum FlacNestLibraryStore {
     }
 
     static func save(_ library: FlacNestLibrary, to url: URL) throws {
-        let doc = makeFlacNestXMLDocument(library)
-        let data = doc.xmlData(options: [.nodePrettyPrint])
-        try data.write(to: url, options: .atomic)
+        try xmlData(for: library).write(to: url, options: .atomic)
+    }
+
+    static func xmlData(for library: FlacNestLibrary) -> Data {
+        makeFlacNestXMLDocument(library).xmlData(options: [.nodePrettyPrint])
     }
 
     // MARK: - FlacNest XML

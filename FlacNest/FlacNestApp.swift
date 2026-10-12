@@ -44,6 +44,7 @@ struct FlacNestApp: App {
                 .onAppear {
                     configureSharedPlayback()
                 }
+                .registersMetadataTransferOpener()
                 .appTheme(theme)
         }
         .windowResizability(.contentMinSize)
@@ -73,6 +74,7 @@ struct FlacNestApp: App {
                 .onAppear {
                     configureSharedPlayback()
                 }
+                .registersMetadataTransferOpener()
                 .appTheme(theme)
         }
         .defaultSize(width: 960, height: 620)
@@ -83,18 +85,29 @@ struct FlacNestApp: App {
                 .environmentObject(libraryVM)
                 .environmentObject(playerWindowTracker)
                 .environmentObject(dockMiniPlayerWindowTracker)
+                .registersMetadataTransferOpener()
                 .appTheme(theme)
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentMinSize)
         .defaultSize(DockMiniPlayerWindowSizing.savedSize(for: AppSettings.dockMiniPlayerOrientation))
 
-        Window("Prepare Export", id: "prepareExport") {
+        Window("Export to Mobile App", id: "prepareExport") {
             PrepareExportView()
                 .environmentObject(libraryVM)
                 .appTheme(theme)
         }
         .defaultSize(width: 560, height: 560)
+        .commandsRemoved()
+
+        Window("Export to Other Desktop", id: "transferMetadata") {
+            MetadataTransferView()
+                .environmentObject(libraryVM)
+                .appTheme(theme)
+        }
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
+        .commandsRemoved()
 
         Settings {
             SettingsView()
@@ -103,6 +116,7 @@ struct FlacNestApp: App {
                     playback.configure(libraryRoot: AppSettings.libraryRootURL)
                     libraryVM.reloadFromDisk()
                 }
+                .registersMetadataTransferOpener()
                 .appTheme(theme)
         }
 
@@ -110,6 +124,7 @@ struct FlacNestApp: App {
             StatusMenuContent()
                 .environment(playback)
                 .environmentObject(libraryVM)
+                .registersMetadataTransferOpener()
                 .appTheme(theme, showsBackdrop: false)
         } label: {
             StatusMenuBarLabel()

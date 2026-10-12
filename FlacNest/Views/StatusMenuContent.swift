@@ -128,6 +128,8 @@ private struct StatusMenuNowPlayingModule: View {
                 }
 
                 transport
+
+                PlaybackVolumeControl(playback: playback, style: .menu)
             }
         }
     }

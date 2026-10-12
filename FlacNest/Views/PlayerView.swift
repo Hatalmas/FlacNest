@@ -129,6 +129,7 @@ struct PlayerView: View {
             TransportControls(playback: playback, style: .player) {
                 barcodeEject.presentEject()
             }
+            PlaybackVolumeControl(playback: playback, style: .player)
             if let error = playback.lastError {
                 Text(error)
                     .font(.caption)

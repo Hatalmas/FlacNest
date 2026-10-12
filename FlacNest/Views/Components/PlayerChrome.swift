@@ -100,6 +100,60 @@ struct TransportControls: View {
     }
 }
 
+struct PlaybackVolumeControl: View {
+    enum Style {
+        case player
+        case bar
+        case menu
+    }
+
+    var playback: PlaybackController
+    var style: Style = .player
+
+    @Environment(\.nestThemePalette) private var palette
+
+    var body: some View {
+        HStack(spacing: style == .bar ? 6 : 8) {
+            Button {
+                playback.toggleMute()
+            } label: {
+                Image(systemName: speakerSymbol)
+                    .font(style == .player ? .body : .caption)
+                    .frame(width: style == .bar ? 16 : 18)
+                    .nestSecondaryForeground()
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(playback.volume > 0.001 ? "Mute" : "Unmute")
+
+            Slider(
+                value: Binding(
+                    get: { Double(playback.volume) },
+                    set: { playback.setVolume(Float($0)) }
+                ),
+                in: 0...1
+            )
+            .controlSize(style == .player ? .regular : .small)
+            .tint(palette?.accent ?? Color.accentColor)
+            .accessibilityLabel("Volume")
+        }
+        .frame(maxWidth: style == .player ? 240 : (style == .menu ? .infinity : 120))
+    }
+
+    private var speakerSymbol: String {
+        switch playback.volume {
+        case 0...0.001:
+            return "speaker.slash.fill"
+        case ...0.33:
+            return "speaker.wave.1.fill"
+        case ...0.66:
+            return "speaker.wave.2.fill"
+        default:
+            return "speaker.wave.3.fill"
+        }
+    }
+}
+
 private struct TransportPressButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
 

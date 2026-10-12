@@ -477,10 +477,13 @@ struct LibraryManagerView: View {
                 libraryVM.scanSubfolder()
             }
             Divider()
-            Button("Prepare Export…", systemImage: "square.and.arrow.up") {
+            Button("Export to Mobile App…", systemImage: "iphone.and.arrow.forward") {
                 openWindow(id: "prepareExport")
             }
             .disabled(libraryVM.library.albums.isEmpty)
+            Button("Export to Other Desktop…", systemImage: "desktopcomputer") {
+                openWindow(id: "transferMetadata")
+            }
         } label: {
             Label("Refresh", systemImage: "arrow.clockwise")
         } primaryAction: {
@@ -744,6 +747,8 @@ private struct LibraryNowPlayingBar: View {
 
                 progress
                     .frame(maxWidth: .infinity)
+
+                PlaybackVolumeControl(playback: playback, style: .bar)
 
                 Button(action: onOpenPlayer) {
                     Label("Open Player Window", systemImage: "macwindow.on.rectangle")

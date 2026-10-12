@@ -32,6 +32,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    func application(_ application: NSApplication, open urls: [URL]) {
+        guard let packageURL = urls.first(where: MetadataTransferPackage.isPackage) else { return }
+        MainActor.assumeIsolated {
+            MetadataTransferRequests.shared.requestImport(of: packageURL)
+        }
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
         NotificationCenter.default.post(name: .flacNestApplicationWillTerminate, object: nil)
         AlbumArtworkImporter.stopAccessingArtwork()

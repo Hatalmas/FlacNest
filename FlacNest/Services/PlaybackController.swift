@@ -10,6 +10,7 @@ final class PlaybackController {
     private(set) var isPlaying = false
     private(set) var currentTime: Double = 0
     private(set) var fileDuration: Double = 0
+    private(set) var volume: Float
     var lastError: String?
 
     private let engine = AVAudioEngine()
@@ -22,10 +23,34 @@ final class PlaybackController {
     private var libraryRoot: URL?
     private var hasAttemptedRestore = false
     private var lastResumeSave = Date.distantPast
+    private var volumeBeforeMute: Float = 1
     var orderedAlbumsProvider: (() -> [LibraryAlbum])?
 
     init() {
+        let storedVolume = AppSettings.playbackVolume
+        volume = storedVolume
+        volumeBeforeMute = storedVolume > 0.001 ? storedVolume : 1
         engine.attach(playerNode)
+        engine.mainMixerNode.outputVolume = storedVolume
+    }
+
+    func setVolume(_ value: Float) {
+        let clamped = min(1, max(0, value))
+        volume = clamped
+        if clamped > 0.001 {
+            volumeBeforeMute = clamped
+        }
+        engine.mainMixerNode.outputVolume = clamped
+        AppSettings.playbackVolume = clamped
+    }
+
+    func toggleMute() {
+        if volume > 0.001 {
+            volumeBeforeMute = volume
+            setVolume(0)
+        } else {
+            setVolume(volumeBeforeMute > 0.001 ? volumeBeforeMute : 1)
+        }
     }
 
     func configure(libraryRoot: URL?) {
@@ -195,8 +220,9 @@ final class PlaybackController {
         currentAlbum = album
     }
 
-    func play(fromTrackStart: Bool = false) {
+    func play(fromTrackStart: Bool = false, allowSpinUp: Bool = true) {
         guard audioFile != nil, let track = currentTrack else { return }
+        let shouldPlaySpinUp = allowSpinUp && !isPlaying
 
         if playerNode.isPlaying && !fromTrackStart {
             isPlaying = true
@@ -226,6 +252,9 @@ final class PlaybackController {
         playerNode.play()
         isPlaying = true
         startPositionTimer()
+        if shouldPlaySpinUp {
+            CDSpinUpSoundPlayer.shared.playIfStartingPlayback()
+        }
         MediaRemoteController.shared.refresh(from: self)
     }
 
@@ -349,6 +378,7 @@ final class PlaybackController {
         engine.stop()
         engine.disconnectNodeOutput(playerNode)
         engine.connect(playerNode, to: engine.mainMixerNode, format: file.processingFormat)
+        engine.mainMixerNode.outputVolume = volume
         playerNode.stop()
     }
 
@@ -423,7 +453,7 @@ final class PlaybackController {
 
         let nextAlbum = albums[currentIndex + 1]
         load(album: nextAlbum, trackIndex: 0)
-        play(fromTrackStart: true)
+        play(fromTrackStart: true, allowSpinUp: false)
         return true
     }
 

@@ -598,6 +598,29 @@ enum FolderPicker {
     }
 
     @MainActor
+    static func chooseMetadataExportFolder() -> URL? {
+        chooseDirectory(
+            title: "Export Library Metadata",
+            message: "Choose a folder for \(MetadataTransferPackage.fileName).",
+            canCreateDirectories: true
+        )
+    }
+
+    @MainActor
+    static func chooseImportedLibraryFolder(albumCount: Int, sourceRootPath: String?) -> URL? {
+        var message = "Select the folder where you moved your FLAC albums (\(albumCount) in this export)."
+        if let sourceRootPath, !sourceRootPath.isEmpty {
+            message += " On the original Mac it was “\((sourceRootPath as NSString).lastPathComponent)”."
+        }
+        return chooseDirectory(
+            title: "Choose FLAC Library Folder",
+            message: message,
+            canCreateDirectories: false,
+            directoryURL: AppSettings.libraryRootURL
+        )
+    }
+
+    @MainActor
     static func isDirectory(_ directory: URL, containedIn parent: URL) -> Bool {
         let parentPath = parent.standardizedFileURL.path
         let directoryPath = directory.standardizedFileURL.path
