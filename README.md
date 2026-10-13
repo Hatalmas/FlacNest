@@ -127,7 +127,7 @@ Both Mac and iOS support custom **Nest** and **Dark Nest** palettes (warm cream/
 
 ### macOS (FlacNest)
 
-- **macOS 14** or later
+- **macOS 15** or later
 - FLAC files with accompanying CUE sheets in your library folder
 - Camera access (for barcode scanning only)
 - **FFmpeg** (bundled via project scripts for Export to Mobile App, or available on `PATH`)

@@ -297,6 +297,7 @@ struct SettingsView: View {
             set: { enabled in
                 showStatusMenu = enabled
                 AppSettings.showStatusMenu = enabled
+                DockIconVisibility.sync()
             }
         )
     }

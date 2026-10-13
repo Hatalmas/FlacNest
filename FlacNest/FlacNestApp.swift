@@ -109,6 +109,14 @@ struct FlacNestApp: App {
         .defaultPosition(.center)
         .commandsRemoved()
 
+        Window("About FlacNest", id: "about") {
+            AboutView()
+                .appTheme(theme, showsBackdrop: false)
+        }
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
+        .commandsRemoved()
+
         Settings {
             SettingsView()
                 .environmentObject(libraryVM)
@@ -468,11 +476,14 @@ enum DockIconVisibility {
     }
 
     static func sync() {
-        apply(
-            showInDock: PlayerWindowSizing.isPlayerWindowOpen
-                || PlayerWindowSizing.isLibraryWindowOpen
-                || DockMiniPlayerWindowSizing.isDockMiniPlayerWindowOpen
-        )
+        apply(showInDock: shouldShowInDock)
+    }
+
+    private static var shouldShowInDock: Bool {
+        AppSettings.showStatusMenu
+            || PlayerWindowSizing.isPlayerWindowOpen
+            || PlayerWindowSizing.isLibraryWindowOpen
+            || DockMiniPlayerWindowSizing.isDockMiniPlayerWindowOpen
     }
 
     private static func apply(showInDock: Bool) {

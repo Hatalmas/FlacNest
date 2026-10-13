@@ -13,6 +13,13 @@ struct FlacNestCommands: Commands {
     }
 
     var body: some Commands {
+        CommandGroup(replacing: .appInfo) {
+            Button("About FlacNest") {
+                DockIconVisibility.prepareToShowMainWindow()
+                openWindow(id: "about")
+            }
+        }
+
         CommandGroup(replacing: .newItem) { }
 
         CommandMenu("Playback") {
