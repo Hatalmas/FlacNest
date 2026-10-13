@@ -483,15 +483,22 @@ enum MobileLibraryPreparer {
         exportDirectory: URL,
         artworkSourceURL: URL?
     ) throws {
-        guard let relativePath = album.artworkRelativePath else { return }
+        guard let sourceURL = artworkSourceURL ?? AlbumArtworkStore.artworkURL(for: album, libraryRoot: libraryRoot),
+              FileManager.default.fileExists(atPath: sourceURL.path) else {
+            return
+        }
+
+        let relativePath: String
+        if AlbumArtworkStore.isStoredPath(album.artworkRelativePath) {
+            relativePath = album.artworkRelativePath!
+        } else {
+            relativePath = AlbumArtworkStore.storedPath(forAlbumID: album.id, pathExtension: sourceURL.pathExtension)
+        }
 
         let destinationURL = exportDirectory.appendingPathComponent(relativePath)
         if FileManager.default.fileExists(atPath: destinationURL.path) {
             return
         }
-
-        let sourceURL = artworkSourceURL ?? libraryRoot.appendingPathComponent(relativePath)
-        guard FileManager.default.fileExists(atPath: sourceURL.path) else { return }
 
         try FileManager.default.createDirectory(
             at: destinationURL.deletingLastPathComponent(),

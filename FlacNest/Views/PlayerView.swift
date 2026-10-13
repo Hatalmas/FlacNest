@@ -114,7 +114,8 @@ struct PlayerView: View {
                   PlayerWindowSizing.isPlayerWindow(window) else { return }
             persistCurrentPlayerLayout()
         }
-        .barcodeEjectSheet()
+        .environment(\.artworkEpoch, libraryVM.artworkEpoch)
+        .barcodeEjectSheet(hostID: BarcodeEjectController.playerHostID)
         .background(MainWindowLifecycleMonitor())
     }
 

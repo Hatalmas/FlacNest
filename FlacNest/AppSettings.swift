@@ -18,15 +18,20 @@ enum AppSettings {
     private static let lastPlaybackStateKey = "lastPlaybackState"
     private static let showSpinningCDWhilePlayingKey = "showSpinningCDWhilePlaying"
     private static let playbackVolumeKey = "playbackVolume"
+    private static let playbackSmoothingRampMillisecondsKey = "playbackSmoothingRampMilliseconds"
+    static let playbackSmoothingRampMillisecondsRange: ClosedRange<Double> = 0...50
     private static let cdSpinUpSoundModeKey = "cdSpinUpSoundMode"
     private static let cdSpinUpSoundVolumeKey = "cdSpinUpSoundVolume"
+    private static let cdSpinUpDelaySecondsKey = "cdSpinUpDelaySeconds"
     private static let cdSpinUpOutputDeviceUIDKey = "cdSpinUpOutputDeviceUID"
+    static let cdSpinUpDelaySecondsRange: ClosedRange<Double> = 0...10
     static let themeKey = "appTheme"
     static let showStatusMenuKey = "showStatusMenu"
     static let dockMiniPlayerOrientationKey = "dockMiniPlayerOrientation"
     static let continuousAlbumPlayKey = "continuousAlbumPlay"
     static let libraryMetadataPreviewVisibleKey = "libraryMetadataPreviewVisible"
     static let libraryShowFavoritesOnlyKey = "libraryShowFavoritesOnly"
+    private static let librarySidebarFilterKey = "librarySidebarFilter"
     private static let barcodeScannerCameraIDKey = "barcodeScannerCameraID"
     static let playerArtworkSizeKey = "playerArtworkSize"
     private static let playerCompactWindowFrameKey = "playerCompactWindowFrame"
@@ -84,6 +89,26 @@ enum AppSettings {
         set { UserDefaults.standard.set(Double(min(1, max(0, newValue))), forKey: playbackVolumeKey) }
     }
 
+    static var playbackSmoothingRampMilliseconds: Double {
+        get {
+            guard UserDefaults.standard.object(forKey: playbackSmoothingRampMillisecondsKey) != nil else {
+                return 0
+            }
+            let value = UserDefaults.standard.double(forKey: playbackSmoothingRampMillisecondsKey)
+            return min(
+                playbackSmoothingRampMillisecondsRange.upperBound,
+                max(playbackSmoothingRampMillisecondsRange.lowerBound, value)
+            )
+        }
+        set {
+            let value = min(
+                playbackSmoothingRampMillisecondsRange.upperBound,
+                max(playbackSmoothingRampMillisecondsRange.lowerBound, newValue)
+            )
+            UserDefaults.standard.set(value, forKey: playbackSmoothingRampMillisecondsKey)
+        }
+    }
+
     static var showSpinningCDWhilePlaying: Bool {
         get {
             if UserDefaults.standard.object(forKey: showSpinningCDWhilePlayingKey) == nil {
@@ -114,6 +139,20 @@ enum AppSettings {
             return volume
         }
         set { UserDefaults.standard.set(newValue.rawValue, forKey: cdSpinUpSoundVolumeKey) }
+    }
+
+    static var cdSpinUpDelaySeconds: Double {
+        get {
+            guard UserDefaults.standard.object(forKey: cdSpinUpDelaySecondsKey) != nil else {
+                return 0
+            }
+            let value = UserDefaults.standard.double(forKey: cdSpinUpDelaySecondsKey)
+            return min(cdSpinUpDelaySecondsRange.upperBound, max(cdSpinUpDelaySecondsRange.lowerBound, value))
+        }
+        set {
+            let value = min(cdSpinUpDelaySecondsRange.upperBound, max(cdSpinUpDelaySecondsRange.lowerBound, newValue))
+            UserDefaults.standard.set(value, forKey: cdSpinUpDelaySecondsKey)
+        }
     }
 
     static var cdSpinUpOutputDeviceUID: String? {
@@ -165,8 +204,22 @@ enum AppSettings {
     }
 
     static var libraryShowFavoritesOnly: Bool {
-        get { UserDefaults.standard.bool(forKey: libraryShowFavoritesOnlyKey) }
-        set { UserDefaults.standard.set(newValue, forKey: libraryShowFavoritesOnlyKey) }
+        get { librarySidebarFilter == .favorites }
+        set { librarySidebarFilter = newValue ? .favorites : .allAlbums }
+    }
+
+    static var librarySidebarFilter: LibrarySidebarFilter {
+        get {
+            if let raw = UserDefaults.standard.string(forKey: librarySidebarFilterKey),
+               let filter = LibrarySidebarFilter(rawValue: raw) {
+                return filter
+            }
+            return UserDefaults.standard.bool(forKey: libraryShowFavoritesOnlyKey) ? .favorites : .allAlbums
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: librarySidebarFilterKey)
+            UserDefaults.standard.set(newValue == .favorites, forKey: libraryShowFavoritesOnlyKey)
+        }
     }
 
     static var barcodeScannerCameraID: String? {

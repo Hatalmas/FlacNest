@@ -3,19 +3,27 @@ import Foundation
 import ImageIO
 
 enum ArtworkImageCache {
-    private static let cache = NSCache<NSURL, NSImage>()
+    private static let cache = NSCache<NSString, NSImage>()
     private static let thumbnailCache: NSCache<NSString, NSImage> = {
         let cache = NSCache<NSString, NSImage>()
         cache.totalCostLimit = 96 * 1024 * 1024
         return cache
     }()
 
+    static func fileRevision(for url: URL?) -> String {
+        guard let url else { return "" }
+        let values = try? url.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey])
+        let size = values?.fileSize ?? 0
+        let mtime = values?.contentModificationDate?.timeIntervalSince1970 ?? 0
+        return "\(url.path)#\(size)#\(mtime)"
+    }
+
     static func image(for url: URL) -> NSImage? {
-        let key = url as NSURL
+        let key = fileRevision(for: url) as NSString
         if let cached = cache.object(forKey: key) {
             return cached
         }
-        guard let image = NSImage(contentsOf: url as URL) else { return nil }
+        guard let data = try? Data(contentsOf: url), let image = NSImage(data: data) else { return nil }
         cache.setObject(image, forKey: key)
         return image
     }
@@ -23,9 +31,14 @@ enum ArtworkImageCache {
     /// Downsampled artwork for list and grid cells; `maxPixelSize` is in pixels, not points.
     static func thumbnail(for url: URL, maxPixelSize: CGFloat) -> NSImage? {
         let bucket = Int((maxPixelSize / 64).rounded(.up)) * 64
-        let key = "\(url.path)#\(bucket)" as NSString
+        let key = "\(fileRevision(for: url))#\(bucket)" as NSString
         if let cached = thumbnailCache.object(forKey: key) {
             return cached
+        }
+
+        guard let data = try? Data(contentsOf: url),
+              let source = CGImageSourceCreateWithData(data as CFData, nil) else {
+            return image(for: url)
         }
 
         let options: [CFString: Any] = [
@@ -34,8 +47,7 @@ enum ArtworkImageCache {
             kCGImageSourceShouldCacheImmediately: true,
             kCGImageSourceThumbnailMaxPixelSize: bucket,
         ]
-        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
-              let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
+        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
             return image(for: url)
         }
 
@@ -44,8 +56,8 @@ enum ArtworkImageCache {
         return image
     }
 
-    static func removeImage(for url: URL) {
-        cache.removeObject(forKey: url as NSURL)
+    static func removeImage(for _: URL) {
+        cache.removeAllObjects()
         thumbnailCache.removeAllObjects()
     }
 

@@ -243,7 +243,7 @@ enum FlacNestLibraryStoreError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .unrecognizedFormat:
-            return "flacnest.xml is not a valid FlacNest library file. Use Refresh Library to rebuild it."
+            return "flacnest.xml is not a valid FlacNest library file. Use Refresh Library to import albums from your files again."
         }
     }
 }

@@ -39,11 +39,13 @@ struct SettingsView: View {
     @State private var showSpinningCDWhilePlaying: Bool = AppSettings.showSpinningCDWhilePlaying
     @State private var cdSpinUpSoundMode: CDSpinUpSoundMode = AppSettings.cdSpinUpSoundMode
     @State private var cdSpinUpSoundVolume: CDSpinUpSoundVolume = AppSettings.cdSpinUpSoundVolume
+    @State private var cdSpinUpDelaySeconds: Double = AppSettings.cdSpinUpDelaySeconds
     @State private var cdSpinUpOutputDeviceUID: String = AppSettings.cdSpinUpOutputDeviceUID ?? ""
     @State private var audioOutputDevices: [AudioOutputDevice] = []
     @State private var showStatusMenu: Bool = AppSettings.showStatusMenu
     @State private var dockMiniPlayerOrientation: DockMiniPlayerOrientation = AppSettings.dockMiniPlayerOrientation
     @State private var continuousAlbumPlay: Bool = AppSettings.continuousAlbumPlay
+    @State private var playbackSmoothingRampMilliseconds: Double = AppSettings.playbackSmoothingRampMilliseconds
     @State private var theme: AppTheme = AppSettings.theme
     @State private var exportStatusMessage: String?
     @State private var exportErrorMessage: String?
@@ -159,8 +161,21 @@ struct SettingsView: View {
                 Toggle("Save last played album and position", isOn: saveLastPlayedToggle)
                 Toggle("Continuous album play", isOn: continuousAlbumPlayToggle)
                 Toggle("Show spinning CD while playing", isOn: showSpinningCDToggle)
+                LabeledContent("Smoothing ramp") {
+                    HStack(spacing: 12) {
+                        Slider(
+                            value: playbackSmoothingRampBinding,
+                            in: AppSettings.playbackSmoothingRampMillisecondsRange,
+                            step: 1
+                        )
+                        Text(playbackSmoothingRampLabel)
+                            .font(.body.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                            .frame(minWidth: 52, alignment: .trailing)
+                    }
+                }
             } footer: {
-                Text("Continuous play advances to the next album in the current library sort order when the last track finishes.")
+                Text("Continuous play advances to the next album in the current library sort order when the last track finishes. Smoothing ramp fades in audio for that many milliseconds when you press play or resume.")
             }
 
             Section {
@@ -175,6 +190,20 @@ struct SettingsView: View {
                     }
                 }
                 .disabled(cdSpinUpSoundMode == .never)
+                LabeledContent("Spin-up delay") {
+                    HStack(spacing: 12) {
+                        Slider(
+                            value: cdSpinUpDelayBinding,
+                            in: AppSettings.cdSpinUpDelaySecondsRange,
+                            step: 0.5
+                        )
+                        Text(cdSpinUpDelayLabel)
+                            .font(.body.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                            .frame(minWidth: 44, alignment: .trailing)
+                    }
+                }
+                .disabled(cdSpinUpSoundMode == .never)
                 Picker("CD spin up output", selection: cdSpinUpOutputDeviceBinding) {
                     Text("System Default").tag("")
                     ForEach(audioOutputDevices) { device in
@@ -183,7 +212,7 @@ struct SettingsView: View {
                 }
                 .disabled(cdSpinUpSoundMode == .never)
             } footer: {
-                Text("The spin-up sound plays at the same time as FLAC playback when you start from pause or stop. Choose a different output — for example the MacBook speakers — so it doesn’t mix into your DAC or headphones.")
+                Text("The spin-up sound plays when you start from pause or stop. If a delay is set, FLAC playback waits that long so the spin-up can play first. Choose a different output — for example the MacBook speakers — so it doesn’t mix into your DAC or headphones.")
             }
 
             Section {
@@ -294,6 +323,23 @@ struct SettingsView: View {
         )
     }
 
+    private var playbackSmoothingRampBinding: Binding<Double> {
+        Binding(
+            get: { playbackSmoothingRampMilliseconds },
+            set: { milliseconds in
+                playbackSmoothingRampMilliseconds = milliseconds
+                AppSettings.playbackSmoothingRampMilliseconds = milliseconds
+            }
+        )
+    }
+
+    private var playbackSmoothingRampLabel: String {
+        if playbackSmoothingRampMilliseconds <= 0 {
+            return "None"
+        }
+        return "\(Int(playbackSmoothingRampMilliseconds.rounded())) ms"
+    }
+
     private var showSpinningCDToggle: Binding<Bool> {
         Binding(
             get: { showSpinningCDWhilePlaying },
@@ -322,6 +368,26 @@ struct SettingsView: View {
                 AppSettings.cdSpinUpSoundVolume = volume
             }
         )
+    }
+
+    private var cdSpinUpDelayBinding: Binding<Double> {
+        Binding(
+            get: { cdSpinUpDelaySeconds },
+            set: { delay in
+                cdSpinUpDelaySeconds = delay
+                AppSettings.cdSpinUpDelaySeconds = delay
+            }
+        )
+    }
+
+    private var cdSpinUpDelayLabel: String {
+        if cdSpinUpDelaySeconds <= 0 {
+            return "None"
+        }
+        if cdSpinUpDelaySeconds.rounded() == cdSpinUpDelaySeconds {
+            return "\(Int(cdSpinUpDelaySeconds)) s"
+        }
+        return String(format: "%.1f s", cdSpinUpDelaySeconds)
     }
 
     private var cdSpinUpOutputDeviceBinding: Binding<String> {
@@ -388,10 +454,12 @@ struct SettingsView: View {
         showSpinningCDWhilePlaying = AppSettings.showSpinningCDWhilePlaying
         cdSpinUpSoundMode = AppSettings.cdSpinUpSoundMode
         cdSpinUpSoundVolume = AppSettings.cdSpinUpSoundVolume
+        cdSpinUpDelaySeconds = AppSettings.cdSpinUpDelaySeconds
         cdSpinUpOutputDeviceUID = AppSettings.cdSpinUpOutputDeviceUID ?? ""
         showStatusMenu = AppSettings.showStatusMenu
         dockMiniPlayerOrientation = AppSettings.dockMiniPlayerOrientation
         continuousAlbumPlay = AppSettings.continuousAlbumPlay
+        playbackSmoothingRampMilliseconds = AppSettings.playbackSmoothingRampMilliseconds
         theme = AppSettings.theme
         exportStatusMessage = nil
         exportErrorMessage = nil

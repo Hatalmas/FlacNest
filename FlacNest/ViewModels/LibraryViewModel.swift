@@ -17,7 +17,9 @@ final class LibraryViewModel: ObservableObject {
     @Published var sortMode: LibrarySortMode = AppSettings.librarySortMode
     @Published var groupMode: LibraryGroupMode = AppSettings.libraryGroupMode
     @Published var showFavoritesOnly: Bool = AppSettings.libraryShowFavoritesOnly
+    @Published var sidebarFilter: LibrarySidebarFilter = AppSettings.librarySidebarFilter
     @Published var filterText = ""
+    @Published private(set) var artworkEpoch = 0
 
     private var scanTask: Task<Void, Never>?
     private var loadTask: Task<Void, Never>?
@@ -111,15 +113,21 @@ final class LibraryViewModel: ObservableObject {
 
         switch result {
         case .success(let loaded):
-            library = loaded
-            statusMessage = "Loaded \(loaded.albums.count) albums from library."
-            await rebuildDisplayedSectionsAndWait(for: loaded)
+            var collected = loaded
+            let didCollect = AlbumArtworkStore.collect(into: &collected, libraryRoot: AppSettings.libraryRootURL)
+            library = collected
+            if didCollect {
+                try? saveLibraryToDisk()
+                ArtworkImageCache.removeAll()
+            }
+            statusMessage = "Loaded \(collected.albums.count) albums from library."
+            await rebuildDisplayedSectionsAndWait(for: collected)
             hasLoadedLibrary = true
         case .failure(let error):
             library = FlacNestLibrary()
             displayedSections = []
             isPreparingLibraryUI = false
-            statusMessage = "Could not read flacnest.xml (\(error.localizedDescription)). Use Refresh Library to rebuild it."
+            statusMessage = "Could not read flacnest.xml (\(error.localizedDescription)). Use Refresh Library to import albums from your files again."
             hasLoadedLibrary = true
         }
 
@@ -135,7 +143,7 @@ final class LibraryViewModel: ObservableObject {
     private func rebuildDisplayedSections(for library: FlacNestLibrary? = nil) {
         sectionsTask?.cancel()
         let sourceLibrary = library ?? self.library
-        let showFavoritesOnly = self.showFavoritesOnly
+        let sidebarFilter = self.sidebarFilter
         let sortMode = self.sortMode
         let groupMode = self.groupMode
 
@@ -144,7 +152,7 @@ final class LibraryViewModel: ObservableObject {
             let sections = await Task.detached(priority: .userInitiated) {
                 Self.buildDisplayedSections(
                     library: sourceLibrary,
-                    showFavoritesOnly: showFavoritesOnly,
+                    filter: sidebarFilter,
                     sortMode: sortMode,
                     groupMode: groupMode
                 )
@@ -161,7 +169,7 @@ final class LibraryViewModel: ObservableObject {
     private func rebuildDisplayedSectionsAndWait(for library: FlacNestLibrary) async {
         sectionsTask?.cancel()
 
-        let showFavoritesOnly = self.showFavoritesOnly
+        let sidebarFilter = self.sidebarFilter
         let sortMode = self.sortMode
         let groupMode = self.groupMode
         isPreparingLibraryUI = true
@@ -169,7 +177,7 @@ final class LibraryViewModel: ObservableObject {
         let sections = await Task.detached(priority: .userInitiated) {
             Self.buildDisplayedSections(
                 library: library,
-                showFavoritesOnly: showFavoritesOnly,
+                filter: sidebarFilter,
                 sortMode: sortMode,
                 groupMode: groupMode
             )
@@ -187,12 +195,27 @@ final class LibraryViewModel: ObservableObject {
 
     nonisolated private static func buildDisplayedSections(
         library: FlacNestLibrary,
-        showFavoritesOnly: Bool,
+        filter: LibrarySidebarFilter,
         sortMode: LibrarySortMode,
         groupMode: LibraryGroupMode
     ) -> [LibraryAlbumSection] {
-        let albums = showFavoritesOnly ? library.albums.filter(\.isFavorite) : library.albums
+        let albums = library.albums.filter { matches($0, filter: filter) }
         return LibraryAlbumSorting.sections(from: albums, sortMode: sortMode, groupMode: groupMode)
+    }
+
+    nonisolated static func matches(_ album: LibraryAlbum, filter: LibrarySidebarFilter) -> Bool {
+        switch filter {
+        case .allAlbums:
+            return true
+        case .favorites:
+            return album.isFavorite
+        case .noBarcode:
+            return !album.hasRegisteredBarcode
+        case .noCoverArt:
+            return !album.hasCoverArt
+        case .noMetadata:
+            return !album.hasCatalogMetadata
+        }
     }
 
     func refreshLibrary() {
@@ -203,7 +226,7 @@ final class LibraryViewModel: ObservableObject {
 
         scanTask?.cancel()
         scanTask = Task {
-            await performScan(libraryRoot: root)
+            await performAdditiveScan(in: root, libraryRoot: root, sourceLabel: nil)
         }
     }
 
@@ -222,7 +245,31 @@ final class LibraryViewModel: ObservableObject {
 
         scanTask?.cancel()
         scanTask = Task {
-            await performSubfolderScan(subfolder: subfolder, libraryRoot: libraryRoot)
+            await performAdditiveScan(
+                in: subfolder,
+                libraryRoot: libraryRoot,
+                sourceLabel: subfolder.lastPathComponent
+            )
+        }
+    }
+
+    func rereadMetadata() {
+        guard let root = AppSettings.libraryRootURL else {
+            statusMessage = "Set a library folder in Settings first."
+            return
+        }
+
+        let alert = NSAlert()
+        alert.messageText = "Re-read Metadata from Files?"
+        alert.informativeText = "FlacNest will replace album and track names from CUE/FLAC files. Barcodes, favorites, and artwork you added are kept. Titles and other fields you edited will be overwritten."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Re-read Metadata")
+        alert.addButton(withTitle: "Cancel")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+        scanTask?.cancel()
+        scanTask = Task {
+            await performMetadataReread(libraryRoot: root)
         }
     }
 
@@ -236,8 +283,13 @@ final class LibraryViewModel: ObservableObject {
     }
 
     func setShowFavoritesOnly(_ enabled: Bool) {
-        showFavoritesOnly = enabled
-        AppSettings.libraryShowFavoritesOnly = enabled
+        setSidebarFilter(enabled ? .favorites : .allAlbums)
+    }
+
+    func setSidebarFilter(_ filter: LibrarySidebarFilter) {
+        sidebarFilter = filter
+        showFavoritesOnly = filter == .favorites
+        AppSettings.librarySidebarFilter = filter
         rebuildDisplayedSections()
     }
 
@@ -259,6 +311,17 @@ final class LibraryViewModel: ObservableObject {
 
     func updateAlbum(_ album: LibraryAlbum) throws {
         guard let index = library.albums.firstIndex(where: { $0.id == album.id }) else { return }
+        let previous = library.albums[index]
+        if previous.artworkRelativePath != nil, album.artworkRelativePath == nil {
+            AlbumArtworkStore.removeStoredArtwork(for: previous)
+        }
+        if let url = artworkURL(for: previous) {
+            ArtworkImageCache.removeImage(for: url)
+        }
+        if let url = artworkURL(for: album) {
+            ArtworkImageCache.removeImage(for: url)
+        }
+        artworkEpoch += 1
         library.albums[index] = album
         try saveLibraryToDisk()
         rebuildDisplayedSections()
@@ -269,6 +332,7 @@ final class LibraryViewModel: ObservableObject {
         guard let index = library.albums.firstIndex(where: { $0.id == albumID }) else { return }
 
         let title = library.albums[index].displayTitle
+        AlbumArtworkStore.removeStoredArtwork(for: library.albums[index])
         library.albums.remove(at: index)
 
         if selectedAlbumID == albumID {
@@ -336,14 +400,127 @@ final class LibraryViewModel: ObservableObject {
         guard let xmlURL = AppSettings.libraryXMLURL else {
             throw LibraryViewModelError.libraryXMLNotConfigured
         }
+        if AlbumArtworkStore.collect(into: &library, libraryRoot: AppSettings.libraryRootURL) {
+            ArtworkImageCache.removeAll()
+        }
         try FlacNestLibraryStore.save(library, to: xmlURL)
     }
 
-    private func performScan(libraryRoot: URL) async {
+    private func performAdditiveScan(in scanRoot: URL, libraryRoot: URL, sourceLabel: String?) async {
+        guard AppSettings.libraryXMLURL != nil else {
+            statusMessage = "Library data file location is not configured."
+            return
+        }
+
         isScanning = true
         lastProgressUpdate = .distantPast
         applyScanProgress(ScanProgress(phase: .discovering), force: true)
-        statusMessage = "Discovering CUE files…"
+        if let sourceLabel {
+            statusMessage = "Looking for new albums in \(sourceLabel)…"
+        } else {
+            statusMessage = "Looking for new albums…"
+        }
+
+        let previousAlbums = library.albums
+        let skipCueRelativePaths = Set(
+            library.albums
+                .filter { !$0.needsDiskMetadataFill }
+                .map(\.cueRelativePath)
+        )
+
+        let result: LibraryScanResult = await withTaskGroup(of: LibraryScanResult.self) { group in
+            group.addTask(priority: .userInitiated) {
+                LibraryScanner.scan(
+                    in: scanRoot,
+                    libraryRoot: libraryRoot,
+                    skipCueRelativePaths: skipCueRelativePaths,
+                    shouldCancel: { Task.isCancelled }
+                ) { progress in
+                    Task { @MainActor in
+                        self.handleScanProgress(progress)
+                    }
+                }
+            }
+            return await group.next() ?? LibraryScanResult(library: FlacNestLibrary(), skippedCues: [])
+        }
+
+        guard !Task.isCancelled else {
+            finishScan(cancelled: true)
+            return
+        }
+
+        var newAlbums: [LibraryAlbum] = []
+        var filledCount = 0
+
+        for scanned in result.library.albums {
+            if let existingIndex = library.albums.firstIndex(where: {
+                $0.cueRelativePath == scanned.cueRelativePath || $0.flacRelativePath == scanned.flacRelativePath
+            }) {
+                if Self.fillMissingMetadata(in: &library.albums[existingIndex], from: scanned, libraryRoot: libraryRoot) {
+                    filledCount += 1
+                }
+                continue
+            }
+
+            newAlbums.append(scanned)
+        }
+
+        guard !newAlbums.isEmpty || filledCount > 0 else {
+            statusMessage = Self.additiveScanMessage(
+                added: 0,
+                filled: 0,
+                hadExistingAlbums: !previousAlbums.isEmpty,
+                skippedCues: result.skippedCues.count,
+                sourceLabel: sourceLabel
+            )
+            finishScan(cancelled: false)
+            return
+        }
+
+        applyScanProgress(ScanProgress(phase: .saving), force: true)
+        statusMessage = "Saving flacnest.xml…"
+
+        library.albums.append(contentsOf: newAlbums)
+        library.scannedAt = Date()
+        _ = AlbumArtworkStore.collect(into: &library, libraryRoot: libraryRoot)
+        ArtworkImageCache.removeAll()
+
+        if let xmlURL = AppSettings.libraryXMLURL {
+            do {
+                try await Task(priority: .utility) {
+                    try FlacNestLibraryStore.save(library, to: xmlURL)
+                }.value
+            } catch {
+                library.albums = previousAlbums
+                statusMessage = "Found \(newAlbums.count) new album(s), but saving flacnest.xml failed: \(error.localizedDescription)"
+                finishScan(cancelled: false)
+                return
+            }
+        }
+
+        guard !Task.isCancelled else {
+            library.albums = previousAlbums
+            finishScan(cancelled: true)
+            return
+        }
+
+        statusMessage = Self.additiveScanMessage(
+            added: newAlbums.count,
+            filled: filledCount,
+            hadExistingAlbums: !previousAlbums.isEmpty,
+            skippedCues: result.skippedCues.count,
+            sourceLabel: sourceLabel
+        )
+        await rebuildDisplayedSectionsAndWait(for: library)
+        finishScan(cancelled: false)
+        postLibraryDidLoad()
+    }
+
+    private func performMetadataReread(libraryRoot: URL) async {
+        isScanning = true
+        lastProgressUpdate = .distantPast
+        applyScanProgress(ScanProgress(phase: .discovering), force: true)
+        statusMessage = "Re-reading metadata from CUE files…"
 
         let result: LibraryScanResult = await withTaskGroup(of: LibraryScanResult.self) { group in
             group.addTask(priority: .userInitiated) {
@@ -384,6 +561,8 @@ final class LibraryViewModel: ObservableObject {
                 library.albums[index].artworkBookmark = preserved.1
             }
         }
+        _ = AlbumArtworkStore.collect(into: &library, libraryRoot: libraryRoot)
+        ArtworkImageCache.removeAll()
 
         if let xmlURL = AppSettings.libraryXMLURL {
             do {
@@ -391,7 +570,7 @@ final class LibraryViewModel: ObservableObject {
                     try FlacNestLibraryStore.save(library, to: xmlURL)
                 }.value
             } catch {
-                statusMessage = "Found \(result.library.albums.count) albums, but saving flacnest.xml failed: \(error.localizedDescription)"
+                statusMessage = "Re-read \(result.library.albums.count) albums, but saving flacnest.xml failed: \(error.localizedDescription)"
                 finishScan(cancelled: false)
                 return
             }
@@ -402,7 +581,7 @@ final class LibraryViewModel: ObservableObject {
             return
         }
 
-        var message = "Found \(result.library.albums.count) albums. Saved to flacnest.xml."
+        var message = "Re-read \(result.library.albums.count) albums from CUE files. Saved to flacnest.xml."
         if !result.skippedCues.isEmpty {
             message += " Skipped \(result.skippedCues.count) CUE file(s)."
         }
@@ -412,95 +591,116 @@ final class LibraryViewModel: ObservableObject {
         postLibraryDidLoad()
     }
 
-    private func performSubfolderScan(subfolder: URL, libraryRoot: URL) async {
-        guard AppSettings.libraryXMLURL != nil else {
-            statusMessage = "Library data file location is not configured."
-            return
+    private static func additiveScanMessage(
+        added: Int,
+        filled: Int,
+        hadExistingAlbums: Bool,
+        skippedCues: Int,
+        sourceLabel: String?
+    ) -> String {
+        var parts: [String] = []
+        let location = sourceLabel.map { " in \($0)" } ?? ""
+
+        if added > 0 {
+            parts.append("Added \(added) album\(added == 1 ? "" : "s")\(location).")
+        }
+        if filled > 0 {
+            parts.append("Filled missing metadata on \(filled) album\(filled == 1 ? "" : "s").")
+        }
+        if parts.isEmpty {
+            var message = "No new albums found\(location)."
+            if hadExistingAlbums {
+                message += " Existing albums were left unchanged."
+            }
+            if skippedCues > 0 {
+                message += " Skipped \(skippedCues) CUE file(s)."
+            }
+            return message
+        }
+        if skippedCues > 0 {
+            parts.append("Skipped \(skippedCues) CUE file(s).")
+        }
+        return parts.joined(separator: " ")
+    }
+
+    @discardableResult
+    private static func fillMissingMetadata(
+        in existing: inout LibraryAlbum,
+        from scanned: LibraryAlbum,
+        libraryRoot: URL
+    ) -> Bool {
+        var changed = false
+
+        func fillString(_ destination: inout String, _ source: String) {
+            if destination.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+               !source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                destination = source
+                changed = true
+            }
         }
 
-        isScanning = true
-        lastProgressUpdate = .distantPast
-        applyScanProgress(ScanProgress(phase: .discovering), force: true)
-        statusMessage = "Discovering CUE files in \(subfolder.lastPathComponent)…"
+        func fillOptional(_ destination: inout String?, _ source: String?) {
+            let destinationEmpty = destination?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true
+            let sourceValue = source?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if destinationEmpty && !sourceValue.isEmpty {
+                destination = source
+                changed = true
+            }
+        }
 
-        let existingCuePaths = Set(library.albums.map(\.cueRelativePath))
-        let existingFlacPaths = Set(library.albums.map(\.flacRelativePath))
+        fillString(&existing.title, scanned.title)
+        fillString(&existing.performer, scanned.performer)
+        fillOptional(&existing.genre, scanned.genre)
+        fillOptional(&existing.date, scanned.date)
+        fillOptional(&existing.discID, scanned.discID)
+        fillOptional(&existing.comment, scanned.comment)
+        fillString(&existing.parentFolder, scanned.parentFolder)
 
-        let result: LibraryScanResult = await withTaskGroup(of: LibraryScanResult.self) { group in
-            group.addTask(priority: .userInitiated) {
-                LibraryScanner.scan(
-                    in: subfolder,
-                    libraryRoot: libraryRoot,
-                    shouldCancel: { Task.isCancelled }
-                ) { progress in
-                    Task { @MainActor in
-                        self.handleScanProgress(progress)
-                    }
+        if !existing.hasCoverArt, scanned.hasCoverArt {
+            existing.artworkRelativePath = scanned.artworkRelativePath
+            existing.artworkBookmark = scanned.artworkBookmark
+            changed = true
+        }
+
+        if !existing.hasRegisteredBarcode, scanned.hasRegisteredBarcode {
+            existing.barcode = scanned.barcode
+            changed = true
+        }
+
+        if existing.flacRelativePath != scanned.flacRelativePath,
+           !scanned.flacRelativePath.isEmpty {
+            let existingURL = libraryRoot.appendingPathComponent(existing.flacRelativePath)
+            let existingMissing = existing.flacRelativePath.isEmpty
+                || !FileManager.default.fileExists(atPath: existingURL.path)
+            if existingMissing {
+                existing.flacRelativePath = scanned.flacRelativePath
+                changed = true
+            }
+        }
+
+        if existing.tracks.isEmpty, !scanned.tracks.isEmpty {
+            existing.tracks = scanned.tracks
+            changed = true
+        } else {
+            let scannedByNumber = Dictionary(uniqueKeysWithValues: scanned.tracks.map { ($0.number, $0) })
+            for index in existing.tracks.indices {
+                guard let scannedTrack = scannedByNumber[existing.tracks[index].number] else { continue }
+                if existing.tracks[index].title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                   !scannedTrack.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    existing.tracks[index].title = scannedTrack.title
+                    changed = true
+                }
+                let performerEmpty = existing.tracks[index].performer?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true
+                if performerEmpty,
+                   let performer = scannedTrack.performer?.trimmingCharacters(in: .whitespacesAndNewlines),
+                   !performer.isEmpty {
+                    existing.tracks[index].performer = performer
+                    changed = true
                 }
             }
-            return await group.next() ?? LibraryScanResult(library: FlacNestLibrary(), skippedCues: [])
         }
 
-        guard !Task.isCancelled else {
-            finishScan(cancelled: true)
-            return
-        }
-
-        let newAlbums = result.library.albums.filter { album in
-            !existingCuePaths.contains(album.cueRelativePath)
-                && !existingFlacPaths.contains(album.flacRelativePath)
-        }
-        let skippedExistingCount = result.library.albums.count - newAlbums.count
-
-        guard !newAlbums.isEmpty else {
-            var message = "No new albums found in \(subfolder.lastPathComponent)."
-            if skippedExistingCount > 0 {
-                message += " \(skippedExistingCount) album(s) were already in the library."
-            }
-            if !result.skippedCues.isEmpty {
-                message += " Skipped \(result.skippedCues.count) CUE file(s)."
-            }
-            statusMessage = message
-            finishScan(cancelled: false)
-            return
-        }
-
-        applyScanProgress(ScanProgress(phase: .saving), force: true)
-        statusMessage = "Saving flacnest.xml…"
-
-        library.albums.append(contentsOf: newAlbums)
-        library.scannedAt = Date()
-
-        if let xmlURL = AppSettings.libraryXMLURL {
-            do {
-                try await Task(priority: .utility) {
-                    try FlacNestLibraryStore.save(library, to: xmlURL)
-                }.value
-            } catch {
-                library.albums.removeLast(newAlbums.count)
-                statusMessage = "Found \(newAlbums.count) new album(s), but saving flacnest.xml failed: \(error.localizedDescription)"
-                finishScan(cancelled: false)
-                return
-            }
-        }
-
-        guard !Task.isCancelled else {
-            library.albums.removeLast(newAlbums.count)
-            finishScan(cancelled: true)
-            return
-        }
-
-        var message = "Added \(newAlbums.count) album(s) from \(subfolder.lastPathComponent)."
-        if skippedExistingCount > 0 {
-            message += " Skipped \(skippedExistingCount) album(s) already in the library."
-        }
-        if !result.skippedCues.isEmpty {
-            message += " Skipped \(result.skippedCues.count) CUE file(s)."
-        }
-        statusMessage = message
-        await rebuildDisplayedSectionsAndWait(for: library)
-        finishScan(cancelled: false)
-        postLibraryDidLoad()
+        return changed
     }
 
     private func handleScanProgress(_ progress: ScanProgress) {
@@ -590,8 +790,8 @@ enum FolderPicker {
     @MainActor
     static func chooseSubfolder(relativeTo libraryRoot: URL) -> URL? {
         chooseDirectory(
-            title: "Scan Subfolder",
-            message: "Select a folder inside your library home to scan for new CUE/FLAC albums.",
+            title: "Refresh Subfolder",
+            message: "Select a folder inside your library home to look for new CUE/FLAC albums. Existing metadata is left unchanged.",
             canCreateDirectories: false,
             directoryURL: libraryRoot
         )

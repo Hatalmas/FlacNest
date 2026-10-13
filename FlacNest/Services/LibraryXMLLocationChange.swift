@@ -50,8 +50,9 @@ enum LibraryXMLLocationChange {
             case .move:
                 do {
                     _ = try AppSettings.moveLibraryXML(from: previousXMLURL, to: newXMLURL)
+                    try AlbumArtworkStore.moveStore(from: previousXMLURL, to: newXMLURL)
                 } catch {
-                    showError("Could not move flacnest.xml: \(error.localizedDescription)")
+                    showError("Could not move library metadata: \(error.localizedDescription)")
                     return false
                 }
             case .leave:

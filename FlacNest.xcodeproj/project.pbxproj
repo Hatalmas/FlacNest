@@ -74,7 +74,6 @@
 		A7F3C1E90B2D4E6A8C1D3F51 /* Exceptions for "FlacNest" folder in "FlacNest" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				FlacNest.entitlements,
 				Info.plist,
 			);
 			target = 57480D8A0EB04403807F1CF4 /* FlacNest */;

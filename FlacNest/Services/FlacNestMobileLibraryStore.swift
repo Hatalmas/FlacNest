@@ -83,9 +83,12 @@ enum FlacNestMobileLibraryStore {
         let fileElement = XMLElement(name: "file")
         fileElement.setAttributesWith(attributes)
 
-        if let artwork = album.artworkRelativePath {
+        if let artwork = album.artworkRelativePath, !artwork.isEmpty {
             let art = XMLElement(name: "artwork")
-            art.setAttributesWith(["path": artwork])
+            let path = AlbumArtworkStore.isStoredPath(artwork)
+                ? artwork
+                : AlbumArtworkStore.storedPath(forAlbumID: album.id, pathExtension: (artwork as NSString).pathExtension)
+            art.setAttributesWith(["path": path])
             fileElement.addChild(art)
         }
 

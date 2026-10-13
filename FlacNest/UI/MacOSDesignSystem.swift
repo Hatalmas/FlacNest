@@ -22,6 +22,9 @@ enum NestMacMetrics {
 enum LibrarySidebarFilter: String, CaseIterable, Identifiable, Hashable {
     case allAlbums
     case favorites
+    case noBarcode
+    case noCoverArt
+    case noMetadata
 
     var id: String { rawValue }
 
@@ -29,6 +32,9 @@ enum LibrarySidebarFilter: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .allAlbums: return "All Albums"
         case .favorites: return "Favorites"
+        case .noBarcode: return "No Barcode"
+        case .noCoverArt: return "No Cover Art"
+        case .noMetadata: return "No Metadata"
         }
     }
 
@@ -36,8 +42,14 @@ enum LibrarySidebarFilter: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .allAlbums: return "square.stack"
         case .favorites: return "star"
+        case .noBarcode: return "barcode"
+        case .noCoverArt: return "photo"
+        case .noMetadata: return "text.badge.xmark"
         }
     }
+
+    static let libraryCases: [LibrarySidebarFilter] = [.allAlbums, .favorites]
+    static let missingCases: [LibrarySidebarFilter] = [.noBarcode, .noCoverArt, .noMetadata]
 }
 
 enum LibraryViewMode: String, CaseIterable, Identifiable {
@@ -87,12 +99,24 @@ struct NestMacEmptyState: View {
 }
 
 /// Loads downsampled artwork off the main thread and shows a placeholder until it is ready.
+private struct ArtworkEpochKey: EnvironmentKey {
+    static let defaultValue = 0
+}
+
+extension EnvironmentValues {
+    var artworkEpoch: Int {
+        get { self[ArtworkEpochKey.self] }
+        set { self[ArtworkEpochKey.self] = newValue }
+    }
+}
+
 struct LibraryArtworkView: View {
     let url: URL?
     let size: CGFloat?
     var cornerRadius: CGFloat = NestMacMetrics.artworkCornerRadius
 
     @Environment(\.displayScale) private var displayScale
+    @Environment(\.artworkEpoch) private var artworkEpoch
     @State private var image: NSImage?
     @State private var loadedPath: String?
 
@@ -130,7 +154,7 @@ struct LibraryArtworkView: View {
     }
 
     private func taskID(for width: CGFloat) -> String {
-        "\(url?.path ?? "")#\(Int(width / 64))"
+        "\(artworkEpoch)#\(ArtworkImageCache.fileRevision(for: url))#\(Int(width / 64))"
     }
 
     private func load(pointSize: CGFloat) async {

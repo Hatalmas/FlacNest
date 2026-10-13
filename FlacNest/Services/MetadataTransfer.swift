@@ -282,17 +282,12 @@ enum MetadataTransferImporter {
         MetadataTransferPathResolver.resolve(library, libraryRoot: libraryRoot)
     }
 
-    /// Copies packaged artwork into the app's storage, except library-relative images that already exist under `libraryRoot`.
+    /// Copies packaged artwork into the Artwork folder next to flacnest.xml.
     static func install(
         _ contents: MetadataTransferPackageContents,
         library remappedLibrary: FlacNestLibrary,
         libraryRoot: URL
     ) throws -> MetadataTransferInstallResult {
-        let fileManager = FileManager.default
-        let storeURL = try importedArtworkRoot()
-            .appendingPathComponent(Self.storeFolderName(), isDirectory: true)
-        try fileManager.createDirectory(at: storeURL, withIntermediateDirectories: true)
-
         let artworkByAlbumID = Dictionary(
             contents.manifest.artwork.map { ($0.albumID, $0) },
             uniquingKeysWith: { first, _ in first }
@@ -300,47 +295,42 @@ enum MetadataTransferImporter {
 
         var library = remappedLibrary
         var copiedPathByEntry: [String: String] = [:]
-        var reusedCount = 0
 
-        do {
-            for index in library.albums.indices {
-                let album = library.albums[index]
-                library.albums[index].artworkBookmark = nil
+        for index in library.albums.indices {
+            let album = library.albums[index]
+            library.albums[index].artworkBookmark = nil
 
-                guard let artwork = artworkByAlbumID[album.id] else { continue }
-
-                if artwork.isLibraryRelative,
-                   fileManager.fileExists(atPath: libraryRoot.appendingPathComponent(artwork.originalPath).path) {
-                    library.albums[index].artworkRelativePath = artwork.originalPath
-                    reusedCount += 1
-                    continue
-                }
-
-                if let copiedPath = copiedPathByEntry[artwork.file] {
-                    library.albums[index].artworkRelativePath = copiedPath
-                    continue
-                }
-
-                let source = contents.extractedDirectory.appendingPathComponent(artwork.file)
-                guard fileManager.fileExists(atPath: source.path) else { continue }
-                let destination = storeURL.appendingPathComponent((artwork.file as NSString).lastPathComponent)
-                if fileManager.fileExists(atPath: destination.path) {
-                    try fileManager.removeItem(at: destination)
-                }
-                try fileManager.copyItem(at: source, to: destination)
-                copiedPathByEntry[artwork.file] = destination.path
-                library.albums[index].artworkRelativePath = destination.path
+            guard let artwork = artworkByAlbumID[album.id] else {
+                _ = AlbumArtworkStore.collect(album: &library.albums[index], libraryRoot: libraryRoot)
+                continue
             }
-        } catch {
-            try? fileManager.removeItem(at: storeURL)
-            throw error
+
+            if let copiedPath = copiedPathByEntry[artwork.file] {
+                library.albums[index].artworkRelativePath = copiedPath
+                continue
+            }
+
+            let source = contents.extractedDirectory.appendingPathComponent(artwork.file)
+            guard FileManager.default.fileExists(atPath: source.path),
+                  let stored = try? AlbumArtworkStore.ingest(
+                    from: source,
+                    albumID: album.id,
+                    replacing: album.artworkRelativePath,
+                    libraryRoot: libraryRoot
+                  ) else {
+                continue
+            }
+            copiedPathByEntry[artwork.file] = stored
+            library.albums[index].artworkRelativePath = stored
         }
 
+        let storeURL = AlbumArtworkStore.directoryURL(libraryRoot: libraryRoot)
+            ?? FileManager.default.temporaryDirectory
         return MetadataTransferInstallResult(
             library: library,
             artworkStoreURL: storeURL,
             copiedArtworkCount: copiedPathByEntry.count,
-            reusedArtworkCount: reusedCount
+            reusedArtworkCount: 0
         )
     }
 

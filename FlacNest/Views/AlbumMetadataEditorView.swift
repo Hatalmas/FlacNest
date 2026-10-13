@@ -17,6 +17,7 @@ struct AlbumMetadataEditorView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 artworkSection
+                barcodeSection
                 metadataSection
                 tracksSection
 
@@ -54,12 +55,11 @@ struct AlbumMetadataEditorView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 VStack(alignment: .leading, spacing: 8) {
-                    if let path = draft.artworkRelativePath, !path.isEmpty {
-                        Text(path)
+                    if draft.artworkRelativePath?.isEmpty == false {
+                        Text("Stored with library metadata")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .lineLimit(2)
-                            .truncationMode(.middle)
                     } else {
                         Text("No artwork set")
                             .font(.caption)
@@ -93,6 +93,61 @@ struct AlbumMetadataEditorView: View {
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+    }
+
+    private var barcodeSection: some View {
+        GroupBox("Barcode") {
+            HStack(alignment: .top, spacing: 16) {
+                barcodePreview
+                    .frame(width: 280)
+                    .frame(minHeight: 88)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    if let barcode = registeredBarcode {
+                        Text("Assigned barcode")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(barcode)
+                            .font(.body.monospacedDigit())
+                            .textSelection(.enabled)
+                    } else {
+                        Text("No barcode set")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Button("Clear") {
+                        draft.barcode = nil
+                    }
+                    .disabled(registeredBarcode == nil)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(4)
+        }
+    }
+
+    @ViewBuilder
+    private var barcodePreview: some View {
+        if let barcode = registeredBarcode {
+            AlbumBarcodeView(barcode: barcode, cornerRadius: 8, barcodeHeight: 56)
+        } else {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color.secondary.opacity(0.12))
+                .overlay {
+                    Image(systemName: "barcode")
+                        .font(.system(size: 36, weight: .light))
+                        .foregroundStyle(.secondary)
+                }
+        }
+    }
+
+    private var registeredBarcode: String? {
+        guard let barcode = draft.barcode?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !barcode.isEmpty else {
+            return nil
+        }
+        return barcode
     }
 
     private var metadataSection: some View {
@@ -207,20 +262,22 @@ struct AlbumMetadataEditorView: View {
     }
 
     private func chooseArtwork() {
-        guard let root = AppSettings.libraryRootURL else {
+        guard AppSettings.libraryRootURL != nil || AppSettings.libraryXMLURL != nil else {
             errorMessage = "Set a library folder in Settings first."
             return
         }
         guard let sourceURL = AlbumArtworkImporter.chooseImageFile() else { return }
 
         do {
-            let reference = try AlbumArtworkImporter.referenceArtwork(
-                from: sourceURL,
-                album: draft,
-                libraryRoot: root
-            )
+            if let previousURL = libraryVM.artworkURL(for: draft) {
+                ArtworkImageCache.removeImage(for: previousURL)
+            }
+            let reference = try AlbumArtworkImporter.importArtwork(from: sourceURL, album: draft)
             draft.artworkRelativePath = reference.path
-            draft.artworkBookmark = reference.bookmark
+            draft.artworkBookmark = nil
+            if let url = libraryVM.artworkURL(for: draft) {
+                ArtworkImageCache.removeImage(for: url)
+            }
             errorMessage = nil
         } catch {
             errorMessage = "Could not set artwork: \(error.localizedDescription)"

@@ -107,17 +107,18 @@ final class CDSpinUpSoundPlayer {
         engine.attach(playerNode)
     }
 
-    func playIfStartingPlayback() {
+    @discardableResult
+    func playIfStartingPlayback() -> Bool {
         switch AppSettings.cdSpinUpSoundMode {
         case .never:
-            return
+            return false
         case .always:
             break
         case .whenCDShown:
-            guard AppSettings.showSpinningCDWhilePlaying else { return }
+            guard AppSettings.showSpinningCDWhilePlaying else { return false }
         }
 
-        play()
+        return play()
     }
 
     func stop() {
@@ -129,8 +130,9 @@ final class CDSpinUpSoundPlayer {
         }
     }
 
-    private func play() {
-        guard let file = preparedFile() else { return }
+    @discardableResult
+    private func play() -> Bool {
+        guard let file = preparedFile() else { return false }
 
         do {
             try prepareEngine(for: file)
@@ -139,8 +141,10 @@ final class CDSpinUpSoundPlayer {
             }
             playerNode.scheduleFile(file, at: nil)
             playerNode.play()
+            return true
         } catch {
             engine.stop()
+            return false
         }
     }
 

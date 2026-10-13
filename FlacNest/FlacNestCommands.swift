@@ -57,7 +57,11 @@ struct FlacNestCommands: Commands {
                 playback.play()
             }
             .keyboardShortcut(.return, modifiers: [])
-            .disabled(libraryVM?.selectedAlbum == nil || libraryVM?.isLibraryBusy == true)
+            .disabled(
+                libraryVM?.selectedAlbum == nil
+                    || libraryVM?.isLibraryBusy == true
+                    || barcodeEject.isPresenting
+            )
 
             Button("Edit Metadata…") {
                 editMetadata?()
@@ -73,10 +77,15 @@ struct FlacNestCommands: Commands {
             .keyboardShortcut("r", modifiers: .command)
             .disabled(libraryVM?.isLibraryBusy == true)
 
-            Button("Scan Subfolder…") {
+            Button("Refresh Subfolder…") {
                 libraryVM?.scanSubfolder()
             }
             .keyboardShortcut("r", modifiers: [.command, .shift])
+            .disabled(libraryVM?.isLibraryBusy == true || AppSettings.libraryRootURL == nil)
+
+            Button("Re-read Metadata…") {
+                libraryVM?.rereadMetadata()
+            }
             .disabled(libraryVM?.isLibraryBusy == true || AppSettings.libraryRootURL == nil)
 
             Button("Cancel Scan") {

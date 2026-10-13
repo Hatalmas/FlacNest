@@ -17,6 +17,11 @@ struct AlbumMetadataPreviewView: View {
                         LibraryArtworkView(url: libraryVM.artworkURL(for: album), size: nil, cornerRadius: 10)
                             .shadow(color: .black.opacity(0.18), radius: 12, y: 6)
 
+                        if let barcode = album.barcode?.trimmingCharacters(in: .whitespacesAndNewlines),
+                           !barcode.isEmpty {
+                            AlbumBarcodeView(barcode: barcode, cornerRadius: 10)
+                        }
+
                         header(for: album)
                         actions(for: album)
 

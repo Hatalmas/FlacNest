@@ -21,7 +21,7 @@ FlacNest is built for listening to **single-file FLAC rips split by CUE sheets**
 
 1. Choose a **library home folder** in Settings. FlacNest scans it for `.cue` files and their companion `.flac` files.
 2. Album and track info is stored in **`flacnest.xml`** (by default inside the library folder, or in a custom location you choose). User metadata includes artwork paths, **barcodes**, and **favorites**.
-3. Open **FlacNest Library** to browse albums, sort/group the list, refresh after adding new music, and edit album metadata or artwork.
+3. Open **FlacNest Library** to browse albums, sort/group the list, refresh to discover newly ripped CDs (existing metadata is left alone), and edit album metadata or artwork. Use **Re-read Metadata** only when you want titles and tracks replaced from CUE/FLAC files.
 
 **Browsing and selection**
 
@@ -154,7 +154,9 @@ Both Mac and iOS support custom **Nest** and **Dark Nest** palettes (warm cream/
 |--------|----------|
 | Play selected album | Return |
 | Edit metadata | ⌘E |
-| Refresh library | ⌘R |
+| Refresh library (new albums only) | ⌘R |
+| Refresh subfolder | ⌘⇧R |
+| Re-read metadata from files | Library menu |
 | Prepare export | Library menu |
 | Cancel scan | Esc |
 | Move selection up / down | ↑ / ↓ |

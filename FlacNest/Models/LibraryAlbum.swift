@@ -35,6 +35,25 @@ struct LibraryAlbum: Codable, Equatable, Identifiable {
         if title.isEmpty { return (cueRelativePath as NSString).lastPathComponent }
         return title
     }
+
+    var hasRegisteredBarcode: Bool {
+        guard let barcode else { return false }
+        return !barcode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var hasCoverArt: Bool {
+        guard let artworkRelativePath else { return false }
+        return !artworkRelativePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var hasCatalogMetadata: Bool {
+        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !performer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var needsDiskMetadataFill: Bool {
+        !hasCatalogMetadata || !hasCoverArt || tracks.isEmpty
+    }
 }
 
 struct LibraryTrack: Codable, Equatable, Identifiable {

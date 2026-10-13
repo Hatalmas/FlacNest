@@ -14,11 +14,11 @@ enum AlbumArtworkImporter {
     static func chooseImageFile() -> URL? {
         let panel = NSOpenPanel()
         panel.title = "Choose Album Artwork"
-        panel.message = "Select an image to reference in metadata. The file is not copied."
+        panel.message = "Select an image. FlacNest copies it into the Artwork folder next to flacnest.xml."
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
-        panel.allowedContentTypes = [.jpeg, .png]
+        panel.allowedContentTypes = [.image]
         panel.prompt = "Choose"
 
         NSApp.activate(ignoringOtherApps: true)
@@ -26,36 +26,28 @@ enum AlbumArtworkImporter {
         return url
     }
 
-    static func referenceArtwork(from sourceURL: URL, album: LibraryAlbum, libraryRoot: URL) throws -> AlbumArtworkReference {
-        let source = sourceURL.standardizedFileURL
-        guard FileManager.default.fileExists(atPath: source.path) else {
-            throw AlbumArtworkImporterError.sourceFileNotFound
+    static func importArtwork(from sourceURL: URL, album: LibraryAlbum) throws -> AlbumArtworkReference {
+        let accessed = sourceURL.startAccessingSecurityScopedResource()
+        defer {
+            if accessed {
+                sourceURL.stopAccessingSecurityScopedResource()
+            }
         }
 
-        let root = libraryRoot.standardizedFileURL
-        let rootPath = root.path
-        let sourcePath = source.path
-
-        if sourcePath == rootPath {
-            throw AlbumArtworkImporterError.invalidArtworkSelection
-        }
-
-        if sourcePath.hasPrefix(rootPath + "/") {
-            return AlbumArtworkReference(
-                path: relativePath(from: rootPath, to: sourcePath),
-                bookmark: nil
-            )
-        }
-
-        let bookmark = try? source.bookmarkData(
-            options: .withSecurityScope,
-            includingResourceValuesForKeys: nil,
-            relativeTo: nil
+        let path = try AlbumArtworkStore.ingest(
+            from: sourceURL,
+            albumID: album.id,
+            replacing: album.artworkRelativePath,
+            libraryRoot: AppSettings.libraryRootURL
         )
-        return AlbumArtworkReference(path: sourcePath, bookmark: bookmark)
+        return AlbumArtworkReference(path: path, bookmark: nil)
     }
 
     static func artworkURL(for album: LibraryAlbum, libraryRoot: URL?) -> URL? {
+        AlbumArtworkStore.artworkURL(for: album, libraryRoot: libraryRoot)
+    }
+
+    static func legacyArtworkURL(for album: LibraryAlbum, libraryRoot: URL?) -> URL? {
         guard let art = album.artworkRelativePath?.trimmingCharacters(in: .whitespacesAndNewlines),
               !art.isEmpty else {
             return nil
@@ -66,11 +58,13 @@ enum AlbumArtworkImporter {
                let url = resolveSecurityScopedURL(from: bookmark) {
                 return url
             }
-            return URL(fileURLWithPath: art)
+            let url = URL(fileURLWithPath: art)
+            return FileManager.default.fileExists(atPath: url.path) ? url : nil
         }
 
         guard let libraryRoot else { return nil }
-        return libraryRoot.appendingPathComponent(art)
+        let url = libraryRoot.appendingPathComponent(art)
+        return FileManager.default.fileExists(atPath: url.path) ? url : nil
     }
 
     static func stopAccessingArtwork() {
@@ -96,20 +90,13 @@ enum AlbumArtworkImporter {
         }
         return url
     }
-
-    private static func relativePath(from root: String, to target: String) -> String {
-        var rootNorm = root
-        if rootNorm.hasSuffix("/") { rootNorm.removeLast() }
-        if target.hasPrefix(rootNorm + "/") {
-            return String(target.dropFirst(rootNorm.count + 1))
-        }
-        return target
-    }
 }
 
 enum AlbumArtworkImporterError: LocalizedError {
     case sourceFileNotFound
     case invalidArtworkSelection
+    case unreadableImage
+    case artworkStoreUnavailable
 
     var errorDescription: String? {
         switch self {
@@ -117,6 +104,10 @@ enum AlbumArtworkImporterError: LocalizedError {
             return "The selected image file could not be found."
         case .invalidArtworkSelection:
             return "Choose an image file, not the library folder itself."
+        case .unreadableImage:
+            return "FlacNest could not read that image. Try JPEG or PNG, or export it again."
+        case .artworkStoreUnavailable:
+            return "Set a library folder or custom flacnest.xml location before adding artwork."
         }
     }
 }

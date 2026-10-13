@@ -10,6 +10,7 @@ struct BarcodeEjectSheet: View {
     @State private var pendingBarcode: String?
     @State private var searchText = ""
     @State private var errorMessage: String?
+    @FocusState private var searchFieldFocused: Bool
 
     private var filteredAlbums: [LibraryAlbum] {
         LibraryAlbumSorting
@@ -147,7 +148,14 @@ struct BarcodeEjectSheet: View {
 
             TextField("Search albums", text: $searchText)
                 .textFieldStyle(.roundedBorder)
+                .focused($searchFieldFocused)
+                .onSubmit {
+                    assignSoleFilteredAlbum(barcode: barcode)
+                }
                 .padding(.horizontal)
+                .onAppear {
+                    searchFieldFocused = true
+                }
 
             if filteredAlbums.isEmpty {
                 ContentUnavailableView(
@@ -180,6 +188,11 @@ struct BarcodeEjectSheet: View {
                 .listStyle(.inset)
             }
         }
+        .onKeyPress(.return) {
+            guard filteredAlbums.count == 1 else { return .ignored }
+            assignSoleFilteredAlbum(barcode: barcode)
+            return .handled
+        }
     }
 
     private func handleScannedBarcode(_ barcode: String) {
@@ -190,6 +203,11 @@ struct BarcodeEjectSheet: View {
 
         pendingBarcode = barcode
         errorMessage = nil
+    }
+
+    private func assignSoleFilteredAlbum(barcode: String) {
+        guard filteredAlbums.count == 1, let album = filteredAlbums.first else { return }
+        assignBarcode(barcode, to: album)
     }
 
     private func assignBarcode(_ barcode: String, to album: LibraryAlbum) {
@@ -212,13 +230,22 @@ struct BarcodeEjectSheet: View {
 }
 
 private struct BarcodeEjectSheetModifier: ViewModifier {
+    let hostID: String
+
     @EnvironmentObject private var barcodeEject: BarcodeEjectController
     @EnvironmentObject private var libraryVM: LibraryViewModel
     @Environment(PlaybackController.self) private var playback
 
     func body(content: Content) -> some View {
         content
-            .sheet(isPresented: $barcodeEject.isPresenting) {
+            .sheet(isPresented: Binding(
+                get: { barcodeEject.isPresenting(on: hostID) },
+                set: { presented in
+                    if !presented {
+                        barcodeEject.dismiss()
+                    }
+                }
+            )) {
                 BarcodeEjectSheet()
                     .environmentObject(libraryVM)
                     .environment(playback)
@@ -228,7 +255,7 @@ private struct BarcodeEjectSheetModifier: ViewModifier {
 }
 
 extension View {
-    func barcodeEjectSheet() -> some View {
-        modifier(BarcodeEjectSheetModifier())
+    func barcodeEjectSheet(hostID: String) -> some View {
+        modifier(BarcodeEjectSheetModifier(hostID: hostID))
     }
 }

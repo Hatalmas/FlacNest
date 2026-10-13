@@ -24,6 +24,7 @@ final class PlaybackController {
     private var hasAttemptedRestore = false
     private var lastResumeSave = Date.distantPast
     private var volumeBeforeMute: Float = 1
+    private var spinUpDelayTask: Task<Void, Never>?
     var orderedAlbumsProvider: (() -> [LibraryAlbum])?
 
     init() {
@@ -220,9 +221,12 @@ final class PlaybackController {
         currentAlbum = album
     }
 
-    func play(fromTrackStart: Bool = false, allowSpinUp: Bool = true) {
-        guard audioFile != nil, let track = currentTrack else { return }
-        let shouldPlaySpinUp = allowSpinUp && !isPlaying
+    func play(
+        fromTrackStart: Bool = false,
+        allowSpinUp: Bool = true,
+        allowSmoothingRamp: Bool = true
+    ) {
+        guard audioFile != nil, currentTrack != nil else { return }
 
         if playerNode.isPlaying && !fromTrackStart {
             isPlaying = true
@@ -230,35 +234,31 @@ final class PlaybackController {
             return
         }
 
-        if !engine.isRunning {
-            do {
-                try engine.start()
-            } catch {
-                lastError = error.localizedDescription
-                return
+        cancelSpinUpDelay()
+
+        let shouldFadeIn = allowSmoothingRamp && !isPlaying
+        let shouldPlaySpinUp = allowSpinUp && !isPlaying
+        let spinUpStarted = shouldPlaySpinUp && CDSpinUpSoundPlayer.shared.playIfStartingPlayback()
+        let delay = spinUpStarted ? AppSettings.cdSpinUpDelaySeconds : 0
+
+        if delay > 0 {
+            isPlaying = true
+            MediaRemoteController.shared.refresh(from: self)
+            spinUpDelayTask = Task { @MainActor in
+                try? await Task.sleep(for: .seconds(delay))
+                guard !Task.isCancelled else { return }
+                guard isPlaying else { return }
+                startAudio(fromTrackStart: fromTrackStart, fadeIn: shouldFadeIn)
             }
+            return
         }
 
-        let trackEnd = endTimeForTrack(at: currentTrackIndex)
-        let start: Double
-        if !fromTrackStart,
-           currentTime >= track.startSeconds && currentTime < trackEnd - 0.05 {
-            start = currentTime
-        } else {
-            start = track.startSeconds
-        }
-
-        scheduleSegment(from: start, to: trackEnd)
-        playerNode.play()
-        isPlaying = true
-        startPositionTimer()
-        if shouldPlaySpinUp {
-            CDSpinUpSoundPlayer.shared.playIfStartingPlayback()
-        }
-        MediaRemoteController.shared.refresh(from: self)
+        startAudio(fromTrackStart: fromTrackStart, fadeIn: shouldFadeIn)
     }
 
     func pause() {
+        cancelSpinUpDelay()
+        CDSpinUpSoundPlayer.shared.stop()
         playerNode.pause()
         isPlaying = false
         stopPositionTimer()
@@ -382,7 +382,7 @@ final class PlaybackController {
         playerNode.stop()
     }
 
-    private func scheduleSegment(from startSeconds: Double, to endSeconds: Double) {
+    private func scheduleSegment(from startSeconds: Double, to endSeconds: Double, fadeIn: Bool = false) {
         guard let file = audioFile else { return }
 
         cancelScheduledSegments()
@@ -399,21 +399,96 @@ final class PlaybackController {
         guard frameCount > 0 else { return }
 
         let segmentID = scheduledSegmentID
-
-        playerNode.scheduleSegment(
-            file,
-            startingFrame: startFrame,
-            frameCount: AVAudioFrameCount(frameCount),
-            at: nil
-        ) { [weak self] in
+        let fadeFrames = fadeInFrameCount(fadeIn: fadeIn, sampleRate: sampleRate, frameCount: frameCount)
+        let remainingFrames = AVAudioFrameCount(frameCount) - fadeFrames
+        let completion: @Sendable () -> Void = { [weak self] in
             Task { @MainActor in
                 self?.handleSegmentFinished(segmentID: segmentID)
             }
         }
 
+        if fadeFrames > 1,
+           remainingFrames > 0,
+           let fadeBuffer = makeFadeInBuffer(from: file, startFrame: startFrame, frameCount: fadeFrames) {
+            playerNode.scheduleBuffer(fadeBuffer, at: nil)
+            playerNode.scheduleSegment(
+                file,
+                startingFrame: startFrame + AVAudioFramePosition(fadeFrames),
+                frameCount: remainingFrames,
+                at: nil,
+                completionHandler: completion
+            )
+        } else {
+            playerNode.scheduleSegment(
+                file,
+                startingFrame: startFrame,
+                frameCount: AVAudioFrameCount(frameCount),
+                at: nil,
+                completionHandler: completion
+            )
+        }
+
         segmentStartSeconds = Double(startFrame) / sampleRate
         segmentEndSeconds = Double(endFrame) / sampleRate
         currentTime = segmentStartSeconds
+    }
+
+    private func fadeInFrameCount(fadeIn: Bool, sampleRate: Double, frameCount: AVAudioFramePosition) -> AVAudioFrameCount {
+        guard fadeIn else { return 0 }
+        let milliseconds = AppSettings.playbackSmoothingRampMilliseconds
+        guard milliseconds > 0 else { return 0 }
+        let frames = AVAudioFrameCount((milliseconds / 1000.0) * sampleRate)
+        guard frames > 1 else { return 0 }
+        return min(frames, AVAudioFrameCount(max(0, frameCount - 1)))
+    }
+
+    private func makeFadeInBuffer(
+        from file: AVAudioFile,
+        startFrame: AVAudioFramePosition,
+        frameCount: AVAudioFrameCount
+    ) -> AVAudioPCMBuffer? {
+        guard let buffer = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: frameCount) else {
+            return nil
+        }
+
+        let savedPosition = file.framePosition
+        defer { file.framePosition = savedPosition }
+
+        do {
+            file.framePosition = startFrame
+            try file.read(into: buffer, frameCount: frameCount)
+        } catch {
+            return nil
+        }
+
+        applyLinearFadeIn(to: buffer)
+        return buffer
+    }
+
+    private func applyLinearFadeIn(to buffer: AVAudioPCMBuffer) {
+        let frames = Int(buffer.frameLength)
+        guard frames > 1 else { return }
+        let lastIndex = Float(frames - 1)
+
+        if let channels = buffer.floatChannelData {
+            for channel in 0..<Int(buffer.format.channelCount) {
+                let samples = channels[channel]
+                for frame in 0..<frames {
+                    samples[frame] *= Float(frame) / lastIndex
+                }
+            }
+            return
+        }
+
+        if let channels = buffer.int16ChannelData {
+            for channel in 0..<Int(buffer.format.channelCount) {
+                let samples = channels[channel]
+                for frame in 0..<frames {
+                    let faded = Float(samples[frame]) * (Float(frame) / lastIndex)
+                    samples[frame] = Int16(max(Float(Int16.min), min(Float(Int16.max), faded.rounded())))
+                }
+            }
+        }
     }
 
     private func cancelScheduledSegments() {
@@ -453,11 +528,48 @@ final class PlaybackController {
 
         let nextAlbum = albums[currentIndex + 1]
         load(album: nextAlbum, trackIndex: 0)
-        play(fromTrackStart: true, allowSpinUp: false)
+        play(fromTrackStart: true, allowSpinUp: false, allowSmoothingRamp: false)
         return true
     }
 
+    private func startAudio(fromTrackStart: Bool, fadeIn: Bool) {
+        guard audioFile != nil, let track = currentTrack else { return }
+
+        if !engine.isRunning {
+            do {
+                try engine.start()
+            } catch {
+                lastError = error.localizedDescription
+                isPlaying = false
+                MediaRemoteController.shared.refresh(from: self)
+                return
+            }
+        }
+
+        let trackEnd = endTimeForTrack(at: currentTrackIndex)
+        let start: Double
+        if !fromTrackStart,
+           currentTime >= track.startSeconds && currentTime < trackEnd - 0.05 {
+            start = currentTime
+        } else {
+            start = track.startSeconds
+        }
+
+        scheduleSegment(from: start, to: trackEnd, fadeIn: fadeIn)
+        playerNode.play()
+        isPlaying = true
+        startPositionTimer()
+        MediaRemoteController.shared.refresh(from: self)
+    }
+
+    private func cancelSpinUpDelay() {
+        spinUpDelayTask?.cancel()
+        spinUpDelayTask = nil
+    }
+
     private func stopInternal(saveState: Bool) {
+        cancelSpinUpDelay()
+        CDSpinUpSoundPlayer.shared.stop()
         cancelScheduledSegments()
         engine.stop()
         isPlaying = false

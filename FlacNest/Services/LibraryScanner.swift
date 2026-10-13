@@ -65,12 +65,14 @@ enum LibraryScanner {
 
     static func scan(
         libraryRoot: URL,
+        skipCueRelativePaths: Set<String> = [],
         shouldCancel: (@Sendable () -> Bool)? = nil,
         reportProgress: ProgressHandler? = nil
     ) -> LibraryScanResult {
         scan(
             in: libraryRoot,
             libraryRoot: libraryRoot,
+            skipCueRelativePaths: skipCueRelativePaths,
             shouldCancel: shouldCancel,
             reportProgress: reportProgress
         )
@@ -79,6 +81,7 @@ enum LibraryScanner {
     static func scan(
         in scanRoot: URL,
         libraryRoot: URL,
+        skipCueRelativePaths: Set<String> = [],
         shouldCancel: (@Sendable () -> Bool)? = nil,
         reportProgress: ProgressHandler? = nil
     ) -> LibraryScanResult {
@@ -88,7 +91,7 @@ enum LibraryScanner {
 
         reportProgress?(ScanProgress(phase: .discovering))
 
-        let cueFiles = discoverCueFiles(in: scanRoot)
+        let cueFiles = discoverCueFiles(in: scanRoot, libraryRoot: libraryRoot)
         let total = cueFiles.count
 
         var albums: [LibraryAlbum] = []
@@ -109,6 +112,10 @@ enum LibraryScanner {
                     currentItem: entry.relativePath
                 )
             )
+
+            if skipCueRelativePaths.contains(entry.relativePath) {
+                continue
+            }
 
             do {
                 guard let album = try parseAlbum(
@@ -146,10 +153,10 @@ enum LibraryScanner {
         var relativePath: String
     }
 
-    private static func discoverCueFiles(in libraryRoot: URL) -> [CueFileEntry] {
+    private static func discoverCueFiles(in scanRoot: URL, libraryRoot: URL) -> [CueFileEntry] {
         let fileManager = FileManager.default
         guard let enumerator = fileManager.enumerator(
-            at: libraryRoot,
+            at: scanRoot,
             includingPropertiesForKeys: [.isRegularFileKey],
             options: [.skipsHiddenFiles]
         ) else {
@@ -258,6 +265,19 @@ enum LibraryScanner {
             }
         }
 
+        guard let contents = try? FileManager.default.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return nil
+        }
+
+        let images = contents.filter { isImageFile($0) }
+        if images.count == 1 {
+            return relativePath(from: libraryRootPath, to: images[0].path)
+        }
+
         return nil
     }
 
@@ -270,9 +290,38 @@ enum LibraryScanner {
             return nil
         }
 
-        return contents.first { fileURL in
-            fileURL.lastPathComponent.caseInsensitiveCompare(name) == .orderedSame
+        return contents.first { fileNamesMatch($0.lastPathComponent, name) }
+    }
+
+    private static func isImageFile(_ url: URL) -> Bool {
+        ["jpg", "jpeg", "png", "webp"].contains(url.pathExtension.lowercased())
+    }
+
+    private static func fileNamesMatch(_ lhs: String, _ rhs: String) -> Bool {
+        if lhs.caseInsensitiveCompare(rhs) == .orderedSame {
+            return true
         }
+
+        let left = lhs.decomposedStringWithCanonicalMapping
+        let right = rhs.decomposedStringWithCanonicalMapping
+        if left.caseInsensitiveCompare(right) == .orderedSame {
+            return true
+        }
+
+        func folded(_ value: String) -> String {
+            value.folding(
+                options: [.diacriticInsensitive, .caseInsensitive, .widthInsensitive],
+                locale: .current
+            )
+        }
+
+        if folded(lhs) == folded(rhs) {
+            return true
+        }
+
+        let leftStem = (lhs as NSString).deletingPathExtension
+        let rightStem = (rhs as NSString).deletingPathExtension
+        return folded(leftStem) == folded(rightStem)
     }
 
     private struct DirectoryContents {
@@ -305,7 +354,7 @@ enum LibraryScanner {
             }
 
             if let match = contents.flacFiles.first(where: {
-                $0.lastPathComponent.caseInsensitiveCompare(referencedName) == .orderedSame
+                fileNamesMatch($0.lastPathComponent, referencedName)
             }) {
                 return match
             }

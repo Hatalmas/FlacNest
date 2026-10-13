@@ -13,7 +13,12 @@ struct LibraryManagerView: View {
     @State private var editingAlbum: LibraryAlbum?
     @State private var albumPendingRemoval: LibraryAlbum?
     @State private var selectedAlbumID: String?
-    @State private var sidebarFilter: LibrarySidebarFilter = .allAlbums
+    private var sidebarFilterBinding: Binding<LibrarySidebarFilter> {
+        Binding(
+            get: { libraryVM.sidebarFilter },
+            set: { libraryVM.setSidebarFilter($0) }
+        )
+    }
     @State private var scrollTarget: String?
     @State private var gridColumnCount = 1
     @FocusState private var contentFocused: Bool
@@ -77,15 +82,9 @@ struct LibraryManagerView: View {
                 }
                 .nestMacWindowChrome()
         }
+        .environment(\.artworkEpoch, libraryVM.artworkEpoch)
         .frame(minWidth: 760, minHeight: 520)
-        .onChange(of: sidebarFilter) { _, filter in
-            libraryVM.setShowFavoritesOnly(filter == .favorites)
-        }
-        .onChange(of: libraryVM.showFavoritesOnly) { _, showFavorites in
-            sidebarFilter = showFavorites ? .favorites : .allAlbums
-        }
         .onAppear {
-            sidebarFilter = libraryVM.showFavoritesOnly ? .favorites : .allAlbums
             playerWindowTracker.refresh()
             contentFocused = true
             if selectedAlbumID == nil {
@@ -119,7 +118,7 @@ struct LibraryManagerView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: { _ in
-            Text("The album’s files stay on disk. Refresh or scan the folder to add it again.")
+            Text("The album’s files stay on disk. Refresh the library to add it again.")
         }
         .flacNestFocusedCommands(
             playback: playback,
@@ -131,16 +130,23 @@ struct LibraryManagerView: View {
             },
             onEject: { barcodeEject.presentEject() }
         )
-        .barcodeEjectSheet()
+        .barcodeEjectSheet(hostID: BarcodeEjectController.libraryHostID)
         .background(MainWindowLifecycleMonitor())
     }
 
     // MARK: - Sidebar
 
     private var sidebar: some View {
-        List(selection: $sidebarFilter) {
+        List(selection: sidebarFilterBinding) {
             Section("Library") {
-                ForEach(LibrarySidebarFilter.allCases) { filter in
+                ForEach(LibrarySidebarFilter.libraryCases) { filter in
+                    Label(filter.title, systemImage: filter.systemImage)
+                        .badge(albumCount(for: filter))
+                        .tag(filter)
+                }
+            }
+            Section("Missing") {
+                ForEach(LibrarySidebarFilter.missingCases) { filter in
                     Label(filter.title, systemImage: filter.systemImage)
                         .badge(albumCount(for: filter))
                         .tag(filter)
@@ -188,11 +194,8 @@ struct LibraryManagerView: View {
     }
 
     private func albumCount(for filter: LibrarySidebarFilter) -> Int {
-        switch filter {
-        case .allAlbums:
-            return libraryVM.library.albums.count
-        case .favorites:
-            return libraryVM.library.albums.reduce(0) { $0 + ($1.isFavorite ? 1 : 0) }
+        libraryVM.library.albums.reduce(0) { count, album in
+            count + (LibraryViewModel.matches(album, filter: filter) ? 1 : 0)
         }
     }
 
@@ -211,6 +214,17 @@ struct LibraryManagerView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .allowsHitTesting(!libraryVM.isLibraryBusy)
+        .background {
+            LibraryArrowKeyCatcher(
+                isActive: editingAlbum == nil
+                    && albumPendingRemoval == nil
+                    && !libraryVM.isLibraryBusy
+                    && selectedAlbumID != nil,
+                isGrid: viewMode == .grid,
+                columnCount: max(1, gridColumnCount),
+                moveSelection: moveSelection
+            )
+        }
         .overlay {
             if libraryVM.isLibraryBusy {
                 LibraryBusyOverlay(
@@ -317,20 +331,6 @@ struct LibraryManagerView: View {
             .focusable()
             .focused($contentFocused)
             .focusEffectDisabled()
-            .onKeyPress(keys: [.upArrow, .downArrow, .leftArrow, .rightArrow, .pageUp, .pageDown]) { press in
-                guard press.modifiers.isEmpty else { return .ignored }
-                let columns = max(1, gridColumnCount)
-                switch press.key {
-                case .leftArrow: moveSelection(by: -1)
-                case .rightArrow: moveSelection(by: 1)
-                case .upArrow: moveSelection(by: -columns)
-                case .downArrow: moveSelection(by: columns)
-                case .pageUp: moveSelection(by: -columns * 4)
-                case .pageDown: moveSelection(by: columns * 4)
-                default: return .ignored
-                }
-                return .handled
-            }
             .onChange(of: scrollTarget) { _, target in
                 scroll(proxy, to: target)
             }
@@ -399,22 +399,47 @@ struct LibraryManagerView: View {
             )
         } else if !libraryVM.filterText.isEmpty {
             ContentUnavailableView.search(text: libraryVM.filterText)
-        } else if libraryVM.showFavoritesOnly {
+        } else if libraryVM.sidebarFilter != .allAlbums {
             NestMacEmptyState(
-                title: "No Favorites Yet",
-                message: "Star albums in your library to collect them here.",
-                systemImage: "star",
+                title: emptyFilterTitle,
+                message: emptyFilterMessage,
+                systemImage: libraryVM.sidebarFilter.systemImage,
                 actionTitle: "Show All Albums",
-                action: { sidebarFilter = .allAlbums }
+                action: { libraryVM.setSidebarFilter(.allAlbums) }
             )
         } else {
             NestMacEmptyState(
                 title: "No Albums in Library",
-                message: "Refresh the library or scan a subfolder to import CUE/FLAC albums.",
+                message: "Refresh the library to import new CUE/FLAC albums without changing existing metadata.",
                 systemImage: "music.note.list",
                 actionTitle: "Refresh Library",
                 action: { libraryVM.refreshLibrary() }
             )
+        }
+    }
+
+    private var emptyFilterTitle: String {
+        switch libraryVM.sidebarFilter {
+        case .favorites: return "No Favorites Yet"
+        case .noBarcode: return "Every Album Has a Barcode"
+        case .noCoverArt: return "Every Album Has Cover Art"
+        case .noMetadata: return "Every Album Has Metadata"
+        case .allAlbums: return "No Albums in Library"
+        }
+    }
+
+    private var emptyFilterMessage: String {
+        switch libraryVM.sidebarFilter {
+        case .favorites:
+            return "Star albums in your library to collect them here."
+        case .noBarcode:
+            return "No albums are missing a barcode. Scan a CD with Eject to assign one."
+        case .noCoverArt:
+            return "No albums are missing cover art."
+        case .noMetadata:
+            return "No albums are missing a title or performer."
+        case .allAlbums:
+            return "Refresh the library to import new CUE/FLAC albums without changing existing metadata."
         }
     }
 
@@ -473,8 +498,12 @@ struct LibraryManagerView: View {
             Button("Refresh Library", systemImage: "arrow.clockwise") {
                 libraryVM.refreshLibrary()
             }
-            Button("Scan Subfolder…", systemImage: "folder.badge.plus") {
+            Button("Refresh Subfolder…", systemImage: "folder.badge.plus") {
                 libraryVM.scanSubfolder()
+            }
+            Divider()
+            Button("Re-read Metadata…", systemImage: "doc.text.magnifyingglass") {
+                libraryVM.rereadMetadata()
             }
             Divider()
             Button("Export to Mobile App…", systemImage: "iphone.and.arrow.forward") {
@@ -490,7 +519,7 @@ struct LibraryManagerView: View {
             libraryVM.refreshLibrary()
         }
         .disabled(AppSettings.libraryRootURL == nil || libraryVM.isLibraryBusy)
-        .help("Refresh library (⌘R) — click and hold for more")
+        .help("Refresh library (⌘R) — find new albums without overwriting metadata")
     }
 
     private var sortGroupMenu: some View {
@@ -598,7 +627,107 @@ struct LibraryManagerView: View {
         let newIndex = min(albums.count - 1, max(0, currentIndex + delta))
         let album = albums[newIndex]
         selectedAlbumID = album.id
+        contentFocused = true
         scrollTarget = album.id
+    }
+}
+
+private struct LibraryArrowKeyCatcher: NSViewRepresentable {
+    var isActive: Bool
+    var isGrid: Bool
+    var columnCount: Int
+    var moveSelection: (Int) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    func makeNSView(context: Context) -> NSView {
+        context.coordinator.install()
+        return NSView()
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        context.coordinator.isActive = isActive
+        context.coordinator.isGrid = isGrid
+        context.coordinator.columnCount = max(1, columnCount)
+        context.coordinator.moveSelection = moveSelection
+    }
+
+    static func dismantleNSView(_ nsView: NSView, coordinator: Coordinator) {
+        coordinator.uninstall()
+    }
+
+    final class Coordinator {
+        var isActive = false
+        var isGrid = true
+        var columnCount = 1
+        var moveSelection: (Int) -> Void = { _ in }
+        private var monitor: Any?
+
+        func install() {
+            guard monitor == nil else { return }
+            monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+                self?.handle(event) ?? event
+            }
+        }
+
+        func uninstall() {
+            if let monitor {
+                NSEvent.removeMonitor(monitor)
+                self.monitor = nil
+            }
+        }
+
+        deinit {
+            uninstall()
+        }
+
+        private func handle(_ event: NSEvent) -> NSEvent? {
+            guard isActive,
+                  let window = event.window,
+                  window.isKeyWindow,
+                  PlayerWindowSizing.isLibraryWindow(window),
+                  event.modifierFlags.intersection([.shift, .command, .option, .control]).isEmpty,
+                  !Self.isEditingText(in: window),
+                  !Self.isSidebarFocused(in: window),
+                  let delta = step(for: event.keyCode) else {
+                return event
+            }
+
+            moveSelection(delta)
+            return nil
+        }
+
+        private func step(for keyCode: UInt16) -> Int? {
+            switch keyCode {
+            case 123: return isGrid ? -1 : nil
+            case 124: return isGrid ? 1 : nil
+            case 125: return isGrid ? columnCount : 1
+            case 126: return isGrid ? -columnCount : -1
+            case 116: return isGrid ? -(columnCount * 4) : -10
+            case 121: return isGrid ? columnCount * 4 : 10
+            default: return nil
+            }
+        }
+
+        private static func isEditingText(in window: NSWindow) -> Bool {
+            if let textView = window.firstResponder as? NSTextView {
+                return textView.isEditable
+            }
+            return window.firstResponder is NSTextField
+        }
+
+        private static func isSidebarFocused(in window: NSWindow) -> Bool {
+            var view = window.firstResponder as? NSView
+            while let current = view {
+                if current is NSTableView || current is NSOutlineView {
+                    return current.convert(current.bounds.origin, to: nil).x < NestMacMetrics.sidebarMinWidth
+                }
+                view = current.superview
+            }
+            return false
+        }
     }
 }
 

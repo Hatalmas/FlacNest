@@ -23,6 +23,7 @@ struct StatusMenuContent: View {
                 playback: playback,
                 artworkURL: playback.currentAlbum.flatMap { libraryVM.artworkURL(for: $0) }
             )
+            .environment(\.artworkEpoch, libraryVM.artworkEpoch)
 
             StatusMenuModule(padding: 5) {
                 VStack(spacing: 0) {

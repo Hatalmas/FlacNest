@@ -48,7 +48,8 @@ extension LibraryAlbum {
             query: query,
             artist: sortArtist,
             albumTitle: displayTitle,
-            tracks: tracks.map { ($0.title, $0.performer) }
+            tracks: tracks.map { ($0.title, $0.performer) },
+            barcode: barcode
         )
     }
 }

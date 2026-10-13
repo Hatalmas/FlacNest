@@ -102,13 +102,15 @@ enum LibraryFilter {
         query: String,
         artist: String,
         albumTitle: String,
-        tracks: [(title: String, performer: String?)]
+        tracks: [(title: String, performer: String?)],
+        barcode: String? = nil
     ) -> Bool {
         let needle = normalizedQuery(query).lowercased()
         guard !needle.isEmpty else { return true }
 
         if artist.lowercased().contains(needle) { return true }
         if albumTitle.lowercased().contains(needle) { return true }
+        if let barcode, barcode.lowercased().contains(needle) { return true }
 
         for track in tracks {
             if track.title.lowercased().contains(needle) { return true }
@@ -128,7 +130,8 @@ extension MobileLibraryAlbum {
             query: query,
             artist: sortArtist,
             albumTitle: displayTitle,
-            tracks: tracks.map { ($0.title, $0.performer) }
+            tracks: tracks.map { ($0.title, $0.performer) },
+            barcode: barcode
         )
     }
 }

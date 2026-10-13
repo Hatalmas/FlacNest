@@ -50,7 +50,7 @@ final class MetadataTransferViewModel: ObservableObject {
                 albumID: album.id,
                 sourceURL: url,
                 originalPath: path,
-                isLibraryRelative: !path.hasPrefix("/")
+                isLibraryRelative: AlbumArtworkStore.isStoredPath(path)
             )
         }
         let rootPath = AppSettings.libraryRootURL?.path
