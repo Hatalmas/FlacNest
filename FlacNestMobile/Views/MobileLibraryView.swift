@@ -31,7 +31,20 @@ struct MobileLibraryView: View {
                             Text(mode.label).tag(mode)
                         }
                     }
-                    Toggle("Favorites only", isOn: $libraryStore.showFavoritesOnly)
+                    Toggle("Favorites only", isOn: Binding(
+                        get: { libraryStore.showFavoritesOnly },
+                        set: { enabled in
+                            libraryStore.showFavoritesOnly = enabled
+                            if enabled { libraryStore.showHiddenOnly = false }
+                        }
+                    ))
+                    Toggle("Hidden", isOn: Binding(
+                        get: { libraryStore.showHiddenOnly },
+                        set: { enabled in
+                            libraryStore.showHiddenOnly = enabled
+                            if enabled { libraryStore.showFavoritesOnly = false }
+                        }
+                    ))
                 } label: {
                     Image(systemName: "line.3.horizontal.decrease.circle")
                 }
@@ -162,6 +175,11 @@ private struct MobileAlbumRow: View {
                         Image(systemName: "star.fill")
                             .font(.caption)
                             .foregroundStyle(.yellow)
+                    }
+                    if album.isHidden {
+                        Image(systemName: "eye.slash.fill")
+                            .font(.caption)
+                            .mobileSecondaryForeground()
                     }
                 }
                 Text(album.sortArtist)

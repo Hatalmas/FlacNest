@@ -79,6 +79,7 @@ enum FlacNestMobileLibraryStore {
         if let comment = album.comment { attributes["comment"] = comment }
         if let barcode = album.barcode { attributes["barcode"] = barcode }
         if album.isFavorite { attributes["favorite"] = "true" }
+        if album.isHidden { attributes["hidden"] = "true" }
 
         let fileElement = XMLElement(name: "file")
         fileElement.setAttributesWith(attributes)
@@ -126,6 +127,7 @@ enum FlacNestMobileLibraryStore {
         if let comment = album.comment { attributes["comment"] = comment }
         if let barcode = album.barcode { attributes["barcode"] = barcode }
         if album.isFavorite { attributes["favorite"] = "true" }
+        if album.isHidden { attributes["hidden"] = "true" }
 
         let fileElement = XMLElement(name: "file")
         fileElement.setAttributesWith(attributes)

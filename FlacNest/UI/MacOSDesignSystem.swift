@@ -22,6 +22,7 @@ enum NestMacMetrics {
 enum LibrarySidebarFilter: String, CaseIterable, Identifiable, Hashable {
     case allAlbums
     case favorites
+    case hidden
     case noBarcode
     case noCoverArt
     case noMetadata
@@ -32,6 +33,7 @@ enum LibrarySidebarFilter: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .allAlbums: return "All Albums"
         case .favorites: return "Favorites"
+        case .hidden: return "Hidden"
         case .noBarcode: return "No Barcode"
         case .noCoverArt: return "No Cover Art"
         case .noMetadata: return "No Metadata"
@@ -42,13 +44,14 @@ enum LibrarySidebarFilter: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .allAlbums: return "square.stack"
         case .favorites: return "star"
+        case .hidden: return "eye.slash"
         case .noBarcode: return "barcode"
         case .noCoverArt: return "photo"
         case .noMetadata: return "text.badge.xmark"
         }
     }
 
-    static let libraryCases: [LibrarySidebarFilter] = [.allAlbums, .favorites]
+    static let libraryCases: [LibrarySidebarFilter] = [.allAlbums, .favorites, .hidden]
     static let missingCases: [LibrarySidebarFilter] = [.noBarcode, .noCoverArt, .noMetadata]
 }
 
@@ -72,6 +75,67 @@ enum LibraryViewMode: String, CaseIterable, Identifiable {
         case .grid: return "square.grid.2x2"
         case .list: return "list.bullet"
         }
+    }
+}
+
+struct LibraryGridSectionHeader: View {
+    let title: String
+
+    @Environment(\.nestThemePalette) private var palette
+
+    var body: some View {
+        Text(title)
+            .font(.title3.weight(.semibold))
+            .nestPrimaryForeground()
+            .lineLimit(1)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 14)
+            .padding(.bottom, 10)
+            .background(alignment: .top) {
+                scrim
+                    .padding(.horizontal, -(NestMacMetrics.contentPadding + 4))
+            }
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    @ViewBuilder
+    private var scrim: some View {
+        if NestGlassSupport.isAvailable {
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .mask(scrimMask)
+        } else if let palette {
+            LinearGradient(
+                colors: [
+                    palette.background.opacity(0.96),
+                    palette.background.opacity(0.78),
+                    palette.background.opacity(0),
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        } else {
+            LinearGradient(
+                colors: [
+                    Color(nsColor: .windowBackgroundColor).opacity(0.96),
+                    Color(nsColor: .windowBackgroundColor).opacity(0),
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
+    }
+
+    private var scrimMask: LinearGradient {
+        LinearGradient(
+            stops: [
+                .init(color: .black, location: 0),
+                .init(color: .black.opacity(0.82), location: 0.58),
+                .init(color: .clear, location: 1),
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
     }
 }
 

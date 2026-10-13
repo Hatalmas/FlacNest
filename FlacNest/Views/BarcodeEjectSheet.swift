@@ -175,6 +175,11 @@ struct BarcodeEjectSheet: View {
                             Text(album.performer.isEmpty ? album.flacRelativePath : album.performer)
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
+                            if album.isHidden {
+                                Text("Hidden")
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                            }
                             if let existingBarcode = album.barcode, !existingBarcode.isEmpty {
                                 Text("Current barcode: \(existingBarcode)")
                                     .font(.caption)

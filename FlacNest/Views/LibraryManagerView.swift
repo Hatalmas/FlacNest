@@ -249,8 +249,13 @@ struct LibraryManagerView: View {
                     if libraryVM.groupMode == .none {
                         listRows(for: section.albums)
                     } else {
-                        Section(section.title) {
+                        Section {
                             listRows(for: section.albums)
+                        } header: {
+                            Text(section.title)
+                                .font(.headline.weight(.semibold))
+                                .nestPrimaryForeground()
+                                .textCase(nil)
                         }
                     }
                 }
@@ -280,7 +285,8 @@ struct LibraryManagerView: View {
                 album: album,
                 artworkURL: libraryVM.artworkURL(for: album),
                 playbackState: playbackState(for: album),
-                onToggleFavorite: { toggleFavorite(for: album) }
+                onToggleFavorite: { toggleFavorite(for: album) },
+                onToggleHidden: { toggleHidden(for: album) }
             )
             .tag(album.id)
             .id(album.id)
@@ -357,12 +363,7 @@ struct LibraryManagerView: View {
     }
 
     private func gridSectionHeader(_ title: String) -> some View {
-        Text(title)
-            .font(.title3.weight(.semibold))
-            .nestPrimaryForeground()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 8)
-            .background(.bar)
+        LibraryGridSectionHeader(title: title)
     }
 
     private func updateGridColumnCount(for width: CGFloat) {
@@ -376,6 +377,9 @@ struct LibraryManagerView: View {
         Button("Play") { beginPlayback(for: album) }
         Button(album.isFavorite ? "Remove from Favorites" : "Add to Favorites") {
             toggleFavorite(for: album)
+        }
+        Button(album.isHidden ? "Show in Library" : "Hide") {
+            toggleHidden(for: album)
         }
         Divider()
         Button("Edit Metadata…") { editingAlbum = album }
@@ -421,6 +425,7 @@ struct LibraryManagerView: View {
     private var emptyFilterTitle: String {
         switch libraryVM.sidebarFilter {
         case .favorites: return "No Favorites Yet"
+        case .hidden: return "No Hidden Albums"
         case .noBarcode: return "Every Album Has a Barcode"
         case .noCoverArt: return "Every Album Has Cover Art"
         case .noMetadata: return "Every Album Has Metadata"
@@ -432,6 +437,8 @@ struct LibraryManagerView: View {
         switch libraryVM.sidebarFilter {
         case .favorites:
             return "Star albums in your library to collect them here."
+        case .hidden:
+            return "Hide compilations or other albums you don’t want in All Albums. They stay in the library and can be shown again from here."
         case .noBarcode:
             return "No albums are missing a barcode. Scan a CD with Eject to assign one."
         case .noCoverArt:
@@ -469,6 +476,14 @@ struct LibraryManagerView: View {
             }
             .disabled(selectedAlbum == nil || libraryVM.isLibraryBusy)
             .help("Play selected album (Return)")
+
+            Button {
+                playRandomAlbum()
+            } label: {
+                Label("Play Random", systemImage: "shuffle")
+            }
+            .disabled(allAlbumsForPlayback.isEmpty || libraryVM.isLibraryBusy)
+            .help("Play a random album from All Albums")
 
             sortGroupMenu
 
@@ -569,6 +584,14 @@ struct LibraryManagerView: View {
         }
     }
 
+    private func toggleHidden(for album: LibraryAlbum) {
+        do {
+            try libraryVM.toggleHidden(for: album.id)
+        } catch {
+            libraryVM.statusMessage = "Could not update hidden album: \(error.localizedDescription)"
+        }
+    }
+
     private func removeAlbum(_ album: LibraryAlbum) {
         do {
             if playback.currentAlbum?.id == album.id {
@@ -587,6 +610,17 @@ struct LibraryManagerView: View {
         guard let root = AppSettings.libraryRootURL else { return }
         let cueURL = root.appendingPathComponent(album.cueRelativePath)
         NSWorkspace.shared.activateFileViewerSelecting([cueURL])
+    }
+
+    private var allAlbumsForPlayback: [LibraryAlbum] {
+        libraryVM.library.albums.filter { LibraryViewModel.matches($0, filter: .allAlbums) }
+    }
+
+    private func playRandomAlbum() {
+        guard let album = allAlbumsForPlayback.randomElement() else { return }
+        libraryVM.setSidebarFilter(.allAlbums)
+        beginPlayback(for: album)
+        scrollTarget = album.id
     }
 
     private func beginPlayback(for album: LibraryAlbum) {
@@ -752,6 +786,7 @@ private struct LibraryAlbumListRow: View {
     let artworkURL: URL?
     let playbackState: LibraryAlbumPlaybackState
     let onToggleFavorite: () -> Void
+    let onToggleHidden: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
@@ -776,6 +811,14 @@ private struct LibraryAlbumListRow: View {
                     .foregroundStyle(.tint)
                     .accessibilityLabel(playbackState == .playing ? "Now playing" : "Paused")
             }
+
+            Button(action: onToggleHidden) {
+                Image(systemName: album.isHidden ? "eye.slash.fill" : "eye")
+                    .foregroundStyle(album.isHidden ? AnyShapeStyle(.secondary) : AnyShapeStyle(.tertiary))
+            }
+            .buttonStyle(.borderless)
+            .help(album.isHidden ? "Show in Library" : "Hide from All Albums")
+            .accessibilityLabel(album.isHidden ? "Show in Library" : "Hide from All Albums")
 
             Button(action: onToggleFavorite) {
                 Image(systemName: album.isFavorite ? "star.fill" : "star")
@@ -815,6 +858,15 @@ private struct LibraryAlbumGridCell: View {
                             .foregroundStyle(.white)
                             .frame(width: 24, height: 24)
                             .background(Color.accentColor, in: Circle())
+                            .padding(8)
+                    }
+                }
+                .overlay(alignment: .topLeading) {
+                    if album.isHidden {
+                        Image(systemName: "eye.slash.fill")
+                            .font(.caption)
+                            .foregroundStyle(.white)
+                            .shadow(color: .black.opacity(0.4), radius: 2)
                             .padding(8)
                     }
                 }

@@ -178,6 +178,7 @@ private final class MobileLibraryXMLParser: NSObject, XMLParserDelegate {
             comment: attributes["comment"],
             barcode: attributes["barcode"],
             isFavorite: FlacNestMobileLibraryLoader.parseBoolAttribute(attributes["favorite"]),
+            isHidden: FlacNestMobileLibraryLoader.parseBoolAttribute(attributes["hidden"]),
             artworkRelativePath: artworkPath,
             tracks: tracks
         )

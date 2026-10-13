@@ -28,6 +28,7 @@ struct LibraryAlbum: Codable, Equatable, Identifiable {
     var artworkBookmark: Data? = nil
     var barcode: String?
     var isFavorite = false
+    var isHidden = false
     var parentFolder: String = ""
     var tracks: [LibraryTrack]
 
@@ -53,6 +54,35 @@ struct LibraryAlbum: Codable, Equatable, Identifiable {
 
     var needsDiskMetadataFill: Bool {
         !hasCatalogMetadata || !hasCoverArt || tracks.isEmpty
+    }
+}
+
+extension LibraryAlbum {
+    enum CodingKeys: String, CodingKey {
+        case id, cueRelativePath, flacRelativePath, title, performer
+        case genre, date, discID, comment
+        case artworkRelativePath, artworkBookmark, barcode
+        case isFavorite, isHidden, parentFolder, tracks
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        cueRelativePath = try container.decode(String.self, forKey: .cueRelativePath)
+        flacRelativePath = try container.decode(String.self, forKey: .flacRelativePath)
+        title = try container.decode(String.self, forKey: .title)
+        performer = try container.decode(String.self, forKey: .performer)
+        genre = try container.decodeIfPresent(String.self, forKey: .genre)
+        date = try container.decodeIfPresent(String.self, forKey: .date)
+        discID = try container.decodeIfPresent(String.self, forKey: .discID)
+        comment = try container.decodeIfPresent(String.self, forKey: .comment)
+        artworkRelativePath = try container.decodeIfPresent(String.self, forKey: .artworkRelativePath)
+        artworkBookmark = try container.decodeIfPresent(Data.self, forKey: .artworkBookmark)
+        barcode = try container.decodeIfPresent(String.self, forKey: .barcode)
+        isFavorite = try container.decodeIfPresent(Bool.self, forKey: .isFavorite) ?? false
+        isHidden = try container.decodeIfPresent(Bool.self, forKey: .isHidden) ?? false
+        parentFolder = try container.decodeIfPresent(String.self, forKey: .parentFolder) ?? ""
+        tracks = try container.decode([LibraryTrack].self, forKey: .tracks)
     }
 }
 

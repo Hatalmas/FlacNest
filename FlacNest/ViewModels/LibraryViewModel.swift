@@ -206,15 +206,17 @@ final class LibraryViewModel: ObservableObject {
     nonisolated static func matches(_ album: LibraryAlbum, filter: LibrarySidebarFilter) -> Bool {
         switch filter {
         case .allAlbums:
-            return true
+            return !album.isHidden
         case .favorites:
-            return album.isFavorite
+            return album.isFavorite && !album.isHidden
+        case .hidden:
+            return album.isHidden
         case .noBarcode:
-            return !album.hasRegisteredBarcode
+            return !album.isHidden && !album.hasRegisteredBarcode
         case .noCoverArt:
-            return !album.hasCoverArt
+            return !album.isHidden && !album.hasCoverArt
         case .noMetadata:
-            return !album.hasCatalogMetadata
+            return !album.isHidden && !album.hasCatalogMetadata
         }
     }
 
@@ -261,7 +263,7 @@ final class LibraryViewModel: ObservableObject {
 
         let alert = NSAlert()
         alert.messageText = "Re-read Metadata from Files?"
-        alert.informativeText = "FlacNest will replace album and track names from CUE/FLAC files. Barcodes, favorites, and artwork you added are kept. Titles and other fields you edited will be overwritten."
+        alert.informativeText = "FlacNest will replace album and track names from CUE/FLAC files. Barcodes, favorites, hidden albums, and artwork you added are kept. Titles and other fields you edited will be overwritten."
         alert.alertStyle = .warning
         alert.addButton(withTitle: "Re-read Metadata")
         alert.addButton(withTitle: "Cancel")
@@ -309,7 +311,7 @@ final class LibraryViewModel: ObservableObject {
         AlbumArtworkImporter.artworkURL(for: album, libraryRoot: AppSettings.libraryRootURL)
     }
 
-    func updateAlbum(_ album: LibraryAlbum) throws {
+    func updateAlbum(_ album: LibraryAlbum, applyParentFolderToSiblings: Bool = false) throws {
         guard let index = library.albums.firstIndex(where: { $0.id == album.id }) else { return }
         let previous = library.albums[index]
         if previous.artworkRelativePath != nil, album.artworkRelativePath == nil {
@@ -323,9 +325,25 @@ final class LibraryViewModel: ObservableObject {
         }
         artworkEpoch += 1
         library.albums[index] = album
+
+        var siblingCount = 0
+        if applyParentFolderToSiblings, previous.parentFolder != album.parentFolder {
+            let originalGroup = previous.parentDirectoryName
+            for albumIndex in library.albums.indices where library.albums[albumIndex].id != album.id {
+                guard library.albums[albumIndex].parentDirectoryName == originalGroup else { continue }
+                library.albums[albumIndex].parentFolder = album.parentFolder
+                siblingCount += 1
+            }
+        }
+
         try saveLibraryToDisk()
         rebuildDisplayedSections()
-        statusMessage = "Saved metadata for \(album.displayTitle)."
+        if siblingCount > 0 {
+            let others = siblingCount == 1 ? "1 other album" : "\(siblingCount) other albums"
+            statusMessage = "Saved metadata for \(album.displayTitle) and updated parent folder on \(others)."
+        } else {
+            statusMessage = "Saved metadata for \(album.displayTitle)."
+        }
     }
 
     func removeAlbum(withID albumID: String) throws {
@@ -355,6 +373,17 @@ final class LibraryViewModel: ObservableObject {
         library.albums[index].isFavorite.toggle()
         try saveLibraryToDisk()
         rebuildDisplayedSections()
+    }
+
+    func toggleHidden(for albumID: String) throws {
+        guard let index = library.albums.firstIndex(where: { $0.id == albumID }) else { return }
+        library.albums[index].isHidden.toggle()
+        let title = library.albums[index].displayTitle
+        try saveLibraryToDisk()
+        rebuildDisplayedSections()
+        statusMessage = library.albums[index].isHidden
+            ? "Hidden \(title) from All Albums."
+            : "Showing \(title) in All Albums again."
     }
 
     func assignBarcode(_ barcode: String, to albumID: String) throws {
@@ -546,6 +575,7 @@ final class LibraryViewModel: ObservableObject {
             }
         )
         let preservedFavorites = Set(library.albums.filter(\.isFavorite).map(\.id))
+        let preservedHidden = Set(library.albums.filter(\.isHidden).map(\.id))
         let preservedArtwork = Dictionary<String, (String, Data?)>(
             uniqueKeysWithValues: library.albums.compactMap { album in
                 guard let path = album.artworkRelativePath else { return nil }
@@ -556,6 +586,7 @@ final class LibraryViewModel: ObservableObject {
         for index in library.albums.indices {
             library.albums[index].barcode = preservedBarcodes[library.albums[index].id]
             library.albums[index].isFavorite = preservedFavorites.contains(library.albums[index].id)
+            library.albums[index].isHidden = preservedHidden.contains(library.albums[index].id)
             if let preserved = preservedArtwork[library.albums[index].id] {
                 library.albums[index].artworkRelativePath = preserved.0
                 library.albums[index].artworkBookmark = preserved.1

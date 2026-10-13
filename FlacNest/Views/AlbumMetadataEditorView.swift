@@ -8,9 +8,13 @@ struct AlbumMetadataEditorView: View {
 
     @State private var draft: LibraryAlbum
     @State private var errorMessage: String?
+    @State private var updateParentOnSiblings = false
+
+    private let originalParentFolder: String
 
     init(album: LibraryAlbum) {
         _draft = State(initialValue: album)
+        originalParentFolder = album.parentFolder
     }
 
     var body: some View {
@@ -34,15 +38,48 @@ struct AlbumMetadataEditorView: View {
         .nestThemedScrollSurface()
         .nestThemedGroupBoxes()
         .navigationTitle("Edit Album Metadata")
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Cancel") { dismiss() }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            editorActionBar
+        }
+        .onChange(of: parentFolderChanged) { _, changed in
+            if !changed {
+                updateParentOnSiblings = false
             }
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Save") { saveChanges() }
-                    .keyboardShortcut(.defaultAction)
-                    .disabled(libraryVM.isLibraryBusy)
+        }
+    }
+
+    private var parentFolderChanged: Bool {
+        draft.parentFolder.trimmingCharacters(in: .whitespacesAndNewlines)
+            != originalParentFolder.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var editorActionBar: some View {
+        HStack(alignment: .center, spacing: 16) {
+            if parentFolderChanged {
+                Toggle("Update parent info on siblings", isOn: $updateParentOnSiblings)
+                    .toggleStyle(.checkbox)
+                    .help("Also set this parent folder on other albums grouped with this one.")
             }
+
+            Spacer(minLength: 12)
+
+            Button("Cancel") { dismiss() }
+                .keyboardShortcut(.cancelAction)
+
+            Button("Save") { saveChanges() }
+                .keyboardShortcut(.defaultAction)
+                .buttonStyle(.borderedProminent)
+                .disabled(libraryVM.isLibraryBusy)
+        }
+        .padding(.horizontal, NestMacMetrics.contentPadding)
+        .padding(.vertical, 12)
+        .background {
+            Rectangle()
+                .fill(.bar)
+                .overlay(alignment: .top) {
+                    Divider()
+                }
+                .ignoresSafeArea()
         }
     }
 
@@ -319,8 +356,13 @@ struct AlbumMetadataEditorView: View {
 
     private func saveChanges() {
         do {
-            try libraryVM.updateAlbum(draft)
-            playback.updateAlbumMetadataIfPlaying(draft)
+            let applyToSiblings = parentFolderChanged && updateParentOnSiblings
+            draft.parentFolder = draft.parentFolder.trimmingCharacters(in: .whitespacesAndNewlines)
+            try libraryVM.updateAlbum(draft, applyParentFolderToSiblings: applyToSiblings)
+            if let playingID = playback.currentAlbum?.id,
+               let latest = libraryVM.library.albums.first(where: { $0.id == playingID }) {
+                playback.updateAlbumMetadataIfPlaying(latest)
+            }
             dismiss()
         } catch {
             errorMessage = "Could not save metadata: \(error.localizedDescription)"

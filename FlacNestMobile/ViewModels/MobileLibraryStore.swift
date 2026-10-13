@@ -13,6 +13,7 @@ final class MobileLibraryStore {
     var sortMode: LibrarySortMode = .artist
     var groupMode: PortableLibraryGroupMode = .artist
     var showFavoritesOnly = false
+    var showHiddenOnly = false
     var filterText = ""
     var statusMessage: String?
     var errorMessage: String?
@@ -50,7 +51,14 @@ final class MobileLibraryStore {
 
     var displayedSections: [MobileLibraryAlbumSection] {
         guard let package else { return [] }
-        let albums = showFavoritesOnly ? package.albums.filter(\.isFavorite) : package.albums
+        let albums: [MobileLibraryAlbum]
+        if showHiddenOnly {
+            albums = package.albums.filter(\.isHidden)
+        } else if showFavoritesOnly {
+            albums = package.albums.filter { $0.isFavorite && !$0.isHidden }
+        } else {
+            albums = package.albums.filter { !$0.isHidden }
+        }
         return MobileLibrarySorting
             .sections(from: albums, sortMode: sortMode, groupMode: groupMode)
             .filtered(by: filterText)

@@ -106,6 +106,17 @@ struct AlbumMetadataPreviewView: View {
                 .foregroundStyle(album.isFavorite ? AnyShapeStyle(Color.yellow) : AnyShapeStyle(.primary))
             }
             .help(album.isFavorite ? "Remove from Favorites" : "Add to Favorites")
+
+            Button {
+                try? libraryVM.toggleHidden(for: album.id)
+            } label: {
+                Label(
+                    album.isHidden ? "Show in Library" : "Hide from All Albums",
+                    systemImage: album.isHidden ? "eye.slash.fill" : "eye.slash"
+                )
+                .labelStyle(.iconOnly)
+            }
+            .help(album.isHidden ? "Show in All Albums again" : "Hide from All Albums")
         }
         .controlSize(.large)
         .disabled(libraryVM.isLibraryBusy)

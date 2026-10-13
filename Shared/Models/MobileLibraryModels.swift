@@ -27,6 +27,7 @@ struct MobileLibraryAlbum: Equatable, Identifiable {
     var comment: String?
     var barcode: String?
     var isFavorite = false
+    var isHidden = false
     var artworkRelativePath: String?
     var tracks: [MobileLibraryTrack]
 

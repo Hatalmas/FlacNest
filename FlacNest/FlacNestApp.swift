@@ -135,7 +135,10 @@ struct FlacNestApp: App {
     private func configureSharedPlayback() {
         playback.configure(libraryRoot: AppSettings.libraryRootURL)
         playback.orderedAlbumsProvider = {
-            LibraryAlbumSorting.sorted(libraryVM.library.albums, by: libraryVM.sortMode)
+            LibraryAlbumSorting.sorted(
+                libraryVM.library.albums.filter { !$0.isHidden },
+                by: libraryVM.sortMode
+            )
         }
         playback.restoreCachedPlaybackIfAvailable()
         libraryVM.loadFromDisk()
