@@ -78,6 +78,9 @@ struct PlayerView: View {
         )
         .nestThemedScreenBackground()
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                WindowDragTitle(title: "FlacNest Player")
+            }
             ToolbarItemGroup(placement: .automatic) {
                 playerToolbarButtons
             }
@@ -168,6 +171,27 @@ struct PlayerView: View {
         }
         .toggleStyle(.button)
         .help(libraryWindowTracker.isOpen ? "Close Library (⌘2)" : "Open Library (⌘2)")
+
+        Menu {
+            Button("Copy Playing Now Token", systemImage: "doc.on.clipboard") {
+                do {
+                    try playback.copyPlayingNowToken()
+                } catch {
+                    PlayingNowTokenPasteboard.presentError(error)
+                }
+            }
+            .disabled(playback.currentAlbum == nil)
+            Button("Paste Playing Now Token", systemImage: "clipboard") {
+                do {
+                    try playback.pastePlayingNowToken()
+                } catch {
+                    PlayingNowTokenPasteboard.presentError(error)
+                }
+            }
+        } label: {
+            Label("Playing Now Token", systemImage: "link")
+        }
+        .help("Copy or paste a token to resume this album on another Mac")
 
         Menu {
             Button("Mini Player", systemImage: "dock.rectangle") {

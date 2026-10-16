@@ -74,6 +74,7 @@ Barcodes are saved in `flacnest.xml`. Assigned barcodes show as a Code 128 previ
 - Optional **save last played album and position** — caches the full album entry so the player can restore immediately on launch without waiting for the library to finish loading
 - Optional **CD spin-up sound** when playback starts from pause or stop: Never / Always / When the CD image is shown, with Soft / Medium / Loud volume, a **spin-up delay** of 0–10 seconds (FLAC waits so the sound can play first), and a separate output device so the click can stay on the Mac speakers instead of your DAC
 - **Now Playing** info for system media controls when an album is loaded
+- **Playing Now token** — with the Player frontmost, **Edit → Copy** (⌘C) copies the current album and position; **Edit → Paste** (⌘V) resumes it on another Mac that shares the same imported metadata. The token matches by album ID, FLAC path, filename, or a short hash of those names. The Library window keeps normal text Copy / Paste.
 
 ### Metadata editor
 
@@ -84,6 +85,7 @@ Open **Edit Metadata…** from the library to change album details, cover art, b
 Enable **Show status menu** in Settings for a menu bar icon with:
 
 - Now playing info, transport controls, and volume
+- Copy / paste a **Playing Now token** to resume on another Mac
 - **Show Player** (⌘P), **Settings**, and **Quit** as icon buttons on the right
 
 ### Settings (macOS)
@@ -148,6 +150,8 @@ Both Mac and iOS support custom **Nest** and **Dark Nest** palettes (warm cream/
 | Next track | ⌘→ |
 | Previous track | ⌘← |
 | Eject — scan barcode | ⌘⇧E |
+| Copy Playing Now token (Player) | ⌘C |
+| Paste Playing Now token (Player) | ⌘V |
 
 ### Windows
 

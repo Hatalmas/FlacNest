@@ -17,6 +17,7 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "57480D8A0EB04403807F1CF4"
                BuildableName = "FlacNest.app"
+               BlueprintName = "FlacNest"
                ReferencedContainer = "container:FlacNest.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -46,6 +47,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "57480D8A0EB04403807F1CF4"
             BuildableName = "FlacNest.app"
+            BlueprintName = "FlacNest"
             ReferencedContainer = "container:FlacNest.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -62,6 +64,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "57480D8A0EB04403807F1CF4"
             BuildableName = "FlacNest.app"
+            BlueprintName = "FlacNest"
             ReferencedContainer = "container:FlacNest.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

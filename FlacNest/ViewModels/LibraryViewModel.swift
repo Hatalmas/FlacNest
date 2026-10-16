@@ -8,6 +8,9 @@ import UniformTypeIdentifiers
 final class LibraryViewModel: ObservableObject {
     @Published var library: FlacNestLibrary = FlacNestLibrary()
     @Published private(set) var displayedSections: [LibraryAlbumSection] = []
+    @Published private(set) var visibleSections: [LibraryAlbumSection] = []
+    @Published private(set) var visibleAlbumCount = 0
+    @Published private(set) var sidebarCounts: [LibrarySidebarFilter: Int] = [:]
     @Published var isScanning = false
     @Published private(set) var isLoadingLibrary = false
     @Published private(set) var isPreparingLibraryUI = false
@@ -24,16 +27,17 @@ final class LibraryViewModel: ObservableObject {
     private var scanTask: Task<Void, Never>?
     private var loadTask: Task<Void, Never>?
     private var sectionsTask: Task<Void, Never>?
+    private var searchTask: Task<Void, Never>?
     private var rootChangeObserver: NSObjectProtocol?
     private var lastProgressUpdate = Date.distantPast
     private var hasLoadedLibrary = false
 
     var isLibraryBusy: Bool {
-        isLoadingLibrary || isScanning || isPreparingLibraryUI
+        isLoadingLibrary || isScanning || (isPreparingLibraryUI && displayedSections.isEmpty)
     }
 
     var filteredDisplayedSections: [LibraryAlbumSection] {
-        displayedSections.filtered(by: filterText)
+        visibleSections
     }
 
     init() {
@@ -76,6 +80,7 @@ final class LibraryViewModel: ObservableObject {
         hasLoadedLibrary = false
         loadTask?.cancel()
         sectionsTask?.cancel()
+        isPreparingLibraryUI = false
         loadFromDisk(force: true)
     }
 
@@ -95,10 +100,17 @@ final class LibraryViewModel: ObservableObject {
         isLoadingLibrary = true
         statusMessage = "Loading library…"
 
-        let result: Result<FlacNestLibrary, Error> = await Task.detached(priority: .userInitiated) {
+        let libraryRoot = AppSettings.libraryRootURL
+        LibraryDiagnostics.log("load start xml=\(xmlURL.path) root=\(libraryRoot?.path ?? "nil")")
+        let result: Result<FlacNestLibrary, Error> = await Task.detached(priority: .utility) {
             do {
-                return .success(try FlacNestLibraryStore.load(from: xmlURL))
+                let loaded = try LibraryDiagnostics.measure("parse flacnest.xml") {
+                    try FlacNestLibraryStore.load(from: xmlURL)
+                }
+                LibraryDiagnostics.summarizeArtwork(in: loaded, libraryRoot: libraryRoot)
+                return .success(loaded)
             } catch {
+                LibraryDiagnostics.log("parse failed \(error.localizedDescription)")
                 return .failure(error)
             }
         }.value
@@ -113,16 +125,13 @@ final class LibraryViewModel: ObservableObject {
 
         switch result {
         case .success(let loaded):
-            var collected = loaded
-            let didCollect = AlbumArtworkStore.collect(into: &collected, libraryRoot: AppSettings.libraryRootURL)
-            library = collected
-            if didCollect {
-                try? saveLibraryToDisk()
-                ArtworkImageCache.removeAll()
+            library = loaded
+            statusMessage = "Loaded \(loaded.albums.count) albums from library. Log: \(LibraryDiagnostics.logURL.path)"
+            await LibraryDiagnostics.measureAsync("rebuild sections") {
+                await rebuildDisplayedSectionsAndWait(for: loaded)
             }
-            statusMessage = "Loaded \(collected.albums.count) albums from library."
-            await rebuildDisplayedSectionsAndWait(for: collected)
             hasLoadedLibrary = true
+            LibraryDiagnostics.log("load ready visible=\(visibleAlbumCount)")
         case .failure(let error):
             library = FlacNestLibrary()
             displayedSections = []
@@ -146,23 +155,33 @@ final class LibraryViewModel: ObservableObject {
         let sidebarFilter = self.sidebarFilter
         let sortMode = self.sortMode
         let groupMode = self.groupMode
+        let query = filterText
+        let shouldShowPrepare = displayedSections.isEmpty
 
-        isPreparingLibraryUI = true
+        if shouldShowPrepare {
+            isPreparingLibraryUI = true
+        }
+
         sectionsTask = Task {
-            let sections = await Task.detached(priority: .userInitiated) {
-                Self.buildDisplayedSections(
-                    library: sourceLibrary,
+            let snapshot = sourceLibrary
+            let (sections, counts) = await Task.detached(priority: .utility) {
+                let built = Self.buildDisplayedSections(
+                    library: snapshot,
                     filter: sidebarFilter,
                     sortMode: sortMode,
                     groupMode: groupMode
                 )
+                return (built, Self.makeSidebarCounts(albums: snapshot.albums))
             }.value
 
             guard !Task.isCancelled else { return }
 
             displayedSections = sections
+            sidebarCounts = counts
+            applyVisibleSections(from: sections, query: query)
             isPreparingLibraryUI = false
             sectionsTask = nil
+            LibraryDiagnostics.log("sections ready count=\(sections.count) albums=\(visibleAlbumCount)")
         }
     }
 
@@ -172,15 +191,20 @@ final class LibraryViewModel: ObservableObject {
         let sidebarFilter = self.sidebarFilter
         let sortMode = self.sortMode
         let groupMode = self.groupMode
-        isPreparingLibraryUI = true
+        let query = filterText
+        if displayedSections.isEmpty {
+            isPreparingLibraryUI = true
+        }
 
-        let sections = await Task.detached(priority: .userInitiated) {
-            Self.buildDisplayedSections(
-                library: library,
+        let snapshot = library
+        let (sections, counts) = await Task.detached(priority: .utility) {
+            let built = Self.buildDisplayedSections(
+                library: snapshot,
                 filter: sidebarFilter,
                 sortMode: sortMode,
                 groupMode: groupMode
             )
+            return (built, Self.makeSidebarCounts(albums: snapshot.albums))
         }.value
 
         guard !Task.isCancelled else {
@@ -189,8 +213,93 @@ final class LibraryViewModel: ObservableObject {
         }
 
         displayedSections = sections
+        sidebarCounts = counts
+        applyVisibleSections(from: sections, query: query)
         isPreparingLibraryUI = false
         sectionsTask = nil
+    }
+
+    func applySearchQuery(_ query: String) {
+        searchTask?.cancel()
+        let source = displayedSections
+        searchTask = Task {
+            if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                try? await Task.sleep(for: .milliseconds(120))
+            }
+            guard !Task.isCancelled else { return }
+            let sections = await Task.detached(priority: .utility) {
+                source.filtered(by: query)
+            }.value
+            guard !Task.isCancelled else { return }
+            applyVisibleSections(from: sections, query: "")
+        }
+    }
+
+    private func applyVisibleSections(from sections: [LibraryAlbumSection], query: String) {
+        let visible = query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? sections
+            : sections.filtered(by: query)
+        visibleSections = visible
+        visibleAlbumCount = visible.reduce(0) { $0 + $1.albums.count }
+    }
+
+    private func replaceDisplayedAlbum(_ album: LibraryAlbum) {
+        let matchesFilter = Self.matches(album, filter: sidebarFilter)
+        var sections = displayedSections
+        var found = false
+
+        for index in sections.indices {
+            guard let albumIndex = sections[index].albums.firstIndex(where: { $0.id == album.id }) else { continue }
+            found = true
+            if matchesFilter {
+                sections[index].albums[albumIndex] = album
+            } else {
+                sections[index].albums.remove(at: albumIndex)
+                if sections[index].albums.isEmpty && groupMode != .none {
+                    sections.remove(at: index)
+                }
+            }
+            break
+        }
+
+        if found {
+            displayedSections = sections
+            applyVisibleSections(from: sections, query: filterText)
+            refreshSidebarCountsInBackground()
+            return
+        }
+
+        if matchesFilter {
+            rebuildDisplayedSections()
+        } else {
+            refreshSidebarCountsInBackground()
+        }
+    }
+
+    private func refreshSidebarCountsInBackground() {
+        let albums = library.albums
+        Task {
+            let counts = await Task.detached(priority: .utility) {
+                Self.makeSidebarCounts(albums: albums)
+            }.value
+            sidebarCounts = counts
+        }
+    }
+
+    nonisolated private static func makeSidebarCounts(albums: [LibraryAlbum]) -> [LibrarySidebarFilter: Int] {
+        var counts = Dictionary(uniqueKeysWithValues: LibrarySidebarFilter.allCases.map { ($0, 0) })
+        for album in albums {
+            if !album.isHidden {
+                counts[.allAlbums, default: 0] += 1
+                if album.isFavorite { counts[.favorites, default: 0] += 1 }
+                if !album.hasRegisteredBarcode { counts[.noBarcode, default: 0] += 1 }
+                if !album.hasCoverArt { counts[.noCoverArt, default: 0] += 1 }
+                if !album.hasCatalogMetadata { counts[.noMetadata, default: 0] += 1 }
+            } else {
+                counts[.hidden, default: 0] += 1
+            }
+        }
+        return counts
     }
 
     nonisolated private static func buildDisplayedSections(
@@ -289,6 +398,7 @@ final class LibraryViewModel: ObservableObject {
     }
 
     func setSidebarFilter(_ filter: LibrarySidebarFilter) {
+        guard filter != sidebarFilter else { return }
         sidebarFilter = filter
         showFavoritesOnly = filter == .favorites
         AppSettings.librarySidebarFilter = filter
@@ -372,7 +482,7 @@ final class LibraryViewModel: ObservableObject {
         guard let index = library.albums.firstIndex(where: { $0.id == albumID }) else { return }
         library.albums[index].isFavorite.toggle()
         try saveLibraryToDisk()
-        rebuildDisplayedSections()
+        replaceDisplayedAlbum(library.albums[index])
     }
 
     func toggleHidden(for albumID: String) throws {
@@ -380,7 +490,7 @@ final class LibraryViewModel: ObservableObject {
         library.albums[index].isHidden.toggle()
         let title = library.albums[index].displayTitle
         try saveLibraryToDisk()
-        rebuildDisplayedSections()
+        replaceDisplayedAlbum(library.albums[index])
         statusMessage = library.albums[index].isHidden
             ? "Hidden \(title) from All Albums."
             : "Showing \(title) in All Albums again."
@@ -399,6 +509,7 @@ final class LibraryViewModel: ObservableObject {
         guard let index = library.albums.firstIndex(where: { $0.id == albumID }) else { return }
         library.albums[index].barcode = normalized
         try saveLibraryToDisk()
+        replaceDisplayedAlbum(library.albums[index])
         statusMessage = "Assigned barcode to \(library.albums[index].displayTitle)."
     }
 
@@ -429,10 +540,10 @@ final class LibraryViewModel: ObservableObject {
         guard let xmlURL = AppSettings.libraryXMLURL else {
             throw LibraryViewModelError.libraryXMLNotConfigured
         }
-        if AlbumArtworkStore.collect(into: &library, libraryRoot: AppSettings.libraryRootURL) {
-            ArtworkImageCache.removeAll()
+        let snapshot = library
+        Task.detached(priority: .utility) {
+            try? FlacNestLibraryStore.save(snapshot, to: xmlURL)
         }
-        try FlacNestLibraryStore.save(library, to: xmlURL)
     }
 
     private func performAdditiveScan(in scanRoot: URL, libraryRoot: URL, sourceLabel: String?) async {

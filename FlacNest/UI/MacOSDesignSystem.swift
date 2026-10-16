@@ -17,6 +17,23 @@ enum NestMacMetrics {
     static let gridItemMaxWidth: CGFloat = 220
     static let gridSpacing: CGFloat = 20
     static let listArtworkSize: CGFloat = 40
+    static let scrollerGutter: CGFloat = 16
+    static let inspectorArtworkSize: CGFloat = 248
+
+    static func libraryContentWidth(windowWidth: CGFloat, showsInspector: Bool) -> CGFloat {
+        var width = windowWidth - sidebarIdealWidth - 1
+        if showsInspector {
+            width -= inspectorIdealWidth + 1
+        }
+        return max(1, width)
+    }
+
+    static func gridColumnCount(forLibraryWidth libraryWidth: CGFloat) -> Int {
+        let available = libraryWidth
+            - scrollerGutter
+            - (contentPadding + 4) * 2
+        return max(1, Int((available + gridSpacing) / (gridItemMinWidth + gridSpacing)))
+    }
 }
 
 enum LibrarySidebarFilter: String, CaseIterable, Identifiable, Hashable {
@@ -218,7 +235,7 @@ struct LibraryArtworkView: View {
     }
 
     private func taskID(for width: CGFloat) -> String {
-        "\(artworkEpoch)#\(ArtworkImageCache.fileRevision(for: url))#\(Int(width / 64))"
+        "\(artworkEpoch)#\(url?.path ?? "")#\(Int(width / 64))"
     }
 
     private func load(pointSize: CGFloat) async {
@@ -237,10 +254,69 @@ struct LibraryArtworkView: View {
     }
 }
 
+struct WindowDragTitle: View {
+    var title: String
+    var subtitle: String? = nil
+
+    var body: some View {
+        ZStack {
+            WindowDragBackdrop()
+            titleLabel
+                .allowsHitTesting(false)
+        }
+        .fixedSize()
+    }
+
+    private var titleLabel: some View {
+        HStack(spacing: 6) {
+            Text(title)
+                .font(.body.weight(.bold))
+            if let subtitleText {
+                Text("·")
+                    .foregroundStyle(.secondary)
+                Text(subtitleText)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.horizontal, 24)
+    }
+
+    private var subtitleText: String? {
+        let trimmed = subtitle?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? nil : trimmed
+    }
+}
+
+private struct WindowDragBackdrop: NSViewRepresentable {
+    func makeNSView(context: Context) -> WindowDragBackdropView {
+        WindowDragBackdropView()
+    }
+
+    func updateNSView(_ nsView: WindowDragBackdropView, context: Context) {}
+}
+
+final class WindowDragBackdropView: NSView {
+    override var isOpaque: Bool { false }
+    override var mouseDownCanMoveWindow: Bool { true }
+
+    override func hitTest(_ point: NSPoint) -> NSView? { self }
+}
+
 extension View {
     func nestMacWindowChrome() -> some View {
         self
             .toolbarBackground(.visible, for: .windowToolbar)
+    }
+
+    @ViewBuilder
+    func nestLibraryToolbarChrome() -> some View {
+        if NestGlassSupport.isAvailable {
+            toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+        } else {
+            toolbarBackground(.ultraThinMaterial, for: .windowToolbar)
+                .toolbarBackgroundVisibility(.visible, for: .windowToolbar)
+        }
     }
 }
 

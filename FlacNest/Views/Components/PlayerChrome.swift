@@ -992,7 +992,6 @@ struct PlayerNowPlayingInfoView: View {
                     .nestPrimaryForeground()
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
-                    .textSelection(.enabled)
                 if !trackPerformer.isEmpty {
                     Text(trackPerformer)
                         .font(.body)

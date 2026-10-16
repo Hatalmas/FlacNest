@@ -26,6 +26,7 @@ final class PlaybackController {
     private var volumeBeforeMute: Float = 1
     private var spinUpDelayTask: Task<Void, Never>?
     var orderedAlbumsProvider: (() -> [LibraryAlbum])?
+    var libraryAlbumsProvider: (() -> [LibraryAlbum])?
 
     init() {
         let storedVolume = AppSettings.playbackVolume
@@ -219,6 +220,38 @@ final class PlaybackController {
     func updateAlbumMetadataIfPlaying(_ album: LibraryAlbum) {
         guard currentAlbum?.id == album.id else { return }
         currentAlbum = album
+    }
+
+    func playingNowToken() -> PlayingNowToken? {
+        guard let album = currentAlbum else { return nil }
+        return PlayingNowToken(album: album, trackIndex: currentTrackIndex, positionSeconds: currentTime)
+    }
+
+    func copyPlayingNowToken() throws {
+        guard let token = playingNowToken() else {
+            throw PlayingNowResumeError.noAlbumLoaded
+        }
+        PlayingNowTokenPasteboard.copy(token)
+    }
+
+    func pastePlayingNowToken() throws {
+        try resume(from: PlayingNowTokenPasteboard.tokenFromClipboard())
+    }
+
+    func resume(from token: PlayingNowToken) throws {
+        lastError = nil
+        guard let albums = libraryAlbumsProvider?(), !albums.isEmpty else {
+            throw PlayingNowResumeError.libraryUnavailable
+        }
+        guard let album = token.matchingAlbum(in: albums) else {
+            throw PlayingNowResumeError.noMatchingAlbum
+        }
+
+        load(album: album, trackIndex: token.trackIndex, seekTo: token.positionSeconds)
+        guard currentAlbum != nil else {
+            throw PlayingNowResumeError.failedToOpen(lastError ?? "Could not open the matching FLAC.")
+        }
+        play()
     }
 
     func play(

@@ -16,10 +16,10 @@ enum LibraryGroupMode: String, CaseIterable, Identifiable {
     }
 }
 
-struct LibraryAlbumSection: Identifiable {
+struct LibraryAlbumSection: Identifiable, Equatable {
     let id: String
     let title: String
-    let albums: [LibraryAlbum]
+    var albums: [LibraryAlbum]
 }
 
 extension LibraryAlbum {

@@ -34,10 +34,21 @@ enum AlbumArtworkStore {
         }
 
         if isStoredPath(art) {
-            return fileURL(forStoredPath: art, libraryRoot: libraryRoot)
+            return storedArtworkURL(forPath: art, libraryRoot: libraryRoot)
         }
 
         return AlbumArtworkImporter.legacyArtworkURL(for: album, libraryRoot: libraryRoot)
+    }
+
+    static func storedArtworkURL(forPath path: String, libraryRoot: URL?) -> URL? {
+        guard isStoredPath(path), let storeURL = directoryURL(libraryRoot: libraryRoot) else {
+            return nil
+        }
+        return storeURL.deletingLastPathComponent().appendingPathComponent(path)
+    }
+
+    static func existingStoredFileURL(forPath path: String?, libraryRoot: URL?) -> URL? {
+        fileURL(forStoredPath: path, libraryRoot: libraryRoot)
     }
 
     @discardableResult

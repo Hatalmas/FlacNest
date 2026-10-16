@@ -301,7 +301,9 @@ enum MetadataTransferImporter {
             library.albums[index].artworkBookmark = nil
 
             guard let artwork = artworkByAlbumID[album.id] else {
-                _ = AlbumArtworkStore.collect(album: &library.albums[index], libraryRoot: libraryRoot)
+                if !AlbumArtworkStore.isStoredPath(album.artworkRelativePath) {
+                    library.albums[index].artworkRelativePath = nil
+                }
                 continue
             }
 
@@ -318,6 +320,7 @@ enum MetadataTransferImporter {
                     replacing: album.artworkRelativePath,
                     libraryRoot: libraryRoot
                   ) else {
+                library.albums[index].artworkRelativePath = nil
                 continue
             }
             copiedPathByEntry[artwork.file] = stored

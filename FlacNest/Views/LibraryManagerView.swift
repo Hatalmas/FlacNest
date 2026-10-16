@@ -20,24 +20,19 @@ struct LibraryManagerView: View {
         )
     }
     @State private var scrollTarget: String?
-    @State private var gridColumnCount = 1
     @FocusState private var contentFocused: Bool
 
     private var selectedAlbum: LibraryAlbum? {
         guard let id = selectedAlbumID else { return nil }
-        return libraryVM.library.albums.first { $0.id == id }
+        return album(withID: id)
     }
 
     private var sections: [LibraryAlbumSection] {
-        libraryVM.filteredDisplayedSections
-    }
-
-    private var displayedAlbums: [LibraryAlbum] {
-        sections.flatMap(\.albums)
+        libraryVM.visibleSections
     }
 
     private var albumCountSubtitle: String {
-        let count = displayedAlbums.count
+        let count = libraryVM.visibleAlbumCount
         let noun = count == 1 ? "album" : "albums"
         if libraryVM.filterText.isEmpty {
             return "\(count) \(noun)"
@@ -46,44 +41,52 @@ struct LibraryManagerView: View {
     }
 
     var body: some View {
-        NavigationSplitView {
-            sidebar
-        } detail: {
-            libraryContent
-                .safeAreaInset(edge: .bottom, spacing: 0) {
-                    if !playerWindowTracker.isOpen {
-                        LibraryNowPlayingBar(
-                            playback: playback,
-                            artworkURL: playback.currentAlbum.flatMap { libraryVM.artworkURL(for: $0) },
-                            onReveal: revealPlayingAlbum,
-                            onOpenPlayer: {
-                                PlayerWindowSizing.detach(openWindow: openWindow, tracker: playerWindowTracker)
-                            }
-                        )
+        GeometryReader { geometry in
+            let libraryWidth = NestMacMetrics.libraryContentWidth(
+                windowWidth: geometry.size.width,
+                showsInspector: showInspector
+            )
+            let columnCount = NestMacMetrics.gridColumnCount(forLibraryWidth: libraryWidth)
+            HStack(spacing: 0) {
+                sidebar
+                    .frame(width: NestMacMetrics.sidebarIdealWidth, height: geometry.size.height)
+                Divider()
+
+                libraryContent(columnCount: columnCount)
+                    .frame(width: libraryWidth, height: geometry.size.height)
+                    .safeAreaInset(edge: .bottom, spacing: 0) {
+                        if !playerWindowTracker.isOpen {
+                            LibraryNowPlayingBar(
+                                playback: playback,
+                                artworkURL: playback.currentAlbum.flatMap { libraryVM.artworkURL(for: $0) },
+                                onReveal: revealPlayingAlbum,
+                                onOpenPlayer: {
+                                    PlayerWindowSizing.detach(openWindow: openWindow, tracker: playerWindowTracker)
+                                }
+                            )
+                        }
                     }
-                }
-                .navigationSubtitle(albumCountSubtitle)
-                .searchable(
-                    text: $libraryVM.filterText,
-                    placement: .toolbar,
-                    prompt: "Albums, artists, or tracks"
-                )
-                .toolbar { toolbarContent }
-                .inspector(isPresented: $showInspector) {
+
+                if showInspector {
+                    Divider()
                     AlbumMetadataPreviewView(
                         album: selectedAlbum,
                         onEdit: { album in editingAlbum = album }
                     )
-                    .inspectorColumnWidth(
-                        min: NestMacMetrics.inspectorMinWidth,
-                        ideal: NestMacMetrics.inspectorIdealWidth,
-                        max: NestMacMetrics.inspectorMaxWidth
-                    )
+                    .frame(width: NestMacMetrics.inspectorIdealWidth, height: geometry.size.height)
                 }
-                .nestMacWindowChrome()
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height, alignment: .topLeading)
         }
+        .frame(minWidth: 760, maxWidth: .infinity, minHeight: 520, maxHeight: .infinity)
+        .searchable(
+            text: $libraryVM.filterText,
+            placement: .toolbar,
+            prompt: "Albums, artists, or tracks"
+        )
+        .toolbar { toolbarContent }
+        .nestLibraryToolbarChrome()
         .environment(\.artworkEpoch, libraryVM.artworkEpoch)
-        .frame(minWidth: 760, minHeight: 520)
         .onAppear {
             playerWindowTracker.refresh()
             contentFocused = true
@@ -97,6 +100,9 @@ struct LibraryManagerView: View {
         }
         .onChange(of: selectedAlbumID) { _, newValue in
             libraryVM.selectedAlbumID = newValue
+        }
+        .onChange(of: libraryVM.filterText) { _, query in
+            libraryVM.applySearchQuery(query)
         }
         .sheet(item: $editingAlbum) { album in
             NavigationStack {
@@ -141,14 +147,14 @@ struct LibraryManagerView: View {
             Section("Library") {
                 ForEach(LibrarySidebarFilter.libraryCases) { filter in
                     Label(filter.title, systemImage: filter.systemImage)
-                        .badge(albumCount(for: filter))
+                        .badge(libraryVM.sidebarCounts[filter, default: 0])
                         .tag(filter)
                 }
             }
             Section("Missing") {
                 ForEach(LibrarySidebarFilter.missingCases) { filter in
                     Label(filter.title, systemImage: filter.systemImage)
-                        .badge(albumCount(for: filter))
+                        .badge(libraryVM.sidebarCounts[filter, default: 0])
                         .tag(filter)
                 }
             }
@@ -157,11 +163,6 @@ struct LibraryManagerView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             sidebarStatus
         }
-        .navigationSplitViewColumnWidth(
-            min: NestMacMetrics.sidebarMinWidth,
-            ideal: NestMacMetrics.sidebarIdealWidth,
-            max: 260
-        )
     }
 
     @ViewBuilder
@@ -193,21 +194,15 @@ struct LibraryManagerView: View {
         }
     }
 
-    private func albumCount(for filter: LibrarySidebarFilter) -> Int {
-        libraryVM.library.albums.reduce(0) { count, album in
-            count + (LibraryViewModel.matches(album, filter: filter) ? 1 : 0)
-        }
-    }
-
     // MARK: - Content
 
-    private var libraryContent: some View {
+    private func libraryContent(columnCount: Int) -> some View {
         Group {
-            if displayedAlbums.isEmpty && !libraryVM.isLibraryBusy {
+            if libraryVM.visibleAlbumCount == 0 && !libraryVM.isLibraryBusy {
                 libraryEmptyState
             } else {
                 switch viewMode {
-                case .grid: albumGrid
+                case .grid: albumGrid(columnCount: columnCount)
                 case .list: albumList
                 }
             }
@@ -221,7 +216,7 @@ struct LibraryManagerView: View {
                     && !libraryVM.isLibraryBusy
                     && selectedAlbumID != nil,
                 isGrid: viewMode == .grid,
-                columnCount: max(1, gridColumnCount),
+                columnCount: max(1, columnCount),
                 moveSelection: moveSelection
             )
         }
@@ -262,6 +257,7 @@ struct LibraryManagerView: View {
             }
             .listStyle(.inset)
             .nestThemedScrollSurface()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .focused($contentFocused)
             .contextMenu(forSelectionType: String.self) { ids in
                 if let id = ids.first, let album = album(withID: id) {
@@ -293,19 +289,15 @@ struct LibraryManagerView: View {
         }
     }
 
-    private var gridColumns: [GridItem] {
-        [GridItem(
-            .adaptive(minimum: NestMacMetrics.gridItemMinWidth, maximum: NestMacMetrics.gridItemMaxWidth),
-            spacing: NestMacMetrics.gridSpacing,
-            alignment: .top
-        )]
-    }
-
-    private var albumGrid: some View {
-        ScrollViewReader { proxy in
+    private func albumGrid(columnCount: Int) -> some View {
+        let columns = Array(
+            repeating: GridItem(.flexible(), spacing: NestMacMetrics.gridSpacing, alignment: .top),
+            count: max(1, columnCount)
+        )
+        return ScrollViewReader { proxy in
             ScrollView {
                 LazyVGrid(
-                    columns: gridColumns,
+                    columns: columns,
                     alignment: .leading,
                     spacing: NestMacMetrics.gridSpacing + 4,
                     pinnedViews: [.sectionHeaders]
@@ -323,17 +315,10 @@ struct LibraryManagerView: View {
                     }
                 }
                 .padding(.horizontal, NestMacMetrics.contentPadding + 4)
+                .padding(.trailing, NestMacMetrics.scrollerGutter)
                 .padding(.vertical, NestMacMetrics.contentPadding)
             }
-            .background {
-                GeometryReader { geometry in
-                    Color.clear
-                        .onAppear { updateGridColumnCount(for: geometry.size.width) }
-                        .onChange(of: geometry.size.width) { _, width in
-                            updateGridColumnCount(for: width)
-                        }
-                }
-            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .focusable()
             .focused($contentFocused)
             .focusEffectDisabled()
@@ -364,12 +349,6 @@ struct LibraryManagerView: View {
 
     private func gridSectionHeader(_ title: String) -> some View {
         LibraryGridSectionHeader(title: title)
-    }
-
-    private func updateGridColumnCount(for width: CGFloat) {
-        let available = width - (NestMacMetrics.contentPadding + 4) * 2
-        let count = Int((available + NestMacMetrics.gridSpacing) / (NestMacMetrics.gridItemMinWidth + NestMacMetrics.gridSpacing))
-        gridColumnCount = max(1, count)
     }
 
     @ViewBuilder
@@ -454,7 +433,7 @@ struct LibraryManagerView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .navigation) {
+        ToolbarItemGroup(placement: .navigation) {
             Picker("View", selection: $viewMode) {
                 ForEach(LibraryViewMode.allCases) { mode in
                     Label(mode.title, systemImage: mode.systemImage)
@@ -464,6 +443,11 @@ struct LibraryManagerView: View {
             .pickerStyle(.segmented)
             .labelStyle(.iconOnly)
             .help("Show albums as a grid or a list")
+
+            WindowDragTitle(
+                title: "FlacNest Library",
+                subtitle: albumCountSubtitle
+            )
         }
 
         ToolbarItemGroup(placement: .primaryAction) {
@@ -482,7 +466,7 @@ struct LibraryManagerView: View {
             } label: {
                 Label("Play Random", systemImage: "shuffle")
             }
-            .disabled(allAlbumsForPlayback.isEmpty || libraryVM.isLibraryBusy)
+            .disabled((libraryVM.sidebarCounts[.allAlbums] ?? 0) == 0 || libraryVM.isLibraryBusy)
             .help("Play a random album from All Albums")
 
             sortGroupMenu
@@ -568,7 +552,12 @@ struct LibraryManagerView: View {
     // MARK: - Actions
 
     private func album(withID id: String) -> LibraryAlbum? {
-        displayedAlbums.first { $0.id == id }
+        for section in libraryVM.visibleSections {
+            if let album = section.albums.first(where: { $0.id == id }) {
+                return album
+            }
+        }
+        return libraryVM.library.albums.first { $0.id == id }
     }
 
     private func playbackState(for album: LibraryAlbum) -> LibraryAlbumPlaybackState {
@@ -612,15 +601,14 @@ struct LibraryManagerView: View {
         NSWorkspace.shared.activateFileViewerSelecting([cueURL])
     }
 
-    private var allAlbumsForPlayback: [LibraryAlbum] {
-        libraryVM.library.albums.filter { LibraryViewModel.matches($0, filter: .allAlbums) }
-    }
-
     private func playRandomAlbum() {
-        guard let album = allAlbumsForPlayback.randomElement() else { return }
-        libraryVM.setSidebarFilter(.allAlbums)
+        let albums = libraryVM.library.albums.filter { LibraryViewModel.matches($0, filter: .allAlbums) }
+        guard let album = albums.randomElement() else { return }
         beginPlayback(for: album)
         scrollTarget = album.id
+        if libraryVM.sidebarFilter != .allAlbums {
+            libraryVM.setSidebarFilter(.allAlbums)
+        }
     }
 
     private func beginPlayback(for album: LibraryAlbum) {
@@ -648,21 +636,20 @@ struct LibraryManagerView: View {
     private func moveSelection(by delta: Int) {
         guard !libraryVM.isLibraryBusy else { return }
 
-        let albums = displayedAlbums
-        guard !albums.isEmpty else { return }
+        let albumIDs = libraryVM.visibleSections.flatMap { $0.albums.map(\.id) }
+        guard !albumIDs.isEmpty else { return }
 
         let currentIndex: Int
-        if let selectedAlbumID, let index = albums.firstIndex(where: { $0.id == selectedAlbumID }) {
+        if let selectedAlbumID, let index = albumIDs.firstIndex(of: selectedAlbumID) {
             currentIndex = index
         } else {
-            currentIndex = delta >= 0 ? -1 : albums.count
+            currentIndex = delta >= 0 ? -1 : albumIDs.count
         }
 
-        let newIndex = min(albums.count - 1, max(0, currentIndex + delta))
-        let album = albums[newIndex]
-        selectedAlbumID = album.id
+        let newIndex = min(albumIDs.count - 1, max(0, currentIndex + delta))
+        selectedAlbumID = albumIDs[newIndex]
         contentFocused = true
-        scrollTarget = album.id
+        scrollTarget = albumIDs[newIndex]
     }
 }
 

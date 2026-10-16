@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct FlacNestCommands: Commands {
@@ -12,6 +13,11 @@ struct FlacNestCommands: Commands {
         playback.currentAlbum != nil
     }
 
+    private static var isPlayerKeyWindow: Bool {
+        let window = NSApp.keyWindow ?? NSApp.mainWindow
+        return window.map(PlayerWindowSizing.isPlayerWindow) == true
+    }
+
     var body: some Commands {
         CommandGroup(replacing: .appInfo) {
             Button("About FlacNest") {
@@ -21,6 +27,33 @@ struct FlacNestCommands: Commands {
         }
 
         CommandGroup(replacing: .newItem) { }
+
+        CommandGroup(replacing: .pasteboard) {
+            Button("Cut") {
+                NSApp.sendAction(#selector(NSText.cut(_:)), to: nil, from: nil)
+            }
+            .keyboardShortcut("x", modifiers: .command)
+            .disabled(Self.isPlayerKeyWindow)
+
+            Button(Self.isPlayerKeyWindow ? "Copy Playing Now Token" : "Copy") {
+                copyForFrontmostWindow()
+            }
+            .keyboardShortcut("c", modifiers: .command)
+            .disabled(Self.isPlayerKeyWindow && !hasLoadedAlbum)
+
+            Button(Self.isPlayerKeyWindow ? "Paste Playing Now Token" : "Paste") {
+                pasteForFrontmostWindow()
+            }
+            .keyboardShortcut("v", modifiers: .command)
+
+            Divider()
+
+            Button("Select All") {
+                NSApp.sendAction(#selector(NSText.selectAll(_:)), to: nil, from: nil)
+            }
+            .keyboardShortcut("a", modifiers: .command)
+            .disabled(Self.isPlayerKeyWindow)
+        }
 
         CommandMenu("Playback") {
             Button("Play / Pause") {
@@ -131,6 +164,38 @@ struct FlacNestCommands: Commands {
                 )
             }
             .keyboardShortcut("2", modifiers: .command)
+        }
+    }
+
+    private func copyForFrontmostWindow() {
+        if Self.isPlayerKeyWindow {
+            copyPlayingNowToken()
+        } else {
+            NSApp.sendAction(#selector(NSText.copy(_:)), to: nil, from: nil)
+        }
+    }
+
+    private func pasteForFrontmostWindow() {
+        if Self.isPlayerKeyWindow {
+            pastePlayingNowToken()
+        } else {
+            NSApp.sendAction(#selector(NSText.paste(_:)), to: nil, from: nil)
+        }
+    }
+
+    private func copyPlayingNowToken() {
+        do {
+            try playback.copyPlayingNowToken()
+        } catch {
+            PlayingNowTokenPasteboard.presentError(error)
+        }
+    }
+
+    private func pastePlayingNowToken() {
+        do {
+            try playback.pastePlayingNowToken()
+        } catch {
+            PlayingNowTokenPasteboard.presentError(error)
         }
     }
 }

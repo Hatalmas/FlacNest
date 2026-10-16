@@ -54,17 +54,15 @@ enum AlbumArtworkImporter {
         }
 
         if art.hasPrefix("/") {
-            if let bookmark = album.artworkBookmark,
-               let url = resolveSecurityScopedURL(from: bookmark) {
-                return url
+            guard let rootPath = libraryRoot?.standardizedFileURL.path,
+                  art == rootPath || art.hasPrefix(rootPath + "/") else {
+                return nil
             }
-            let url = URL(fileURLWithPath: art)
-            return FileManager.default.fileExists(atPath: url.path) ? url : nil
+            return URL(fileURLWithPath: art)
         }
 
         guard let libraryRoot else { return nil }
-        let url = libraryRoot.appendingPathComponent(art)
-        return FileManager.default.fileExists(atPath: url.path) ? url : nil
+        return libraryRoot.appendingPathComponent(art)
     }
 
     static func stopAccessingArtwork() {

@@ -16,6 +16,10 @@ private struct EjectFocusedKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
+private struct PlayingNowEditCommandsFocusedKey: FocusedValueKey {
+    typealias Value = Bool
+}
+
 extension FocusedValues {
     var focusedPlayback: PlaybackController? {
         get { self[PlaybackControllerFocusedKey.self] }
@@ -36,18 +40,34 @@ extension FocusedValues {
         get { self[EjectFocusedKey.self] }
         set { self[EjectFocusedKey.self] = newValue }
     }
+
+    var usesPlayingNowEditCommands: Bool? {
+        get { self[PlayingNowEditCommandsFocusedKey.self] }
+        set { self[PlayingNowEditCommandsFocusedKey.self] = newValue }
+    }
 }
 
 extension View {
+    @ViewBuilder
     func flacNestFocusedCommands(
         playback: PlaybackController,
         libraryVM: LibraryViewModel? = nil,
         onEditMetadata: (() -> Void)? = nil,
-        onEject: (() -> Void)? = nil
+        onEject: (() -> Void)? = nil,
+        usesPlayingNowEditCommands: Bool = false
     ) -> some View {
-        focusedValue(\.focusedPlayback, playback)
+        let commands = focusedValue(\.focusedPlayback, playback)
             .focusedValue(\.focusedLibraryViewModel, libraryVM)
             .focusedValue(\.focusedEditMetadata, onEditMetadata)
             .focusedValue(\.focusedEject, onEject)
+            .focusedValue(\.usesPlayingNowEditCommands, usesPlayingNowEditCommands ? true : nil)
+
+        if usesPlayingNowEditCommands {
+            commands
+                .focusable()
+                .focusEffectDisabled()
+        } else {
+            commands
+        }
     }
 }

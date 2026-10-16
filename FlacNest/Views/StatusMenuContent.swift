@@ -39,6 +39,17 @@ struct StatusMenuContent: View {
 
                     StatusMenuSeparator()
 
+                    StatusMenuRow(title: "Copy Playing Now Token", systemImage: "doc.on.clipboard", shortcut: "⌘C") {
+                        copyPlayingNowToken()
+                    }
+                    .disabled(playback.currentAlbum == nil)
+
+                    StatusMenuRow(title: "Paste Playing Now Token", systemImage: "clipboard", shortcut: "⌘V") {
+                        pastePlayingNowToken()
+                    }
+
+                    StatusMenuSeparator()
+
                     StatusMenuRow(title: "Settings…", systemImage: "gearshape", shortcut: "⌘,") {
                         NSApp.activate(ignoringOtherApps: true)
                         openSettings()
@@ -69,6 +80,22 @@ struct StatusMenuContent: View {
         openWindow(id: "library")
         DispatchQueue.main.async {
             PlayerWindowSizing.bringLibraryToFront()
+        }
+    }
+
+    private func copyPlayingNowToken() {
+        do {
+            try playback.copyPlayingNowToken()
+        } catch {
+            PlayingNowTokenPasteboard.presentError(error)
+        }
+    }
+
+    private func pastePlayingNowToken() {
+        do {
+            try playback.pastePlayingNowToken()
+        } catch {
+            PlayingNowTokenPasteboard.presentError(error)
         }
     }
 }

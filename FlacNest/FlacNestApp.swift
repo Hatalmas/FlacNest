@@ -29,7 +29,8 @@ struct FlacNestApp: App {
                 .environmentObject(barcodeEject)
                 .flacNestFocusedCommands(
                     playback: playback,
-                    onEject: { barcodeEject.presentEject() }
+                    onEject: { barcodeEject.presentEject() },
+                    usesPlayingNowEditCommands: true
                 )
                 .onReceive(NotificationCenter.default.publisher(for: .flacNestLibraryRootDidChange)) { _ in
                     playback.configure(libraryRoot: AppSettings.libraryRootURL)
@@ -47,6 +48,7 @@ struct FlacNestApp: App {
                 .registersMetadataTransferOpener()
                 .appTheme(theme)
         }
+        .windowToolbarStyle(.unified(showsTitle: false))
         .windowResizability(.contentMinSize)
         .defaultSize(
             width: PlayerWindowSizing.savedSize(trackListVisible: playerTrackListVisible).width,
@@ -77,6 +79,8 @@ struct FlacNestApp: App {
                 .registersMetadataTransferOpener()
                 .appTheme(theme)
         }
+        .windowToolbarStyle(.unified(showsTitle: false))
+        .windowResizability(.contentMinSize)
         .defaultSize(width: 960, height: 620)
 
         Window("FlacNest Dock Mini", id: "dockMiniPlayer") {
@@ -147,6 +151,9 @@ struct FlacNestApp: App {
                 libraryVM.library.albums.filter { !$0.isHidden },
                 by: libraryVM.sortMode
             )
+        }
+        playback.libraryAlbumsProvider = {
+            libraryVM.library.albums
         }
         playback.restoreCachedPlaybackIfAvailable()
         libraryVM.loadFromDisk()

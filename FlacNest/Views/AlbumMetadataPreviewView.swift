@@ -14,7 +14,11 @@ struct AlbumMetadataPreviewView: View {
             if let album {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
-                        LibraryArtworkView(url: libraryVM.artworkURL(for: album), size: nil, cornerRadius: 10)
+                        LibraryArtworkView(
+                            url: libraryVM.artworkURL(for: album),
+                            size: NestMacMetrics.inspectorArtworkSize,
+                            cornerRadius: 10
+                        )
                             .shadow(color: .black.opacity(0.18), radius: 12, y: 6)
 
                         if let barcode = album.barcode?.trimmingCharacters(in: .whitespacesAndNewlines),
