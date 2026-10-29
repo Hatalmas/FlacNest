@@ -9,10 +9,10 @@ enum CUEFileReader {
         }
 
         if let whole = bestDecodedText(for: data), !containsReplacementCharacters(whole) {
-            return whole
+            return MetadataTextRepair.repaired(whole)
         }
 
-        return decodeLineByLine(data)
+        return MetadataTextRepair.repaired(decodeLineByLine(data))
     }
 
     private static let preferredEncodings: [String.Encoding] = [
@@ -52,7 +52,10 @@ enum CUEFileReader {
         var best: (text: String, score: Int)?
         for encoding in preferredEncodings {
             guard let text = String(data: bytes, encoding: encoding) else { continue }
-            let score = scoreCueText(text)
+            var score = scoreCueText(text)
+            if encoding == .utf8, !containsReplacementCharacters(text) {
+                score += 40
+            }
             if best == nil || score > best!.score {
                 best = (text, score)
             }
@@ -64,6 +67,7 @@ enum CUEFileReader {
         var score = 0
         score -= text.count(where: { $0 == "\u{FFFD}" }) * 1_000
         if text.contains("ï¿½") { score -= 500 }
+        if MetadataTextRepair.looksDamaged(text) { score -= 200 }
 
         let upper = text.uppercased()
         if upper.contains("FILE ") { score += 20 }
@@ -72,7 +76,7 @@ enum CUEFileReader {
         if upper.contains("PERFORMER ") { score += 5 }
         if upper.contains("TITLE ") { score += 5 }
 
-        let centralEuropean = "áéíóöőúüűÁÉÍÓÖŐÚÜŰ"
+        let centralEuropean = "áéíóöőúüűÁÉÍÓÖŐÚÜŰëËäÄčČ"
         score += text.count(where: { centralEuropean.contains($0) }) * 3
         return score
     }

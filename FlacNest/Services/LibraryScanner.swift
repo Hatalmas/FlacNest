@@ -223,6 +223,7 @@ enum LibraryScanner {
             flacRelativePath: flacRelative,
             title: metadata.title,
             performer: metadata.performer,
+            albumArtist: metadata.albumArtist,
             genre: metadata.genre,
             date: metadata.date,
             discID: metadata.discID,

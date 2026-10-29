@@ -105,8 +105,8 @@ enum FlacNestLibraryStore {
                 LibraryTrack(
                     id: trackID,
                     number: number,
-                    title: title,
-                    performer: performer,
+                    title: MetadataTextRepair.repaired(title),
+                    performer: MetadataTextRepair.repaired(performer),
                     startSeconds: start,
                     endSeconds: end
                 )
@@ -117,18 +117,19 @@ enum FlacNestLibraryStore {
             id: id,
             cueRelativePath: cue,
             flacRelativePath: flac,
-            title: element.attribute(forName: "title")?.stringValue ?? "",
-            performer: element.attribute(forName: "performer")?.stringValue ?? "",
-            genre: element.attribute(forName: "genre")?.stringValue,
+            title: MetadataTextRepair.repaired(element.attribute(forName: "title")?.stringValue ?? ""),
+            performer: MetadataTextRepair.repaired(element.attribute(forName: "performer")?.stringValue ?? ""),
+            albumArtist: MetadataTextRepair.repaired(element.attribute(forName: "albumArtist")?.stringValue),
+            genre: MetadataTextRepair.repaired(element.attribute(forName: "genre")?.stringValue),
             date: element.attribute(forName: "date")?.stringValue,
             discID: element.attribute(forName: "discID")?.stringValue,
-            comment: element.attribute(forName: "comment")?.stringValue,
+            comment: MetadataTextRepair.repaired(element.attribute(forName: "comment")?.stringValue),
             artworkRelativePath: artwork,
             artworkBookmark: artworkBookmark,
             barcode: element.attribute(forName: "barcode")?.stringValue,
             isFavorite: parseBoolAttribute(element.attribute(forName: "favorite")?.stringValue),
             isHidden: parseBoolAttribute(element.attribute(forName: "hidden")?.stringValue),
-            parentFolder: element.attribute(forName: "parentFolder")?.stringValue ?? "",
+            parentFolder: MetadataTextRepair.repaired(element.attribute(forName: "parentFolder")?.stringValue ?? ""),
             tracks: tracks
         )
     }
@@ -159,6 +160,9 @@ enum FlacNestLibraryStore {
             "title": album.title,
             "performer": album.performer,
         ]
+        if let albumArtist = album.albumArtist, !albumArtist.isEmpty {
+            attributes["albumArtist"] = albumArtist
+        }
         if let genre = album.genre { attributes["genre"] = genre }
         if let date = album.date { attributes["date"] = date }
         if let discID = album.discID { attributes["discID"] = discID }

@@ -4,6 +4,7 @@ struct ParsedCUE {
     var flacFileName: String
     var title: String
     var performer: String
+    var albumArtist: String? = nil
     var genre: String?
     var date: String?
     var discID: String?

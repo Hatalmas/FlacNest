@@ -105,7 +105,7 @@ struct MobilePlayerShellView: View {
         if let track, let performer = track.performer?.trimmingCharacters(in: .whitespacesAndNewlines), !performer.isEmpty {
             return performer
         }
-        return album?.performer ?? ""
+        return album?.displayArtist ?? ""
     }
 
     private func syncPlaybackSelection(playback: MobilePlaybackController) {

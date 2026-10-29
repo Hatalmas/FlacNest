@@ -20,6 +20,7 @@ struct MobileLibraryAlbum: Equatable, Identifiable {
     var mp3RelativePath: String
     var title: String
     var performer: String
+    var albumArtist: String? = nil
     var parentFolder: String
     var genre: String?
     var date: String?
@@ -37,8 +38,14 @@ struct MobileLibraryAlbum: Equatable, Identifiable {
         return trimmed
     }
 
+    var displayArtist: String {
+        let albumArtist = albumArtist?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !albumArtist.isEmpty { return albumArtist }
+        return performer.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     var sortArtist: String {
-        let trimmed = performer.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = displayArtist
         return trimmed.isEmpty ? parentFolder : trimmed
     }
 }

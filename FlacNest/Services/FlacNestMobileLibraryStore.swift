@@ -68,6 +68,9 @@ enum FlacNestMobileLibraryStore {
             "performer": album.performer,
             "parentFolder": album.parentDirectoryName,
         ]
+        if let albumArtist = album.albumArtist, !albumArtist.isEmpty {
+            attributes["albumArtist"] = albumArtist
+        }
 
         if let mp3RelativePath {
             attributes["mp3"] = mp3RelativePath
@@ -120,6 +123,9 @@ enum FlacNestMobileLibraryStore {
             "performer": album.performer,
             "parentFolder": album.parentFolder,
         ]
+        if let albumArtist = album.albumArtist, !albumArtist.isEmpty {
+            attributes["albumArtist"] = albumArtist
+        }
 
         if let genre = album.genre { attributes["genre"] = genre }
         if let date = album.date { attributes["date"] = date }

@@ -140,10 +140,11 @@ final class MediaRemoteController {
             return
         }
 
-        let performer = track.performer?.isEmpty == false ? track.performer! : album.performer
+        let performer = album.displayedArtist(for: track)
         MPNowPlayingInfoCenter.default().nowPlayingInfo = [
             MPMediaItemPropertyTitle: track.title,
             MPMediaItemPropertyArtist: performer,
+            MPMediaItemPropertyAlbumArtist: album.displayArtist,
             MPMediaItemPropertyAlbumTitle: album.displayTitle,
             MPNowPlayingInfoPropertyElapsedPlaybackTime: playback.currentTime,
             MPMediaItemPropertyPlaybackDuration: playback.trackDuration,

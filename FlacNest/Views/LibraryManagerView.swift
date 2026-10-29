@@ -819,7 +819,7 @@ private struct LibraryAlbumListRow: View {
     }
 
     private var subtitle: String {
-        var parts = [album.performer]
+        var parts = [album.displayArtist]
         if let date = album.date, !date.isEmpty { parts.append(date) }
         parts.append(album.tracks.count == 1 ? "1 track" : "\(album.tracks.count) tracks")
         return parts.filter { !$0.isEmpty }.joined(separator: " · ")
@@ -878,7 +878,7 @@ private struct LibraryAlbumGridCell: View {
                     .font(.callout.weight(.medium))
                     .nestPrimaryForeground()
                     .lineLimit(1)
-                Text(album.performer)
+                Text(album.displayArtist)
                     .font(.callout)
                     .nestSecondaryForeground()
                     .lineLimit(1)
@@ -888,7 +888,7 @@ private struct LibraryAlbumGridCell: View {
         .contentShape(Rectangle())
         .onHover { isHovering = $0 }
         .animation(.easeOut(duration: 0.15), value: isHovering)
-        .help("\(album.displayTitle) — \(album.performer)")
+        .help("\(album.displayTitle) — \(album.displayArtist)")
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
@@ -962,7 +962,7 @@ private struct LibraryNowPlayingBar: View {
 
     private var subtitle: String {
         guard let album = playback.currentAlbum else { return "Double-click an album to play" }
-        let performer = playback.currentTrack?.performer.flatMap { $0.isEmpty ? nil : $0 } ?? album.performer
+        let performer = album.displayedArtist(for: playback.currentTrack)
         return [performer, album.displayTitle].filter { !$0.isEmpty }.joined(separator: " — ")
     }
 

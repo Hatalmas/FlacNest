@@ -195,6 +195,11 @@ struct AlbumMetadataEditorView: View {
                     TextField("Title", text: $draft.title)
                 }
                 GridRow {
+                    Text("Album Artist")
+                    TextField("Album Artist", text: optionalBinding($draft.albumArtist))
+                        .help("Used for library grouping and listings. Filled from the FLAC ALBUMARTIST tag when present.")
+                }
+                GridRow {
                     Text("Performer")
                     TextField("Performer", text: $draft.performer)
                 }
@@ -347,7 +352,7 @@ struct AlbumMetadataEditorView: View {
     }
 
     private func overrideTrackPerformersFromAlbum() {
-        let performer = draft.performer.trimmingCharacters(in: .whitespacesAndNewlines)
+        let performer = draft.displayArtist
         for index in draft.tracks.indices {
             draft.tracks[index].performer = performer.isEmpty ? nil : performer
         }

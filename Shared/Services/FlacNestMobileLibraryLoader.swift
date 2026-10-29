@@ -171,6 +171,7 @@ private final class MobileLibraryXMLParser: NSObject, XMLParserDelegate {
             mp3RelativePath: mp3,
             title: attributes["title"] ?? "",
             performer: attributes["performer"] ?? "",
+            albumArtist: attributes["albumArtist"],
             parentFolder: attributes["parentFolder"] ?? "Unknown",
             genre: attributes["genre"],
             date: attributes["date"],

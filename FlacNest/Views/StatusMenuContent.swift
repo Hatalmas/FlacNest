@@ -169,11 +169,7 @@ private struct StatusMenuNowPlayingModule: View {
 
     private var subtitle: String {
         guard let album = playback.currentAlbum else { return "FlacNest" }
-        if let performer = playback.currentTrack?.performer?.trimmingCharacters(in: .whitespacesAndNewlines),
-           !performer.isEmpty {
-            return performer
-        }
-        return album.performer
+        return album.displayedArtist(for: playback.currentTrack)
     }
 
     private var transport: some View {

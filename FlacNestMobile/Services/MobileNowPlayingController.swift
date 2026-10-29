@@ -194,10 +194,11 @@ final class MobileNowPlayingController {
             return
         }
 
-        let performer = track.performer?.isEmpty == false ? track.performer! : album.performer
+        let performer = track.performer?.isEmpty == false ? track.performer! : album.displayArtist
         var info: [String: Any] = [
             MPMediaItemPropertyTitle: track.title,
             MPMediaItemPropertyArtist: performer,
+            MPMediaItemPropertyAlbumArtist: album.displayArtist,
             MPMediaItemPropertyAlbumTitle: album.displayTitle,
             MPNowPlayingInfoPropertyElapsedPlaybackTime: playback.trackElapsed,
             MPMediaItemPropertyPlaybackDuration: playback.trackDuration,

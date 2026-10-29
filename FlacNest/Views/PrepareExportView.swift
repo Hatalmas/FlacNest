@@ -7,7 +7,7 @@ struct PrepareExportView: View {
     var body: some View {
         Form {
             Section {
-                Text("Convert each album FLAC to a single MP3 for iPhone/iPad. Track boundaries come from CUE metadata. Resume skips albums listed in process.txt.")
+                Text("Convert each album FLAC to a single MP3 for iPhone/iPad. MP3s are written at the export folder root; leftover nested MP3s are moved there. Existing MP3s are kept; only albums without one are encoded. Each MP3 is tagged with the album title and artist, not the first FLAC track.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -24,13 +24,6 @@ struct PrepareExportView: View {
 
                 Picker("Conversion threads", selection: $viewModel.parallelism) {
                     ForEach(MobileExportParallelism.allCases) { option in
-                        Text(option.label).tag(option)
-                    }
-                }
-                .disabled(viewModel.isRunning)
-
-                Picker("MP3 layout", selection: $viewModel.mp3Layout) {
-                    ForEach(MobileExportLayout.allCases) { option in
                         Text(option.label).tag(option)
                     }
                 }
@@ -105,21 +98,11 @@ struct PrepareExportView: View {
         .nestThemedScrollSurface()
         .nestThemedScreenBackground()
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                if viewModel.isRunning {
-                    Button("Cancel") {
-                        viewModel.cancelExport()
-                    }
-                    .keyboardShortcut(.escape, modifiers: [])
-                }
-            }
-
             ToolbarItemGroup(placement: .primaryAction) {
-                Button("Flatten Export") {
-                    viewModel.flattenExport()
+                Button("Cancel") {
+                    viewModel.cancelExport()
                 }
-                .disabled(!viewModel.canFlatten)
-                .help("Move MP3s to the export root and update flacnestmobile.xml.")
+                .disabled(!viewModel.isRunning)
 
                 Button("Start Export") {
                     viewModel.startExport(library: libraryVM.library) { album in

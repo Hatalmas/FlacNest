@@ -488,7 +488,7 @@ struct PlayerTrackListView: View {
                         ForEach(Array(album.tracks.enumerated()), id: \.element.id) { index, track in
                             PlayerTrackRow(
                                 track: track,
-                                albumPerformer: album.performer,
+                                album: album,
                                 isCurrent: index == playback.currentTrackIndex,
                                 isPlaying: playback.isPlaying
                             ) {
@@ -521,7 +521,7 @@ struct PlayerTrackListView: View {
 
 private struct PlayerTrackRow: View {
     let track: LibraryTrack
-    let albumPerformer: String
+    let album: LibraryAlbum
     let isCurrent: Bool
     let isPlaying: Bool
     let onPlay: () -> Void
@@ -585,10 +585,7 @@ private struct PlayerTrackRow: View {
     }
 
     private var trackPerformer: String? {
-        guard let performer = track.performer?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !performer.isEmpty,
-              performer != albumPerformer else { return nil }
-        return performer
+        album.displayedTrackPerformer(for: track)
     }
 }
 
@@ -694,8 +691,7 @@ struct NowPlayingMetadataView: View {
     }
 
     private var trackPerformer: String {
-        if let p = track?.performer, !p.isEmpty { return p }
-        return album?.performer ?? ""
+        album?.displayedArtist(for: track) ?? ""
     }
 
     @ViewBuilder
@@ -1020,11 +1016,7 @@ struct PlayerNowPlayingInfoView: View {
     }
 
     private var trackPerformer: String {
-        if let performer = track?.performer?.trimmingCharacters(in: .whitespacesAndNewlines),
-           !performer.isEmpty {
-            return performer
-        }
-        return album?.performer ?? ""
+        album?.displayedArtist(for: track) ?? ""
     }
 }
 

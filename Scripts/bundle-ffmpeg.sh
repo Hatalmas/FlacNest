@@ -42,9 +42,30 @@ bundle_homebrew_with_dylibbundler() {
     echo "Bundled Homebrew ffmpeg with dylibbundler"
 }
 
+needed_archs="${ARCHS:-$(uname -m)}"
+static_archs=""
 if [ -x "${STATIC}" ]; then
+    static_archs="$(lipo -archs "${STATIC}" 2>/dev/null || true)"
+fi
+
+static_covers_needed=1
+for arch in ${needed_archs}; do
+    case "${arch}" in
+        arm64|x86_64)
+            if ! echo " ${static_archs} " | grep -q " ${arch} "; then
+                static_covers_needed=0
+            fi
+            ;;
+    esac
+done
+
+if [ -x "${STATIC}" ] && [ "${static_covers_needed}" -eq 1 ]; then
     bundle_static
     exit 0
+fi
+
+if [ -x "${STATIC}" ] && [ "${static_covers_needed}" -eq 0 ]; then
+    echo "warning: ThirdParty/ffmpeg ($(echo "${static_archs}" | tr ' ' ',')) is missing archs required for this build (${needed_archs}). Trying Homebrew ffmpeg."
 fi
 
 if command -v dylibbundler >/dev/null 2>&1 && bundle_homebrew_with_dylibbundler; then

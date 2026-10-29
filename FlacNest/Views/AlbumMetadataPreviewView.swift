@@ -9,6 +9,8 @@ struct AlbumMetadataPreviewView: View {
     let album: LibraryAlbum?
     var onEdit: (LibraryAlbum) -> Void = { _ in }
 
+    @State private var showsExtendedDetails = false
+
     var body: some View {
         Group {
             if let album {
@@ -59,8 +61,8 @@ struct AlbumMetadataPreviewView: View {
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
 
-            if !album.performer.isEmpty {
-                Text(album.performer)
+            if !album.displayArtist.isEmpty {
+                Text(album.displayArtist)
                     .font(.body)
                     .nestSecondaryForeground()
                     .textSelection(.enabled)
@@ -129,11 +131,28 @@ struct AlbumMetadataPreviewView: View {
     // MARK: - Details
 
     private func detailsSection(for album: LibraryAlbum) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionTitle("Details")
+        let extraRows = extraDetailRows(for: album)
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text("Details")
+                    .font(.headline)
+                    .nestPrimaryForeground()
+                if !extraRows.isEmpty {
+                    Button(showsExtendedDetails ? "Less" : "More") {
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            showsExtendedDetails.toggle()
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .font(.callout)
+                    .nestSecondaryForeground()
+                    .help(showsExtendedDetails ? "Hide extra album metadata" : "Show comment, file paths, and other extra album metadata")
+                }
+                Spacer(minLength: 0)
+            }
 
             Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 12, verticalSpacing: 8) {
-                ForEach(detailRows(for: album), id: \.label) { row in
+                ForEach(visibleDetailRows(for: album), id: \.label) { row in
                     GridRow {
                         Text(row.label)
                             .nestSecondaryForeground()
@@ -158,17 +177,36 @@ struct AlbumMetadataPreviewView: View {
         var isPath = false
     }
 
-    private func detailRows(for album: LibraryAlbum) -> [DetailRow] {
-        let candidates: [(String, String?, Bool)] = [
+    private func visibleDetailRows(for album: LibraryAlbum) -> [DetailRow] {
+        var rows = compactDetailRows(for: album)
+        if showsExtendedDetails {
+            rows.append(contentsOf: extraDetailRows(for: album))
+        }
+        return rows
+    }
+
+    private func compactDetailRows(for album: LibraryAlbum) -> [DetailRow] {
+        detailRows(from: [
+            ("Album Artist", album.albumArtist, false),
+            ("Performer", album.performer.isEmpty ? nil : album.performer, false),
             ("Genre", album.genre, false),
             ("Year", album.date, false),
-            ("Parent Folder", album.parentFolder, true),
+            ("Parent Folder", album.parentFolder.isEmpty ? nil : album.parentFolder, true),
             ("Disc ID", album.discID, false),
             ("Barcode", album.barcode, false),
+        ])
+    }
+
+    private func extraDetailRows(for album: LibraryAlbum) -> [DetailRow] {
+        detailRows(from: [
             ("Comment", album.comment, false),
             ("Cue File", album.cueRelativePath, true),
-        ]
-        return candidates.compactMap { label, value, isPath in
+            ("FLAC File", album.flacRelativePath, true),
+        ])
+    }
+
+    private func detailRows(from candidates: [(String, String?, Bool)]) -> [DetailRow] {
+        candidates.compactMap { label, value, isPath in
             guard let value = value?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else { return nil }
             return DetailRow(label: label, value: value, isPath: isPath)
         }
@@ -184,7 +222,7 @@ struct AlbumMetadataPreviewView: View {
                 ForEach(Array(album.tracks.enumerated()), id: \.element.id) { index, track in
                     InspectorTrackRow(
                         track: track,
-                        albumPerformer: album.performer,
+                        album: album,
                         isCurrent: playback.currentAlbum?.id == album.id && playback.currentTrackIndex == index,
                         isPlaying: playback.isPlaying
                     ) {
@@ -227,7 +265,7 @@ struct AlbumMetadataPreviewView: View {
 
 private struct InspectorTrackRow: View {
     let track: LibraryTrack
-    let albumPerformer: String
+    let album: LibraryAlbum
     let isCurrent: Bool
     let isPlaying: Bool
     let onPlay: () -> Void
@@ -290,9 +328,6 @@ private struct InspectorTrackRow: View {
     }
 
     private var trackPerformer: String? {
-        guard let performer = track.performer?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !performer.isEmpty,
-              performer != albumPerformer else { return nil }
-        return performer
+        album.displayedTrackPerformer(for: track)
     }
 }

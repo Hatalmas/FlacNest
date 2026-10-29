@@ -5,36 +5,64 @@ enum CUEMetadataRepair {
         var result = parsed
         let flacTags = FLACMetadataReader.readVorbisComments(from: flacURL)
 
-        if metadataIsDamaged(result.performer) {
-            if let artist = firstTag(in: flacTags, keys: ["ARTIST", "ALBUMARTIST"]) {
+        result.title = MetadataTextRepair.repaired(result.title)
+        result.performer = MetadataTextRepair.repaired(result.performer)
+        result.genre = MetadataTextRepair.repaired(result.genre)
+        result.date = MetadataTextRepair.repaired(result.date)
+        result.comment = MetadataTextRepair.repaired(result.comment)
+        result.albumArtist = MetadataTextRepair.repaired(firstTag(in: flacTags, keys: ["ALBUMARTIST"]))
+        for index in result.tracks.indices {
+            result.tracks[index].title = MetadataTextRepair.repaired(result.tracks[index].title)
+            result.tracks[index].performer = MetadataTextRepair.repaired(result.tracks[index].performer)
+        }
+
+        let flacArtist = MetadataTextRepair.repaired(firstTag(in: flacTags, keys: ["ARTIST", "ALBUMARTIST"]))
+        if result.performer.isEmpty || MetadataTextRepair.looksDamaged(result.performer) {
+            if let artist = flacArtist {
                 result.performer = artist
-            } else if let trackPerformer = mostCommonTrackPerformer(result.tracks) {
+            } else if let trackPerformer = mostCommonTrackPerformer(result.tracks),
+                      !MetadataTextRepair.looksDamaged(trackPerformer) {
                 result.performer = trackPerformer
             }
         }
 
-        if metadataIsDamaged(result.title) {
-            if let album = firstTag(in: flacTags, keys: ["ALBUM"]) {
+        if result.title.isEmpty || MetadataTextRepair.looksDamaged(result.title) {
+            if let album = MetadataTextRepair.repaired(firstTag(in: flacTags, keys: ["ALBUM"])) {
                 result.title = album
             }
         }
 
+        let fallbackPerformer = [
+            result.albumArtist,
+            flacArtist,
+            result.performer,
+        ]
+        .compactMap { value -> String? in
+            let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            return trimmed.isEmpty || MetadataTextRepair.looksDamaged(trimmed) ? nil : trimmed
+        }
+        .first
+
+        if let fallbackPerformer {
+            for index in result.tracks.indices {
+                let performer = result.tracks[index].performer?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                if performer.isEmpty || MetadataTextRepair.looksDamaged(performer) {
+                    result.tracks[index].performer = fallbackPerformer
+                }
+            }
+        }
+
         if (result.genre == nil || result.genre?.isEmpty == true),
-           let genre = firstTag(in: flacTags, keys: ["GENRE"]) {
+           let genre = MetadataTextRepair.repaired(firstTag(in: flacTags, keys: ["GENRE"])) {
             result.genre = genre
         }
 
         if (result.date == nil || result.date?.isEmpty == true),
-           let date = firstTag(in: flacTags, keys: ["DATE"]) {
+           let date = MetadataTextRepair.repaired(firstTag(in: flacTags, keys: ["DATE"])) {
             result.date = date
         }
 
         return result
-    }
-
-    private static func metadataIsDamaged(_ text: String) -> Bool {
-        guard !text.isEmpty else { return false }
-        return text.contains("\u{FFFD}") || text.contains("ï¿½")
     }
 
     private static func firstTag(in tags: [String: String], keys: [String]) -> String? {

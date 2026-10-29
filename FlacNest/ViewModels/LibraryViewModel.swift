@@ -524,6 +524,7 @@ final class LibraryViewModel: ObservableObject {
         let haystack = [
             album.displayTitle,
             album.performer,
+            album.albumArtist ?? "",
             album.flacRelativePath,
             album.cueRelativePath,
             album.barcode ?? "",
@@ -693,6 +694,15 @@ final class LibraryViewModel: ObservableObject {
                 return (album.id, (path, album.artworkBookmark))
             }
         )
+        let preservedAlbumArtist = Dictionary(
+            uniqueKeysWithValues: library.albums.compactMap { album -> (String, String)? in
+                guard let artist = album.albumArtist?.trimmingCharacters(in: .whitespacesAndNewlines),
+                      !artist.isEmpty else {
+                    return nil
+                }
+                return (album.id, artist)
+            }
+        )
         library = result.library
         for index in library.albums.indices {
             library.albums[index].barcode = preservedBarcodes[library.albums[index].id]
@@ -701,6 +711,9 @@ final class LibraryViewModel: ObservableObject {
             if let preserved = preservedArtwork[library.albums[index].id] {
                 library.albums[index].artworkRelativePath = preserved.0
                 library.albums[index].artworkBookmark = preserved.1
+            }
+            if let preserved = preservedAlbumArtist[library.albums[index].id] {
+                library.albums[index].albumArtist = preserved
             }
         }
         _ = AlbumArtworkStore.collect(into: &library, libraryRoot: libraryRoot)
@@ -774,8 +787,10 @@ final class LibraryViewModel: ObservableObject {
         var changed = false
 
         func fillString(_ destination: inout String, _ source: String) {
-            if destination.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-               !source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let destinationEmpty = destination.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                || MetadataTextRepair.looksDamaged(destination)
+            let sourceValue = source.trimmingCharacters(in: .whitespacesAndNewlines)
+            if destinationEmpty && !sourceValue.isEmpty && !MetadataTextRepair.looksDamaged(sourceValue) {
                 destination = source
                 changed = true
             }
@@ -792,6 +807,7 @@ final class LibraryViewModel: ObservableObject {
 
         fillString(&existing.title, scanned.title)
         fillString(&existing.performer, scanned.performer)
+        fillOptional(&existing.albumArtist, scanned.albumArtist)
         fillOptional(&existing.genre, scanned.genre)
         fillOptional(&existing.date, scanned.date)
         fillOptional(&existing.discID, scanned.discID)
@@ -832,10 +848,12 @@ final class LibraryViewModel: ObservableObject {
                     existing.tracks[index].title = scannedTrack.title
                     changed = true
                 }
-                let performerEmpty = existing.tracks[index].performer?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true
-                if performerEmpty,
+                let existingPerformer = existing.tracks[index].performer?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                let performerMissing = existingPerformer.isEmpty || MetadataTextRepair.looksDamaged(existingPerformer)
+                if performerMissing,
                    let performer = scannedTrack.performer?.trimmingCharacters(in: .whitespacesAndNewlines),
-                   !performer.isEmpty {
+                   !performer.isEmpty,
+                   !MetadataTextRepair.looksDamaged(performer) {
                     existing.tracks[index].performer = performer
                     changed = true
                 }

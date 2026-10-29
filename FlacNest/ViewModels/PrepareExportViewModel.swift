@@ -6,7 +6,6 @@ import SwiftUI
 final class PrepareExportViewModel: ObservableObject {
     @Published var bitrate: MobileExportBitrate = .kbps320
     @Published var parallelism: MobileExportParallelism = .four
-    @Published var mp3Layout: MobileExportLayout = .nested
     @Published var exportDirectoryPath: String = ""
     @Published var isRunning = false
     @Published var progress = MobileExportProgress()
@@ -21,7 +20,6 @@ final class PrepareExportViewModel: ObservableObject {
     private static let exportDirectoryPathKey = "mobileExportDirectoryPath"
     private static let exportBitrateKey = "mobileExportBitrate"
     private static let exportParallelismKey = "mobileExportParallelism"
-    private static let exportMP3LayoutKey = "mobileExportMP3Layout"
 
     init() {
         if let raw = UserDefaults.standard.object(forKey: Self.exportBitrateKey) as? Int,
@@ -32,10 +30,6 @@ final class PrepareExportViewModel: ObservableObject {
            let saved = MobileExportParallelism(rawValue: raw) {
             parallelism = saved
         }
-        if let raw = UserDefaults.standard.string(forKey: Self.exportMP3LayoutKey),
-           let saved = MobileExportLayout(rawValue: raw) {
-            mp3Layout = saved
-        }
         exportDirectoryPath = UserDefaults.standard.string(forKey: Self.exportDirectoryPathKey) ?? ""
         exportDirectoryBookmark = UserDefaults.standard.data(forKey: Self.exportDirectoryBookmarkKey)
         exportDirectoryURL = resolveExportDirectoryURL()
@@ -43,16 +37,6 @@ final class PrepareExportViewModel: ObservableObject {
 
     var canStart: Bool {
         !isRunning && exportDirectoryURL != nil
-    }
-
-    var canFlatten: Bool {
-        !isRunning && exportDirectoryURL != nil && hasExistingMobileExport
-    }
-
-    private var hasExistingMobileExport: Bool {
-        guard let exportDirectory = exportDirectoryURL else { return false }
-        let xmlURL = exportDirectory.appendingPathComponent(FlacNestMobileLibraryStore.xmlFilename, isDirectory: false)
-        return FileManager.default.fileExists(atPath: xmlURL.path)
     }
 
     func chooseExportDirectory() {
@@ -92,7 +76,6 @@ final class PrepareExportViewModel: ObservableObject {
 
         UserDefaults.standard.set(bitrate.rawValue, forKey: Self.exportBitrateKey)
         UserDefaults.standard.set(parallelism.rawValue, forKey: Self.exportParallelismKey)
-        UserDefaults.standard.set(mp3Layout.rawValue, forKey: Self.exportMP3LayoutKey)
 
         let cancellation = ExportCancellation()
         exportCancellation = cancellation
@@ -102,7 +85,6 @@ final class PrepareExportViewModel: ObservableObject {
 
         let selectedBitrate = bitrate
         let selectedParallelism = parallelism.rawValue
-        let selectedLayout = mp3Layout
         let exportPath = exportDirectory.path
         let artworkSourceURLs = Dictionary(
             uniqueKeysWithValues: library.albums.compactMap { album in
@@ -112,9 +94,13 @@ final class PrepareExportViewModel: ObservableObject {
 
         exportTask = Task {
             let accessingExport = exportDirectory.startAccessingSecurityScopedResource()
+            let accessingLibrary = libraryRoot.startAccessingSecurityScopedResource()
             defer {
                 if accessingExport {
                     exportDirectory.stopAccessingSecurityScopedResource()
+                }
+                if accessingLibrary {
+                    libraryRoot.stopAccessingSecurityScopedResource()
                 }
                 exportCancellation = nil
                 isRunning = false
@@ -128,7 +114,6 @@ final class PrepareExportViewModel: ObservableObject {
                         exportDirectory: exportDirectory,
                         bitrate: selectedBitrate,
                         parallelJobs: selectedParallelism,
-                        mp3Layout: selectedLayout,
                         artworkSourceURLs: artworkSourceURLs,
                         cancellation: cancellation,
                         reportProgress: { update in
@@ -148,6 +133,13 @@ final class PrepareExportViewModel: ObservableObject {
                 default:
                     break
                 }
+            } catch is CancellationError {
+                var cancelled = progress
+                cancelled.phase = .cancelled
+                cancelled.currentItem = ""
+                appendLog(&cancelled, "Export cancelled.")
+                applyProgress(cancelled)
+                statusMessage = "Export cancelled."
             } catch MobileLibraryExportError.cancelled {
                 var cancelled = progress
                 cancelled.phase = .cancelled
@@ -168,63 +160,6 @@ final class PrepareExportViewModel: ObservableObject {
 
     func cancelExport() {
         exportCancellation?.cancel()
-        exportTask?.cancel()
-    }
-
-    func flattenExport() {
-        guard !isRunning else { return }
-        guard let exportDirectory = exportDirectoryURL else {
-            statusMessage = "Choose an export directory first."
-            return
-        }
-        guard hasExistingMobileExport else {
-            statusMessage = "No existing export found in the selected directory."
-            return
-        }
-
-        isRunning = true
-        progress = MobileExportProgress(phase: .preparing, currentItem: "Flattening export…")
-        statusMessage = nil
-
-        let exportPath = exportDirectory.path
-        exportTask = Task {
-            let accessingExport = exportDirectory.startAccessingSecurityScopedResource()
-            defer {
-                if accessingExport {
-                    exportDirectory.stopAccessingSecurityScopedResource()
-                }
-                isRunning = false
-            }
-
-            do {
-                let result = try await Task.detached(priority: .userInitiated) {
-                    try MobileExportFlattener.flatten(exportDirectory: exportDirectory) { line in
-                        Task { @MainActor in
-                            var updated = self.progress
-                            self.appendLog(&updated, line)
-                            self.applyProgress(updated)
-                        }
-                    }
-                }.value
-
-                var finished = progress
-                finished.phase = .finished
-                finished.currentItem = ""
-                appendLog(&finished, "Flatten complete. Moved \(result.movedCount) MP3 file(s).")
-                if result.alreadyFlatCount > 0 {
-                    appendLog(&finished, "\(result.alreadyFlatCount) album(s) were already at the export root.")
-                }
-                applyProgress(finished)
-                statusMessage = "Flatten finished. Output: \(exportPath)"
-            } catch {
-                var failed = progress
-                failed.phase = .failed
-                failed.currentItem = ""
-                appendLog(&failed, error.localizedDescription)
-                applyProgress(failed)
-                statusMessage = error.localizedDescription
-            }
-        }
     }
 
     private func setExportDirectory(_ url: URL) {

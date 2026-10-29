@@ -39,7 +39,7 @@ extension LibraryAlbum {
     }
 
     var sortArtist: String {
-        let trimmed = performer.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = displayArtist
         return trimmed.isEmpty ? parentDirectoryName : trimmed
     }
 

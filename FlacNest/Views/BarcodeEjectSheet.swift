@@ -172,7 +172,7 @@ struct BarcodeEjectSheet: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(album.displayTitle)
                                 .font(.headline)
-                            Text(album.performer.isEmpty ? album.flacRelativePath : album.performer)
+                            Text(album.displayArtist.isEmpty ? album.flacRelativePath : album.displayArtist)
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                             if album.isHidden {
